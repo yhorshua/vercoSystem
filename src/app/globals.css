@@ -24,3 +24,239 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* login css */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #fff;
+}
+
+.logo {
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  width: 250px;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.login-button {
+  width: 250px;
+  padding: 10px;
+  background-color: #000000;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  background-color: #03c1a1;
+}
+
+
+/*estilos navbar */
+
+.home-container {
+  font-family: Arial, sans-serif;
+}
+/* Estilo general del navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between; /* Espacio entre la hamburguesa y el contenido */
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #000000;
+  color: #ffffff;
+  width: 100%; /* Ajustamos el ancho del navbar */
+  margin: 0 auto; /* Centra el navbar */
+  position: relative; /* Para que el contenido se ajuste bien con el botón hamburguesa fijo */
+   height: 60px; /* Ajustamos el alto de la barra para que el contenido tenga espacio */
+}
+
+/* Estilos para el menú hamburguesa */
+.hamburger {
+  display: none; /* Ocultamos el botón en pantallas grandes */
+  flex-direction: column;
+  cursor: pointer;
+  position: fixed; /* Fijamos el botón */
+  top: 15px; /* Ajustamos la distancia desde la parte superior */
+  left: 20px; /* Alineamos el botón hamburguesa al lado izquierdo */
+  z-index: 1000; /* Nos aseguramos de que el botón esté por encima de otros elementos */
+}
+
+.bar {
+  width: 25px;
+  height: 3px;
+  margin: 4px 0;
+  background-color: #fff;
+}
+
+/* Contenido del navbar */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.user-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-avatar {
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.username {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 5px; /* Espacio entre el nombre y el área */
+}
+
+.user-area {
+  font-size: 12px;
+  color: #d3d3d3;
+}
+
+/* Estilos para el menú hamburguesa */
+.hamburger {
+  display: none; /* Ocultamos el botón en pantallas grandes */
+  flex-direction: column;
+  cursor: pointer;
+  position: fixed; /* Fijamos el botón */
+  top: 15px; /* Ajustamos la distancia desde la parte superior */
+  left: 20px; /* Alineamos el botón hamburguesa al lado izquierdo */
+  z-index: 1000; /* Nos aseguramos de que el botón esté por encima de otros elementos */
+}
+
+.bar {
+  width: 25px;
+  height: 4px;
+  margin: 4px 0;
+  background-color: #ffffff;
+}
+
+/* Media Query para pantallas más pequeñas (móviles) */
+@media (max-width: 768px) {
+  .navbar-right {
+    display: none; /* Ocultamos la barra de usuario en pantallas pequeñas */
+    position: absolute;
+    top: 60px; /* Ajustamos el top para que el panel esté debajo del botón hamburguesa */
+    left: 0;
+    background-color: #838383;
+    width: 60%;  /* Panel ocupa el 60% de la pantalla */
+    height: 100vh; /* Alto completo de la pantalla */
+    padding: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    z-index: 999; /* Asegura que el menú esté encima del contenido */
+    transition: 0.3s ease-in-out; /* Transición suave para la apertura/cierre */
+  }
+
+  .navbar-right.open {
+    display: flex; /* Mostramos el menú cuando esté abierto */
+  }
+
+  .user-avatar {
+    margin-right: 0;
+    margin-bottom: 10px; /* Espacio debajo de la imagen */
+  }
+
+  .user-details {
+    align-items: flex-start;
+  }
+
+  .username {
+    font-size: 18px;
+  }
+
+  .user-area {
+    font-size: 12px;
+  }
+
+  /* Mostramos el botón de hamburguesa */
+  .hamburger {
+    display: flex; /* Mostramos el botón en pantallas pequeñas */
+  }
+
+  .navbar-right.open .user-avatar {
+  transform: scale(1.5) translateX(10px); /* Aumenta el tamaño de la imagen un 50% */
+  transition: transform 0.3s ease-in-out; /* Transición suave */
+}
+
+.user-avatar {
+  border-radius: 50%;
+  margin-right: 0;
+  margin-bottom: 10px; /* Espacio debajo de la imagen */
+  transition: transform 0.3s ease-in-out; /* Transición suave por si está cerrado */
+}
+}
+
+/* Media Query para pantallas muy pequeñas (móviles en modo retrato) */
+@media (max-width: 480px) {
+  .username {
+    font-size: 14px;
+  }
+
+  .user-area {
+    font-size: 12px;
+  }
+
+  .navbar-right.open .user-avatar {
+  transform: scale(1.5) translateX(10px); /* Aumenta el tamaño de la imagen un 50% */
+  transition: transform 0.3s ease-in-out; /* Transición suave */
+}
+
+.user-avatar {
+  border-radius: 50%;
+  margin-right: 0;
+  margin-bottom: 10px; /* Espacio debajo de la imagen */
+  transition: transform 0.3s ease-in-out; /* Transición suave por si está cerrado */
+}
+}
+
+
+
+
+
