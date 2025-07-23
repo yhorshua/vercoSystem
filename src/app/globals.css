@@ -91,9 +91,13 @@ body {
   font-family: Arial, sans-serif;
 }
 /* Estilo general del navbar */
+/* Estilo general del navbar */
+/* Estilo general del navbar */
+/* Estilo general del navbar */
+/* Estilo general del navbar */
 .navbar {
   display: flex;
-  justify-content: space-between; /* Espacio entre la hamburguesa y el contenido */
+  justify-content: space-between; /* Espacio entre el logo, los enlaces y el contenido */
   align-items: center;
   padding: 10px 20px;
   background-color: #000000;
@@ -101,10 +105,15 @@ body {
   width: 100%; /* Ajustamos el ancho del navbar */
   margin: 0 auto; /* Centra el navbar */
   position: relative; /* Para que el contenido se ajuste bien con el botón hamburguesa fijo */
-   height: 60px; /* Ajustamos el alto de la barra para que el contenido tenga espacio */
+  height: 60px; /* Ajustamos el alto de la barra para que el contenido tenga espacio */
 }
 
-/* Estilos para el menú hamburguesa */
+/* Logo en el lado izquierdo */
+.navbar-logo {
+  flex: 0 1 50px; /* Ajusta el espacio que toma el logo */
+}
+
+/* Botón de menú hamburguesa alineado a la izquierda */
 .hamburger {
   display: none; /* Ocultamos el botón en pantallas grandes */
   flex-direction: column;
@@ -117,9 +126,31 @@ body {
 
 .bar {
   width: 25px;
-  height: 3px;
+  height: 4px;
   margin: 4px 0;
   background-color: #fff;
+}
+
+/* Contenedor de los enlaces centrados */
+.navbar-center {
+  display: flex;
+  justify-content: center; /* Centramos los enlaces */
+  align-items: center;
+  gap: 30px; /* Espacio entre los enlaces */
+  flex: 0 1 auto; /* Evita que los enlaces se estiren, solo ocupan el espacio necesario */
+}
+
+.navbar-link {
+  color: white;
+  text-decoration: none;
+  font-size: 14px; /* Tamaño de los enlaces */
+  padding: 8px 16px; /* Ajustamos el tamaño del padding */
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.navbar-link:hover {
+  background-color: #595959;
 }
 
 /* Contenido del navbar */
@@ -148,36 +179,23 @@ body {
 }
 
 .username {
-  font-size: 16px;
+  font-size: 14px; /* Reducimos el tamaño de la fuente */
   font-weight: bold;
   margin-bottom: 5px; /* Espacio entre el nombre y el área */
 }
 
 .user-area {
-  font-size: 12px;
+  font-size: 10px; /* Reducimos aún más el tamaño */
   color: #d3d3d3;
-}
-
-/* Estilos para el menú hamburguesa */
-.hamburger {
-  display: none; /* Ocultamos el botón en pantallas grandes */
-  flex-direction: column;
-  cursor: pointer;
-  position: fixed; /* Fijamos el botón */
-  top: 15px; /* Ajustamos la distancia desde la parte superior */
-  left: 20px; /* Alineamos el botón hamburguesa al lado izquierdo */
-  z-index: 1000; /* Nos aseguramos de que el botón esté por encima de otros elementos */
-}
-
-.bar {
-  width: 25px;
-  height: 4px;
-  margin: 4px 0;
-  background-color: #ffffff;
 }
 
 /* Media Query para pantallas más pequeñas (móviles) */
 @media (max-width: 768px) {
+  /* Contenido de usuario y menú de navegación oculto */
+  .navbar-center {
+    display: none; /* Ocultamos los enlaces en pantallas pequeñas */
+  }
+
   .navbar-right {
     display: none; /* Ocultamos la barra de usuario en pantallas pequeñas */
     position: absolute;
@@ -219,42 +237,22 @@ body {
   .hamburger {
     display: flex; /* Mostramos el botón en pantallas pequeñas */
   }
-
-  .navbar-right.open .user-avatar {
-  transform: scale(1.5) translateX(10px); /* Aumenta el tamaño de la imagen un 50% */
-  transition: transform 0.3s ease-in-out; /* Transición suave */
-}
-
-.user-avatar {
-  border-radius: 50%;
-  margin-right: 0;
-  margin-bottom: 10px; /* Espacio debajo de la imagen */
-  transition: transform 0.3s ease-in-out; /* Transición suave por si está cerrado */
-}
 }
 
 /* Media Query para pantallas muy pequeñas (móviles en modo retrato) */
 @media (max-width: 480px) {
-  .username {
-    font-size: 14px;
-  }
+    .username {
+      font-size: 14px;
+    }
 
-  .user-area {
-    font-size: 12px;
-  }
-
-  .navbar-right.open .user-avatar {
-  transform: scale(1.5) translateX(10px); /* Aumenta el tamaño de la imagen un 50% */
-  transition: transform 0.3s ease-in-out; /* Transición suave */
+    .user-area {
+      font-size: 12px;
+    }
 }
 
-.user-avatar {
-  border-radius: 50%;
-  margin-right: 0;
-  margin-bottom: 10px; /* Espacio debajo de la imagen */
-  transition: transform 0.3s ease-in-out; /* Transición suave por si está cerrado */
-}
-}
+
+
+
 
 
 
