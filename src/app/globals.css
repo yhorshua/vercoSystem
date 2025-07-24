@@ -133,12 +133,11 @@ body {
 
 /* Contenedor de los enlaces centrados */
 .navbar-center {
-  display: flex;
-  justify-content: center; /* Centramos los enlaces */
-  align-items: center;
-  gap: 30px; /* Espacio entre los enlaces */
-  flex: 0 1 auto; /* Evita que los enlaces se estiren, solo ocupan el espacio necesario */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
+
 
 .navbar-link {
   color: white;
@@ -158,7 +157,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  width: 100%;
+  width: auto; /* ✅ CAMBIA esto */
 }
 
 .user-info {
@@ -248,6 +247,46 @@ body {
     .user-area {
       font-size: 12px;
     }
+}
+
+@media (max-width: 768px) {
+  .navbar-logo {
+    order: 2; /* Mueve el logo a la derecha */
+    margin-left: auto; /* Empuja el logo al final */
+  }
+}
+/* Estilos para los enlaces dentro del menú hamburguesa */
+.navbar-mobile-links {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .navbar-center {
+    display: none; /* Oculta los enlaces del centro */
+  }
+
+  .navbar-logo {
+    order: 2;
+    margin-left: auto;
+  }
+}
+/* Ocultar en pantallas grandes */
+.navbar-mobile-links {
+  display: none;
+}
+
+
+/* Mostrar solo en modo responsive */
+@media (max-width: 768px) {
+  .navbar-mobile-links {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    gap: 10px;
+  }
 }
 
 

@@ -12,49 +12,58 @@ const Navbar = ({ username, userArea }: { username: string, userArea: string }) 
   };
 
   return (
-    <nav className="navbar">
-      {/* Logo en el lado izquierdo */}
-      <div className="navbar-logo">
+  <nav className="navbar">
+    {/* Logo */}
+    <div className="navbar-logo">
+      <Image
+        src="/img/verco_logo.png"
+        alt="Logo Empresa"
+        width={100}
+        height={40}
+      />
+    </div>
+
+    {/* Hamburguesa */}
+    <div className="hamburger" onClick={toggleMenu}>
+      <span className="bar"></span>
+      <span className="bar"></span>
+      <span className="bar"></span>
+    </div>
+
+    {/* Enlaces centrados (solo en desktop) */}
+    <div className="navbar-center">
+      <Link href="/register-pedido" className="navbar-link">Registrar Pedido</Link>
+      <Link href="/lista-pedidos" className="navbar-link">Lista de Pedidos</Link>
+      <Link href="/stock" className="navbar-link">Stock</Link>
+    </div>
+
+    {/* Panel lateral responsive: user + enlaces */}
+    <div className={`navbar-right ${isMenuOpen ? 'open' : ''}`}>
+      {/* User Info */}
+      <div className="user-info">
         <Image
-          src="/img/verco_logo.png" // Ruta de la imagen del logo
-          alt="Logo Empresa"
-          width={100} // Ajusta el tamaño del logo según sea necesario
+          src="/img/unnamed.jpg"
+          alt="User Avatar"
+          width={40}
           height={40}
+          className="user-avatar"
         />
       </div>
-
-      {/* Botón de menú hamburguesa alineado a la izquierda */}
-      <div className="hamburger" onClick={toggleMenu}>
-        <span className="bar"></span>
-        <span className="bar"></span>
-        <span className="bar"></span>
+      <div className="user-details">
+        <span className="username">{username}</span>
+        <span className="user-area">{userArea}</span>
       </div>
 
-      {/* Contenedor de enlaces centrados */}
-      <div className="navbar-center">
+      {/* Links para menú responsive */}
+      <div className="navbar-mobile-links">
         <Link href="/register-pedido" className="navbar-link">Registrar Pedido</Link>
         <Link href="/lista-pedidos" className="navbar-link">Lista de Pedidos</Link>
         <Link href="/stock" className="navbar-link">Stock</Link>
       </div>
+    </div>
+  </nav>
+);
 
-      {/* Contenedor del usuario, se muestra cuando se abre el menú */}
-      <div className={`navbar-right ${isMenuOpen ? 'open' : ''}`}>
-        <div className="user-info">
-          <Image
-            src="/img/unnamed.jpg" // Ruta de la imagen del usuario
-            alt="User Avatar"
-            width={40}
-            height={40}
-            className="user-avatar"
-          />
-        </div>
-        <div className="user-details">
-          <span className="username">{username}</span>
-          <span className="user-area">{userArea}</span>
-        </div>
-      </div>
-    </nav>
-  );
 };
 
 export default Navbar;
