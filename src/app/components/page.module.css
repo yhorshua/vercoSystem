@@ -1,0 +1,160 @@
+
+
+/* Estilo general del navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #000000;
+  color: #ffffff;
+  width: 100%; /* Ajustamos el ancho del navbar */
+  margin: 0 auto; /* Centra el navbar */
+  position: relative; /* Para que el contenido se ajuste bien con el botón hamburguesa fijo */
+  height: 60px; /* Ajustamos el alto de la barra para que el contenido tenga espacio */
+}
+
+/* Logo en el lado izquierdo */
+.navbarLogo {
+  flex: 0 1 50px; /* Ajusta el espacio que toma el logo */
+}
+
+/* Botón de menú hamburguesa alineado a la izquierda */
+.hamburger {
+  display: none; /* Ocultamos el botón en pantallas grandes */
+  flex-direction: column;
+  cursor: pointer;
+  position: fixed; /* Fijamos el botón */
+  top: 15px; /* Ajustamos la distancia desde la parte superior */
+  left: 20px; /* Alineamos el botón hamburguesa al lado izquierdo */
+  z-index: 1000; /* Nos aseguramos de que el botón esté por encima de otros elementos */
+}
+
+.bar {
+  width: 25px;
+  height: 4px;
+  margin: 4px 0;
+  background-color: #fff;
+}
+
+/* Contenedor de los enlaces centrados */
+.navbarCenter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Enlaces de navegación */
+.navbarLink {
+  color: white;
+  text-decoration: none;
+  font-size: 14px; /* Tamaño de los enlaces */
+  padding: 8px 16px; /* Ajustamos el tamaño del padding */
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.navbarLink:hover {
+  background-color: #595959;
+}
+
+/* Panel lateral (navbarRight) */
+.navbarRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: auto;
+  position: relative;
+  /* Siempre visible en pantallas grandes */
+}
+
+.navbarRight.open {
+  display: flex; /* Cuando el menú está abierto en dispositivos pequeños */
+  position: absolute;
+  top: 60px; /* Asegura que el panel lateral esté debajo del navbar */
+  left: 0;
+  background-color: #838383;
+  width: 60%;  /* Panel ocupa el 60% de la pantalla */
+  height: 100vh; /* Alto completo de la pantalla */
+  padding: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  z-index: 999; /* Asegura que el menú esté por encima del contenido */
+  transition: 0.3s ease-in-out; /* Transición suave para la apertura/cierre */
+}
+
+/* User info */
+.userInfo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.userAvatar {
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.username {
+  font-size: 14px; /* Reducimos el tamaño de la fuente */
+  font-weight: bold;
+  margin-bottom: 5px; /* Espacio entre el nombre y el área */
+}
+
+.userArea {
+  font-size: 10px; /* Reducimos aún más el tamaño */
+  color: #d3d3d3;
+}
+
+/* Media Query para pantallas más pequeñas (móviles) */
+@media (max-width: 768px) {
+  /* Contenido de usuario y menú de navegación oculto */
+  .navbarCenter {
+    display: none; /* Ocultamos los enlaces en pantallas pequeñas */
+  }
+
+  .navbarRight {
+    display: none; /* Ocultamos la barra de usuario en pantallas pequeñas */
+    position: absolute;
+    top: 60px; /* Ajustamos el top para que el panel esté debajo del botón hamburguesa */
+    left: 0;
+    background-color: #838383;
+    width: 60%;  /* Panel ocupa el 60% de la pantalla */
+    height: 100vh; /* Alto completo de la pantalla */
+    padding: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    z-index: 999; /* Asegura que el menú esté por encima del contenido */
+    transition: 0.3s ease-in-out; /* Transición suave para la apertura/cierre */
+  }
+
+  .navbarRight.open {
+    display: flex; /* Mostramos el menú cuando esté abierto */
+  }
+
+  .hamburger {
+    display: flex; /* Mostramos el botón en pantallas pequeñas */
+  }
+}
+
+/* Estilos para los enlaces dentro del menú hamburguesa */
+.navbarMobileLinks {
+  display: none; /* Ocultar los enlaces por defecto */
+}
+
+@media (max-width: 768px) {
+  .navbarMobileLinks {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    gap: 10px;
+  }
+}

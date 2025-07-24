@@ -3,8 +3,14 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link'; // Usamos Link para la redirección en Next.js
+import { useUser } from '../context/UserContext';
+import style from './page.module.css'; // Importamos los estilos de CSS Module
 
-const Navbar = ({ username, userArea }: { username: string, userArea: string }) => {
+const Navbar = () => {
+  const { username, userArea } = useUser(); // Accedemos al contexto para obtener el username y userArea
+
+  console.log('Username:', username, 'UserArea:', userArea); // Verifica que estos valores no sean undefined o vacíos
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -12,58 +18,57 @@ const Navbar = ({ username, userArea }: { username: string, userArea: string }) 
   };
 
   return (
-  <nav className="navbar">
-    {/* Logo */}
-    <div className="navbar-logo">
-      <Image
-        src="/img/verco_logo.png"
-        alt="Logo Empresa"
-        width={100}
-        height={40}
-      />
-    </div>
-
-    {/* Hamburguesa */}
-    <div className="hamburger" onClick={toggleMenu}>
-      <span className="bar"></span>
-      <span className="bar"></span>
-      <span className="bar"></span>
-    </div>
-
-    {/* Enlaces centrados (solo en desktop) */}
-    <div className="navbar-center">
-      <Link href="/register-pedido" className="navbar-link">Registrar Pedido</Link>
-      <Link href="/lista-pedidos" className="navbar-link">Lista de Pedidos</Link>
-      <Link href="/stock" className="navbar-link">Stock</Link>
-    </div>
-
-    {/* Panel lateral responsive: user + enlaces */}
-    <div className={`navbar-right ${isMenuOpen ? 'open' : ''}`}>
-      {/* User Info */}
-      <div className="user-info">
+    <nav className={style.navbar}>
+      {/* Logo */}
+      <div className={style.navbarLogo}>
         <Image
-          src="/img/unnamed.jpg"
-          alt="User Avatar"
-          width={40}
+          src="/img/verco_logo.png"
+          alt="Logo Empresa"
+          width={100}
           height={40}
-          className="user-avatar"
         />
       </div>
-      <div className="user-details">
-        <span className="username">{username}</span>
-        <span className="user-area">{userArea}</span>
+
+      {/* Botón de menú hamburguesa */}
+      <div className={style.hamburger} onClick={toggleMenu}>
+        <span className={style.bar}></span>
+        <span className={style.bar}></span>
+        <span className={style.bar}></span>
       </div>
 
-      {/* Links para menú responsive */}
-      <div className="navbar-mobile-links">
-        <Link href="/register-pedido" className="navbar-link">Registrar Pedido</Link>
-        <Link href="/lista-pedidos" className="navbar-link">Lista de Pedidos</Link>
-        <Link href="/stock" className="navbar-link">Stock</Link>
+      {/* Enlaces centrados (solo en desktop) */}
+      <div className={style.navbarCenter}>
+        <Link href="/register-pedido" className={style.navbarLink}>Registrar Pedido</Link>
+        <Link href="/lista-pedidos" className={style.navbarLink}>Lista de Pedidos</Link>
+        <Link href="/stock" className={style.navbarLink}>Stock</Link>
       </div>
-    </div>
-  </nav>
-);
 
+      {/* Panel lateral responsive: user + enlaces */}
+      <div className={`${style.navbarRight} ${isMenuOpen ? style.open : ''}`}>
+        {/* Info del usuario */}
+        <div className={style.userInfo}>
+          <Image
+            src="/img/unnamed.jpg"
+            alt="User Avatar"
+            width={40}
+            height={40}
+            className={style.userAvatar}
+          />
+        </div>
+        <div className={style.userDetails}>
+          <span className={style.username}>{username}</span>
+          <span className={style.userArea}>{userArea}</span>
+        </div>
+
+        {/* Enlaces para menú responsive */}
+        <div className={style.navbarMobileLinks}>
+          <Link href="/register-pedido" className={style.navbarLink}>Registrar Pedido</Link>
+          <Link href="/lista-pedidos" className={style.navbarLink}>Lista de Pedidos</Link>
+          <Link href="/stock" className={style.navbarLink}>Stock</Link>
+        </div>
+      </div>
+    </nav>
+  );
 };
 
 export default Navbar;

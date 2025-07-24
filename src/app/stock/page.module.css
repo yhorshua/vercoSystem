@@ -1,0 +1,155 @@
+/* Estilos generales */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+  padding: 20px;
+}
+
+/* Contenedor principal */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Títulos */
+.container h1 {
+  text-align: center;
+  color: #2a5d84;
+  margin-bottom: 20px;
+}
+
+/* Estilos del formulario */
+.container label {
+  font-size: 14px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+/* Contenedor de los inputs */
+.inputsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 20px;
+}
+
+/* Agrupar los inputs en una fila y el botón de búsqueda */
+.inputGroup {
+  display: flex;
+  gap: 10px; /* Espacio entre el input y el botón */
+  width: 100%;
+  align-items: center; /* Asegura que el input y el botón estén alineados */
+}
+
+/* Estilo de los inputs */
+.inputField {
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  max-width: 250px;
+}
+
+/* Botón de búsqueda */
+.searchButton {
+  padding: 10px 20px;
+  background-color: #2a5d84;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.searchButton:hover {
+  background-color: #1c4b63;
+}
+
+/* Tabla con clase local */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.table th, .table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.table th {
+  background-color: #f8f8f8;
+  color: #555;
+}
+
+.table td {
+  background-color: #ffffff;
+}
+
+/* Botones de exportación */
+.exportButtons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.exportButtons .button {
+  margin-right: 10px;
+}
+
+.exportButtons .button:last-child {
+  margin-right: 0;
+}
+
+/* Estilos responsivos */
+@media screen and (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .container h1 {
+    font-size: 24px;
+  }
+
+  .container .inputField, .searchButton {
+    font-size: 16px;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  .table th, .table td {
+    padding: 8px;
+  }
+
+  .inputGroup {
+    flex-direction: column; /* Cambiar la dirección de flexbox para mostrar los inputs en columna */
+  }
+
+  /* Botones debajo en móvil */
+  .exportButtons {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .exportButtons .button {
+    margin: 5px 0;
+  }
+
+  .searchButton {
+    width: 100%; /* Ocupa todo el ancho en pantallas pequeñas */
+  }
+}
