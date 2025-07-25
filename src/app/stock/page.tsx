@@ -5,11 +5,21 @@ import { saveAs } from 'file-saver'; // Para la exportación de archivos
 import * as XLSX from 'xlsx'; // Para exportar a Excel
 import styles from './page.module.css'; // Importamos los estilos CSS
 
-// Simulando algunos datos de ejemplo
+// Datos de ejemplo con los campos solicitados
 const mockData = [
-  { codigo: '001', serie: 'A123', descripcion: 'Artículo 1', tallas: 'M, L', total: 50 },
-  { codigo: '002', serie: 'B456', descripcion: 'Artículo 2', tallas: 'S, M, L', total: 30 },
-  { codigo: '003', serie: 'C789', descripcion: 'Artículo 3', tallas: 'L', total: 15 },
+  {
+    codigo: 'A1001AR',
+    serie: 'A',
+    descripcion: 'ZAPATILLA DEP. ULTRA AZULINO/ ROSADO 38-43',
+    sal00: 23,
+    sal01: 10,
+    sal02: 22,
+    sal03: 33,
+    sal04: 12,
+    sal05: 0,
+    sal06: 0,
+    saldo: 0
+  }
 ];
 
 const StockPage = () => {
@@ -55,15 +65,23 @@ const StockPage = () => {
       doc.text('Stock de Artículos', 20, 20);
       
       // Definir las cabeceras de la tabla
-      const headers = ['Código', 'Serie', 'Descripción', 'Tallas', 'Total'];
+      const headers = [
+        'Código', 'Serie', 'Descripción', 'sal00', 'sal01', 'sal02', 'sal03', 'sal04', 'sal05', 'sal06', 'Saldo'
+      ];
 
       // Definir los datos de la tabla
       const data = stock.map(item => [
         item.codigo,
         item.serie,
         item.descripcion,
-        item.tallas,
-        item.total
+        item.sal00,
+        item.sal01,
+        item.sal02,
+        item.sal03,
+        item.sal04,
+        item.sal05,
+        item.sal06,
+        item.saldo
       ]);
 
       // Usando autoTable para generar la tabla en el PDF
@@ -102,37 +120,48 @@ const StockPage = () => {
               className={styles.inputField}
             />
           </div>
-          {/* Botón de búsqueda al lado derecho de los inputs */}
+          {/* Botón de búsqueda */}
           <button className={styles.searchButton} onClick={handleSearch}>Buscar</button>
+          <button className={styles.exportButton} onClick={exportToExcel}>Exportar a Excel</button>
         </div>
       </div>
 
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Serie</th>
-            <th>Descripción</th>
-            <th>Tallas</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stock.map((item, index) => (
-            <tr key={index}>
-              <td>{item.codigo}</td>
-              <td>{item.serie}</td>
-              <td>{item.descripcion}</td>
-              <td>{item.tallas}</td>
-              <td>{item.total}</td>
+     {/* Contenedor con scroll horizontal para la tabla */}
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Serie</th>
+              <th>Descripción</th>
+              <th>sal00</th>
+              <th>sal01</th>
+              <th>sal02</th>
+              <th>sal03</th>
+              <th>sal04</th>
+              <th>sal05</th>
+              <th>sal06</th>
+              <th>Saldo</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className={styles.exportButtons}>
-        <button className={styles.button} onClick={exportToExcel}>Exportar a Excel</button>
-        <button className={styles.button} onClick={exportToPDF}>Exportar a PDF</button>
+          </thead>
+          <tbody>
+            {stock.map((item, index) => (
+              <tr key={index}>
+                <td>{item.codigo}</td>
+                <td>{item.serie}</td>
+                <td>{item.descripcion}</td>
+                <td>{item.sal00}</td>
+                <td>{item.sal01}</td>
+                <td>{item.sal02}</td>
+                <td>{item.sal03}</td>
+                <td>{item.sal04}</td>
+                <td>{item.sal05}</td>
+                <td>{item.sal06}</td>
+                <td>{item.saldo}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

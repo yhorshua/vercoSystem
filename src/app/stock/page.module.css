@@ -8,8 +8,8 @@ body {
 
 /* Contenedor principal */
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%; /* Se asegura de que el contenedor ocupe el 100% del ancho disponible */
+  margin: auto;
   padding: 20px;
   background-color: white;
   border-radius: 8px;
@@ -40,14 +40,13 @@ body {
   margin-bottom: 20px;
 }
 
-/* Agrupar los inputs en una fila y el botón de búsqueda */
+/* Contenedor para los inputs y el botón de búsqueda */
 .inputGroup {
   display: flex;
-  gap: 10px; /* Espacio entre el input y el botón */
-  width: 100%;
-  align-items: center; /* Asegura que el input y el botón estén alineados */
+  justify-content: flex-start;
+  gap: 10px;
+  align-items: center;
 }
-
 /* Estilo de los inputs */
 .inputField {
   padding: 10px;
@@ -56,32 +55,64 @@ body {
   border-radius: 4px;
   font-size: 14px;
   width: 100%;
-  max-width: 250px;
+  width: 250px; /* Limita el ancho de los inputs */
 }
 
-/* Botón de búsqueda */
-.searchButton {
+/* Los botones de búsqueda y exportación tienen su propio estilo */
+.searchButton, .exportButton {
   padding: 10px 20px;
-  background-color: #2a5d84;
-  color: white;
   border: none;
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  
+}
+
+/* Estilo para los botones (buscar) */
+.searchButton {
+  background-color: #2a5d84;
+  color: white;
+  margin-top: 31.5px;
+}
+
+.inputGroup > .searchButton {
+  margin-top: 31.5px;
+  width: 250px;
 }
 
 .searchButton:hover {
   background-color: #1c4b63;
 }
 
-/* Tabla con clase local */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+/* Botón de exportación */
+.exportButton {
+  background-color: #28a745; /* Color verde */
+  color: white;
+  margin-top: 31.5px;
+  width: 250px;
+  flex-shrink: 0; /* Evita que el botón se encoja */
 }
 
+.exportButton:hover {
+  background-color: #218838; /* Color verde oscuro */
+}
+
+/* Contenedor con scroll horizontal para la tabla */
+.table-container {
+  width: 100%;
+  overflow-x: auto; /* Habilita el scroll horizontal si es necesario */
+  margin-top: 20px;
+  -webkit-overflow-scrolling: touch; /* Agrega soporte para desplazamiento suave en dispositivos táctiles */
+}
+
+/* Estilos para la tabla */
+.table {
+  width: 100%; /* La tabla ocupa el 100% del ancho del contenedor */
+  border-collapse: collapse;
+}
+
+/* Estilo para las celdas de la tabla */
 .table th, .table td {
   padding: 12px;
   text-align: left;
@@ -97,59 +128,33 @@ body {
   background-color: #ffffff;
 }
 
-/* Botones de exportación */
-.exportButtons {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
-
-.exportButtons .button {
-  margin-right: 10px;
-}
-
-.exportButtons .button:last-child {
-  margin-right: 0;
-}
-
-/* Estilos responsivos */
+/* Estilos responsivos para la tabla */
 @media screen and (max-width: 768px) {
-  .container {
-    padding: 10px;
-  }
-
-  .container h1 {
-    font-size: 24px;
-  }
-
-  .container .inputField, .searchButton {
-    font-size: 16px;
+  .table-container {
+    overflow-x: auto; /* Asegura que se habilite el desplazamiento horizontal */
+    -webkit-overflow-scrolling: touch; /* Agrega soporte para desplazamiento suave en dispositivos táctiles */
   }
 
   .table {
-    font-size: 12px;
+    width: 100%; /* Asegura que la tabla ocupe el 100% del contenedor */
+    table-layout: fixed; /* Mantiene el formato de las columnas */
   }
 
   .table th, .table td {
-    padding: 8px;
+    padding: 10px; /* Ajusta el padding para pantallas pequeñas */
+    font-size: 12px; /* Ajusta el tamaño de la fuente */
   }
 
   .inputGroup {
-    flex-direction: column; /* Cambiar la dirección de flexbox para mostrar los inputs en columna */
+    flex-direction: column; /* Coloca los inputs y los botones en columna */
+    gap: 15px; /* Añade espacio entre los elementos */
+    align-items: center; /* Alinea todo al centro en dispositivos pequeños */
   }
 
-  /* Botones debajo en móvil */
   .exportButtons {
     display: flex;
     flex-direction: column;
-  }
-
-  .exportButtons .button {
-    margin: 5px 0;
-  }
-
-  .searchButton {
-    width: 100%; /* Ocupa todo el ancho en pantallas pequeñas */
+    gap: 10px;
+    width: 100%; /* Los botones ocupan todo el ancho */
   }
 }

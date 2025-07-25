@@ -6,7 +6,6 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <Navbar username={username} userArea={userArea} />
 
       {/* Contenido de la página */}
       <h1>Bienvenido a tu página de inicio</h1>
