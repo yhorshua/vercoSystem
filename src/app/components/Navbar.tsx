@@ -38,7 +38,7 @@ const Navbar = () => {
 
       {/* Enlaces centrados (solo en desktop) */}
       <div className={style.navbarCenter}>
-        <Link href="/register-pedido" className={style.navbarLink}>Registrar Pedido</Link>
+        <Link href="/register-requested" className={style.navbarLink}>Registrar Pedido</Link>
         <Link href="/lista-pedidos" className={style.navbarLink}>Lista de Pedidos</Link>
         <Link href="/stock" className={style.navbarLink}>Stock</Link>
       </div>
