@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
     "file-saver": "^2.0.5",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",

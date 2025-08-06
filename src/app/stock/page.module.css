@@ -8,7 +8,7 @@ body {
 
 /* Contenedor principal */
 .container {
-  width: 100%; /* Se asegura de que el contenedor ocupe el 100% del ancho disponible */
+  width: 100%;
   margin: auto;
   padding: 20px;
   background-color: white;
@@ -16,21 +16,21 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Títulos */
+/* Título */
 .container h1 {
   text-align: center;
   color: #2a5d84;
   margin-bottom: 20px;
 }
 
-/* Estilos del formulario */
+/* Etiquetas */
 .container label {
   font-size: 14px;
   margin-bottom: 5px;
   display: block;
 }
 
-/* Contenedor de los inputs */
+/* Contenedor de inputs */
 .inputsContainer {
   display: flex;
   flex-direction: column;
@@ -38,46 +38,40 @@ body {
   width: 100%;
   max-width: 600px;
   margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Contenedor para los inputs y el botón de búsqueda */
+/* Agrupación de input + botón */
 .inputGroup {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
+  align-items: flex-start;
   gap: 10px;
-  align-items: center;
+  width: fit-content;
+  margin: 20px auto;
+  flex-wrap: wrap;
 }
-/* Estilo de los inputs */
+
+/* Estilo de input */
 .inputField {
   padding: 10px;
-  margin-top: 5px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 14px;
-  width: 100%;
-  width: 250px; /* Limita el ancho de los inputs */
+  width: 250px;
 }
 
-/* Los botones de búsqueda y exportación tienen su propio estilo */
-.searchButton, .exportButton {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  
-}
-
-/* Estilo para los botones (buscar) */
+/* Botón de búsqueda */
 .searchButton {
   background-color: #2a5d84;
   color: white;
-  margin-top: 31.5px;
-}
-
-.inputGroup > .searchButton {
-  margin-top: 31.5px;
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0;
   width: 250px;
 }
 
@@ -87,74 +81,81 @@ body {
 
 /* Botón de exportación */
 .exportButton {
-  background-color: #28a745; /* Color verde */
+  background-color: #28a745;
   color: white;
-  margin-top: 31.5px;
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0;
   width: 250px;
-  flex-shrink: 0; /* Evita que el botón se encoja */
+  flex-shrink: 0;
 }
 
 .exportButton:hover {
-  background-color: #218838; /* Color verde oscuro */
+  background-color: #218838;
 }
 
-/* Contenedor con scroll horizontal para la tabla */
-.table-container {
+/* Contenedor con scroll horizontal */
+.tableContainer {
   width: 100%;
-  overflow-x: auto; /* Habilita el scroll horizontal si es necesario */
+  overflow-x: auto;
   margin-top: 20px;
-  -webkit-overflow-scrolling: touch; /* Agrega soporte para desplazamiento suave en dispositivos táctiles */
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  justify-content: center;
 }
 
-/* Estilos para la tabla */
+/* Tabla responsiva */
 .table {
-  width: 100%; /* La tabla ocupa el 100% del ancho del contenedor */
+  width: max-content;
   border-collapse: collapse;
 }
 
-/* Estilo para las celdas de la tabla */
-.table th, .table td {
+/* Estilos de celdas */
+.table th,
+.table td {
   padding: 12px;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid #ddd;
+  white-space: nowrap;
+  font-size: 14px;
 }
 
 .table th {
   background-color: #f8f8f8;
-  color: #555;
+  color: #2a5d84;
+  font-weight: bold;
 }
 
 .table td {
   background-color: #ffffff;
+  color: #333;
 }
 
-/* Estilos responsivos para la tabla */
+/* Estilos para móviles */
 @media screen and (max-width: 768px) {
-  .table-container {
-    overflow-x: auto; /* Asegura que se habilite el desplazamiento horizontal */
-    -webkit-overflow-scrolling: touch; /* Agrega soporte para desplazamiento suave en dispositivos táctiles */
+  .tableContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block; /* ← CAMBIO CLAVE: evita el centrado con flex */
   }
 
   .table {
-    width: 100%; /* Asegura que la tabla ocupe el 100% del contenedor */
-    table-layout: fixed; /* Mantiene el formato de las columnas */
-  }
-
-  .table th, .table td {
-    padding: 10px; /* Ajusta el padding para pantallas pequeñas */
-    font-size: 12px; /* Ajusta el tamaño de la fuente */
+    min-width: 600px; /* o lo que necesites para que quepa el contenido mínimo */
   }
 
   .inputGroup {
-    flex-direction: column; /* Coloca los inputs y los botones en columna */
-    gap: 15px; /* Añade espacio entre los elementos */
-    align-items: center; /* Alinea todo al centro en dispositivos pequeños */
+    flex-direction: column;
+    align-items: center;
   }
 
-  .exportButtons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%; /* Los botones ocupan todo el ancho */
+  .inputField,
+  .exportButton,
+  .searchButton {
+    width: 100%;
+    max-width: 300px;
   }
 }
+
