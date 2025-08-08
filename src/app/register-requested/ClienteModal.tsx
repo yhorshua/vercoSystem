@@ -1,20 +1,65 @@
+// ClienteModal.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import {
+  ColumnDef,
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+} from '@tanstack/react-table';
 import styles from './clienteModal.module.css';
 
+interface Cliente {
+  codigo: string;
+  nombre: string;
+}
+
 interface ClienteModalProps {
-  clientes: string[];
+  clientes: Cliente[];
   onClose: () => void;
-  onSelect: (nombre: string) => void;
+  onSelect: (cliente: Cliente) => void;
 }
 
 export default function ClienteModal({ clientes, onClose, onSelect }: ClienteModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredClientes = clientes.filter((cliente) =>
-    cliente.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClientes = useMemo(
+    () => clientes.filter(c => c.nombre.toLowerCase().includes(searchTerm.toLowerCase())),
+    [clientes, searchTerm]
   );
+
+  const columns = useMemo<ColumnDef<Cliente>[]>(
+    () => [
+      {
+        id: 'select',
+        header: 'Seleccionar',
+        cell: ({ row }) => (
+          <button
+            className={styles.selectButton}
+            onClick={() => onSelect(row.original)}
+          >
+            Seleccionar
+          </button>
+        ),
+      },
+      {
+        accessorKey: 'codigo',
+        header: 'Código',
+      },
+      {
+        accessorKey: 'nombre',
+        header: 'Nombre del Cliente',
+      },
+    ],
+    [onSelect]
+  );
+
+  const table = useReactTable({
+    data: filteredClientes,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <div className={styles.modalOverlay}>
@@ -27,29 +72,34 @@ export default function ClienteModal({ clientes, onClose, onSelect }: ClienteMod
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Seleccionar</th>
-              <th>Nombre del Cliente</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredClientes.map((cliente, index) => (
-              <tr key={index}>
-                <td>
-                  <button
-                    className={styles.selectButton}
-                    onClick={() => onSelect(cliente)}
-                  >
-                    Seleccionar
-                  </button>
-                </td>
-                <td>{cliente}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        <div className={styles.responsiveWrapper}>
+          <table className={styles.table}>
+            <thead>
+              {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map(header => (
+                    <th key={header.id}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map(row => (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map(cell => (
+                    <td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         <button className={styles.addButton} onClick={onClose}>Cerrar</button>
       </div>
     </div>

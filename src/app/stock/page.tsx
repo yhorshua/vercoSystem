@@ -30,7 +30,7 @@ export default function StockPage() {
     <input
       type="text"
       value={search}
-      onChange={(e) => setSearch(e.target.value)}
+      onChange={(e) => setSearch(e.target.value.toUpperCase())}
       className={styles.inputField}
       placeholder="Buscar por código o nombre"
     />

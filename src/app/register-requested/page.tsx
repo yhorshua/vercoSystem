@@ -1,8 +1,10 @@
+// RegisterPedidoPage.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import styles from './registerPedido.module.css';
 import ClienteModal from './ClienteModal';
+import PedidoTabla from './PedidoTabla';
 
 const stockMock: Record<string, {
   descripcion: string;
@@ -16,7 +18,7 @@ const stockMock: Record<string, {
     precio: 89,
     stock: { 38: 12, 39: 5, 40: 9, 41: 6, 42: 10, 43: 7 },
   },
-  M4013PL: {
+  M4013NZ: {
     descripcion: "Zapatilla Escolar Clásica Negra",
     serie: "M",
     precio: 75,
@@ -25,16 +27,16 @@ const stockMock: Record<string, {
 };
 
 const clientesMock = [
-  'Supermercado Central',
-  'Zapatería El Paso',
-  'Cliente VIP',
-  'Distribuidora Norte',
-  'Retail Express',
-  'Calzado Estilo',
+  { codigo: 'CLI001', nombre: 'Supermercado Central' },
+  { codigo: 'CLI002', nombre: 'Zapatería El Paso' },
+  { codigo: 'CLI003', nombre: 'Cliente VIP' },
+  { codigo: 'CLI004', nombre: 'Distribuidora Norte' },
+  { codigo: 'CLI005', nombre: 'Retail Express' },
+  { codigo: 'CLI006', nombre: 'Calzado Estilo' },
 ];
 
 export default function RegisterPedidoPage() {
-  const [cliente, setCliente] = useState('');
+  const [cliente, setCliente] = useState<{ codigo: string; nombre: string } | null>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [codigoArticulo, setCodigoArticulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -46,8 +48,9 @@ export default function RegisterPedidoPage() {
   const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
-    if (stockMock[codigoArticulo]) {
-      const producto = stockMock[codigoArticulo];
+    const codigoMayus = codigoArticulo.toUpperCase();
+    if (stockMock[codigoMayus]) {
+      const producto = stockMock[codigoMayus];
       setDescripcion(producto.descripcion);
       setSerie(producto.serie);
       setPrecio(producto.precio);
@@ -63,19 +66,21 @@ export default function RegisterPedidoPage() {
   }, [codigoArticulo]);
 
   const handleCantidadChange = (talla: number, value: string) => {
-    setCantidades((prev) => ({ ...prev, [talla]: parseInt(value) || 0 }));
+    const cantidad = parseInt(value) || 0;
+    const disponible = stockPorTalla[talla] || 0;
+    if (cantidad < 0 || cantidad > disponible) return;
+    setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
+  };
+
+  const handleDeleteItem = (index: number) => {
+    const nuevosItems = items.filter((_, i) => i !== index);
+    setItems(nuevosItems);
   };
 
   const agregarItem = () => {
     const total = Object.values(cantidades).reduce((sum, val) => sum + val, 0);
-    const nuevoItem = {
-      codigo: codigoArticulo,
-      descripcion,
-      serie,
-      precio,
-      cantidades,
-      total,
-    };
+    if (!codigoArticulo || total === 0) return;
+    const nuevoItem = { codigo: codigoArticulo.toUpperCase(), descripcion, serie, precio, cantidades, total };
     setItems([...items, nuevoItem]);
     setCodigoArticulo('');
     setDescripcion('');
@@ -86,8 +91,7 @@ export default function RegisterPedidoPage() {
     setStockPorTalla({});
   };
 
-  const totalUnidades = items.reduce((sum, item) => sum + item.total, 0);
-  const totalPrecio = items.reduce((sum, item) => sum + item.total * item.precio, 0);
+  const botonAgregarDeshabilitado = !codigoArticulo || Object.values(cantidades).reduce((sum, val) => sum + val, 0) === 0;
 
   return (
     <div className={styles.container}>
@@ -96,9 +100,9 @@ export default function RegisterPedidoPage() {
       <div className={styles.inputGroup}>
         <label className={styles.label}>Cliente:</label>
         <input
-          className={styles.input}
+          className={`${styles.input} ${styles.inputClient}`}
           type="text"
-          value={cliente}
+          value={cliente?.nombre || ''}
           onClick={() => setShowClienteModal(true)}
           readOnly
           placeholder="Selecciona un cliente"
@@ -111,32 +115,14 @@ export default function RegisterPedidoPage() {
           className={styles.input}
           type="text"
           value={codigoArticulo}
-          onChange={(e) => setCodigoArticulo(e.target.value)}
+          onChange={(e) => setCodigoArticulo(e.target.value.toUpperCase())}
         />
-
         <label className={styles.label}>Descripción:</label>
-        <input
-          className={styles.input}
-          type="text"
-          value={descripcion}
-          readOnly
-        />
-
+        <input className={`${styles.input} ${styles.inputDescripcion}`} value={descripcion} readOnly />
         <label className={styles.label}>Serie:</label>
-        <input
-          className={styles.input}
-          type="text"
-          value={serie}
-          readOnly
-        />
-
+        <input className={`${styles.input} ${styles.inputSerie}`} value={serie} readOnly />
         <label className={styles.label}>Precio Unitario:</label>
-        <input
-          className={styles.input}
-          type="number"
-          value={precio}
-          onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)}
-        />
+        <input className={`${styles.input} ${styles.inputPrecio}`} type="number" value={precio} onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)} />
       </div>
 
       <div className={styles.tallasContainer}>
@@ -154,71 +140,32 @@ export default function RegisterPedidoPage() {
             </div>
           ))}
         </div>
-        <div className={styles.stockGrid}>
+        <div className={styles.tallasGrid}>
           {tallasDisponibles.map((talla) => (
             <div key={talla} className={styles.tallaInput}>
               <label className={styles.tallaLabel}>Stock {talla}</label>
-              <input
-                className={styles.tallaField}
-                type="number"
-                value={stockPorTalla[talla]}
-                readOnly
-              />
+              <input className={styles.tallaField} type="number" value={stockPorTalla[talla]} readOnly />
             </div>
           ))}
         </div>
       </div>
 
-      <button className={styles.addButton} onClick={agregarItem}>Agregar al Pedido</button>
+      <button
+        className={styles.addButton}
+        onClick={agregarItem}
+        disabled={botonAgregarDeshabilitado}
+      >
+        Agregar al Pedido
+      </button>
 
-      {items.length > 0 && (
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Descripción</th>
-                <th>Serie</th>
-                <th>Precio</th>
-                {tallasDisponibles.map((t) => (
-                  <th key={t}>{t}</th>
-                ))}
-                <th>Total</th>
-                <th>Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, idx) => (
-                <tr key={idx}>
-                  <td>{item.codigo}</td>
-                  <td>{item.descripcion}</td>
-                  <td>{item.serie}</td>
-                  <td>{item.precio}</td>
-                  {tallasDisponibles.map((t) => (
-                    <td key={t}>{item.cantidades[t] || 0}</td>
-                  ))}
-                  <td>{item.total}</td>
-                  <td>{(item.total * item.precio).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={tallasDisponibles.length + 4}><strong>Total Pedido:</strong></td>
-                <td>{totalUnidades}</td>
-                <td>{totalPrecio.toFixed(2)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      )}
+      <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} />
 
       {showClienteModal && (
         <ClienteModal
           clientes={clientesMock}
           onClose={() => setShowClienteModal(false)}
-          onSelect={(nombre) => {
-            setCliente(nombre);
+          onSelect={(clienteSeleccionado) => {
+            setCliente(clienteSeleccionado);
             setShowClienteModal(false);
           }}
         />

@@ -39,8 +39,9 @@ const Navbar = () => {
       {/* Enlaces centrados (solo en desktop) */}
       <div className={style.navbarCenter}>
         <Link href="/register-requested" className={style.navbarLink}>Registrar Pedido</Link>
-        <Link href="/lista-pedidos" className={style.navbarLink}>Lista de Pedidos</Link>
+        <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
         <Link href="/stock" className={style.navbarLink}>Stock</Link>
+        <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
       </div>
 
       {/* Panel lateral responsive: user + enlaces */}
@@ -62,9 +63,10 @@ const Navbar = () => {
 
         {/* Enlaces para menú responsive */}
         <div className={style.navbarMobileLinks}>
-          <Link href="/register-pedido" className={style.navbarLink}>Registrar Pedido</Link>
-          <Link href="/lista-pedidos" className={style.navbarLink}>Lista de Pedidos</Link>
+          <Link href="/register-requested" className={style.navbarLink}>Registrar Pedido</Link>
+          <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
           <Link href="/stock" className={style.navbarLink}>Stock</Link>
+          <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
         </div>
       </div>
     </nav>
