@@ -12,15 +12,15 @@ const stockMock: Record<string, {
   precio: number;
   stock: Record<number, number>;
 }> = {
-  A3024JF: {
-    descripcion: "Zapatilla Importada Evolution Jade/Fucsia",
+  CH025VT: {
+    descripcion: "Zapatilla Importada Evolution Verde/Turqueza",
     serie: "A",
     precio: 89,
     stock: { 38: 12, 39: 5, 40: 9, 41: 6, 42: 10, 43: 7 },
   },
-  M4013NZ: {
-    descripcion: "Zapatilla Escolar Clásica Negra",
-    serie: "M",
+  A3024JF: {
+    descripcion: "Zapatilla Evolution Jade/Fucsia",
+    serie: "A",
     precio: 75,
     stock: { 33: 8, 34: 4, 35: 6, 36: 7, 37: 3 },
   },

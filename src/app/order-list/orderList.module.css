@@ -13,6 +13,12 @@
   color: #003366;
 }
 
+
+.label {
+  font-weight: bold;
+}
+
+
 .tableContainer {
   overflow-x: auto;
   background-color: white;

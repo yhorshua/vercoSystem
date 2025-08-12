@@ -42,6 +42,7 @@ const Navbar = () => {
         <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
         <Link href="/stock" className={style.navbarLink}>Stock</Link>
         <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
+        <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
       </div>
 
       {/* Panel lateral responsive: user + enlaces */}
@@ -67,6 +68,7 @@ const Navbar = () => {
           <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
           <Link href="/stock" className={style.navbarLink}>Stock</Link>
           <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
+          <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
         </div>
       </div>
     </nav>
