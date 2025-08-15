@@ -113,6 +113,12 @@
   margin-left: 4px;
 }
 
+.pickingButton {
+  background-color: #ff5900;
+  color: white;
+  margin-left: 4px;
+}
+
 .guiaButton {
   background-color: #17a2b8;
   color: white;

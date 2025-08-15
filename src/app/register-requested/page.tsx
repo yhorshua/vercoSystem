@@ -22,7 +22,7 @@ const stockMock: Record<string, {
     descripcion: "Zapatilla Evolution Jade/Fucsia",
     serie: "A",
     precio: 75,
-    stock: { 33: 8, 34: 4, 35: 6, 36: 7, 37: 3 },
+    stock: { 38: 8, 39: 4, 40: 6, 41: 7, 42: 3, 43: 8 },
   },
 };
 

@@ -6,6 +6,7 @@ import styles from './orderList.module.css';
 import PedidoDetalleModal from './PedidoDetalleModal';
 import Swal from 'sweetalert2';
 import { generarProformaPDF } from '../utils/pdfGenerator';
+import PickingModal from './PickingModal';
 
 interface Pedido {
   id: string;
@@ -17,7 +18,7 @@ interface Pedido {
   };
   totalUnidades: number;
   totalPrecio: number;
-  estado: 'Pendiente' | 'Aprobado' | 'Anulado' | 'Facturado';
+  estado: 'Pendiente' | 'Aprobado' | 'Alistado' | 'Anulado' | 'Facturado';
   items: {
     codigo: string;
     descripcion: string;
@@ -33,6 +34,7 @@ export default function OrderListPage() {
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
 
   const rolUsuario = 'jefeVentas'; // Cambiar a 'vendedor' para el rol de vendedor
+  const [pedidoEnPicking, setPedidoEnPicking] = useState<Pedido | null>(null);
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('pedidos') || '[]');
@@ -163,6 +165,13 @@ export default function OrderListPage() {
                   {rolUsuario === 'jefeVentas' && pedido.estado === 'Aprobado' && (
                     <>
                       <button
+                        onClick={() => setPedidoEnPicking(pedido)}
+                        className={`${styles.button} ${styles.pickingButton}`}
+                      >
+                        Picking
+                      </button>
+
+                      <button
                         onClick={() => generarGuiaInterna(pedido)}
                         className={`${styles.button} ${styles.guiaButton}`}
                       >
@@ -184,6 +193,7 @@ export default function OrderListPage() {
                       </button>
                     </>
                   )}
+
 
                   {/* Si el usuario es 'vendedor', solo puede ver los botones de detalle y anular */}
                   {rolUsuario === 'vendedor' && (
@@ -208,6 +218,18 @@ export default function OrderListPage() {
           onClose={() => setPedidoSeleccionado(null)}
         />
       )}
+
+      {pedidoEnPicking && (
+        <PickingModal
+          pedido={pedidoEnPicking}
+          onClose={() => setPedidoEnPicking(null)}
+          onFinalizar={(pedidoActualizado) => {
+            actualizarEstadoPedido(pedidoActualizado.id, 'Alistado');
+            setPedidoEnPicking(null);
+          }}
+        />
+      )}
+
     </div>
   );
 }
