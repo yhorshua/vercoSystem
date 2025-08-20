@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
-import peruMap from '../../geojson/peru.json'; // Asegúrate que es un FeatureCollection válido
-import { FeatureCollection, Feature } from 'geojson';
+import peruMap from '../../geojson/peru.json'; // Asegúrate de que este sea un archivo GeoJSON válido
+import { FeatureCollection, Feature, Point, Polygon } from 'geojson';
 
 // Definir un tipo más estricto para las propiedades
 interface AdaptedGeoJsonProperties {
@@ -13,10 +13,16 @@ interface AdaptedGeoJsonProperties {
   [key: string]: string | number | number[] | undefined;  // Permitir otros tipos de propiedades
 }
 
+// Especifica el tipo de geometría: `Point`, `Polygon`, etc.
+type AdaptedGeometry = Point | Polygon; // Define los tipos de geometría posibles
+
+// Adaptación de los `Feature`
 interface AdaptedFeature extends Feature {
+  geometry: AdaptedGeometry; // Definir el tipo de geometría más estrictamente
   properties: AdaptedGeoJsonProperties;
 }
 
+// Adaptación del `FeatureCollection`
 interface AdaptedFeatureCollection extends FeatureCollection {
   features: AdaptedFeature[];
 }
@@ -27,9 +33,14 @@ const adaptGeoJson = (geoJson: FeatureCollection): AdaptedFeatureCollection => {
     const adaptedFeature = feature as AdaptedFeature;
     adaptedFeature.properties = {
       ...adaptedFeature.properties,
-      name: adaptedFeature.properties?.name || '',  // Aseguramos que 'name' no sea null
-      cp: adaptedFeature.properties?.cp || [],     // Aseguramos que 'cp' sea un arreglo, si no, asignamos un arreglo vacío
+      name: adaptedFeature.properties?.name || '',
+      cp: adaptedFeature.properties?.cp || [],
     };
+
+    // Asegurarse de que la geometría sea válida y ajustada a los requisitos
+    if (adaptedFeature.geometry && adaptedFeature.geometry.type === 'Point') {
+      adaptedFeature.geometry.coordinates = adaptedFeature.geometry.coordinates || [];
+    }
     return adaptedFeature;
   });
 
