@@ -1,120 +1,124 @@
 .container {
-  max-width: 1100px;
-  background: #f4f6f9;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 40px;
+    display: flex;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+    padding: 20px;
+    background: #f4f6f9;
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  max-width: 1100px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 1100px;
+    width: 100%; /* Asegura que la tarjeta use el ancho disponible */
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .title {
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
 }
 
 .subtitle {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 20px 0 10px;
-  color: #444;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 20px 0 10px;
+    color: #444;
 }
 
 .formRow {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .input {
-  flex: 1;
-  padding: 10px 14px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.2s ease;
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
 }
 
 .input:focus {
-  border-color: #0070f3;
-  outline: none;
-}
-
-.fileInput {
-  font-size: 14px;
-}
-
-.tallaRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+    border-color: #0070f3;
+    outline: none;
 }
 
 .inputSmall {
-  width: 100px;
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
+    width: 140px; /* Aumenta el tamaño del input */
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
 }
 
+.tallaRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.btnSize {
+    background: #0ac013;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
 .btnDelete {
-  background: #f44336;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-  transition: background 0.2s ease;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: background 0.2s ease;
 }
 
 .btnDelete:hover {
-  background: #d32f2f;
+    background: #d32f2f;
 }
 
 .btnAdd {
-  background: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: background 0.2s ease;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s ease;
 }
 
 .btnAdd:hover {
-  background: #388e3c;
+    background: #388e3c;
 }
 
 .actions {
-  text-align: center;
-  margin-top: 30px;
+    text-align: center;
+    margin-top: 30px;
 }
 
 .btnPrimary {
-  background: #0070f3;
-  color: white;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  padding: 12px 24px;
-  cursor: pointer;
-  transition: background 0.2s ease;
+    background: #0070f3;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: background 0.2s ease;
 }
 
 .btnPrimary:hover {
-  background: #005bb5;
+    background: #005bb5;
 }
