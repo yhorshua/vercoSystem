@@ -1,10 +1,18 @@
-// RegisterPedidoPage.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import styles from './registerPedido.module.css';
 import ClienteModal from './ClienteModal';
 import PedidoTabla from './PedidoTabla';
+
+interface Item {
+  codigo: string;
+  descripcion: string;
+  serie: string;
+  precio: number;
+  cantidades: Record<number, number>; // Representa la cantidad por talla
+  total: number;
+}
 
 const stockMock: Record<string, {
   descripcion: string;
@@ -45,7 +53,7 @@ export default function RegisterPedidoPage() {
   const [cantidades, setCantidades] = useState<Record<number, number>>({});
   const [tallasDisponibles, setTallasDisponibles] = useState<number[]>([]);
   const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Item[]>([]); // Cambié 'any[]' por 'Item[]'
 
   useEffect(() => {
     const codigoMayus = codigoArticulo.toUpperCase();
@@ -80,7 +88,7 @@ export default function RegisterPedidoPage() {
   const agregarItem = () => {
     const total = Object.values(cantidades).reduce((sum, val) => sum + val, 0);
     if (!codigoArticulo || total === 0) return;
-    const nuevoItem = { codigo: codigoArticulo.toUpperCase(), descripcion, serie, precio, cantidades, total };
+    const nuevoItem: Item = { codigo: codigoArticulo.toUpperCase(), descripcion, serie, precio, cantidades, total };
     setItems([...items, nuevoItem]);
     setCodigoArticulo('');
     setDescripcion('');

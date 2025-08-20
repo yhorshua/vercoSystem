@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import styles from './orderList.module.css';
 import PedidoDetalleModal from './PedidoDetalleModal';
 import Swal from 'sweetalert2';

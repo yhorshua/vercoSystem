@@ -43,7 +43,7 @@ const Navbar = () => {
         <Link href="/stock" className={style.navbarLink}>Stock</Link>
         <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
         <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
-        <Link href="/qr" className={style.navbarLink}>Registro de codigo de barra</Link>
+        <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
       </div>
 
       {/* Panel lateral responsive: user + enlaces */}
@@ -70,7 +70,7 @@ const Navbar = () => {
           <Link href="/stock" className={style.navbarLink}>Stock</Link>
           <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
           <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
-           <Link href="/qr" className={style.navbarLink}>Registro de codigo de barra</Link>
+           <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
         </div>
       </div>
     </nav>
