@@ -5,6 +5,15 @@ html, body {
   height: 100%; /* Asegura que el body ocupe todo el alto de la pantalla */
   width: 100%; /* Asegura que el body ocupe todo el ancho de la pantalla */
 }
+
+/* Estilos generales */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+  padding: 20px;
+}
+
 /* Estilo general para el cuerpo */
 * {
   box-sizing: border-box; /* Asegura que padding y border no afecten al tamaño total */
