@@ -3,12 +3,13 @@ import React, { useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import peruMap from '../../geojson/peru.json'; // Asegúrate que es un FeatureCollection válido
+import { FeatureCollection } from 'geojson';
 
 export default function Home() {
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    echarts.registerMap('peru', peruMap as any);
+    echarts.registerMap('peru', peruMap as FeatureCollection);
     setMapReady(true);
   }, []);
 
