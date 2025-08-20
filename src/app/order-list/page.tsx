@@ -28,11 +28,14 @@ interface Pedido {
   }[];
 }
 
+// Definir los roles posibles
+type RolUsuario = 'jefeVentas' | 'vendedor';
+
 export default function OrderListPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
 
-  const rolUsuario = 'jefeVentas'; // Cambiar a 'vendedor' para el rol de vendedor
+  const rolUsuario: RolUsuario = 'jefeVentas'; // Puede cambiar a 'vendedor' según el rol
   const [pedidoEnPicking, setPedidoEnPicking] = useState<Pedido | null>(null);
 
   useEffect(() => {
@@ -193,7 +196,6 @@ export default function OrderListPage() {
                     </>
                   )}
 
-
                   {/* Si el usuario es 'vendedor', solo puede ver los botones de detalle y anular */}
                   {rolUsuario === 'vendedor' && (
                     <button
@@ -228,7 +230,6 @@ export default function OrderListPage() {
           }}
         />
       )}
-
     </div>
   );
 }
