@@ -1,4 +1,3 @@
-'use client';
 import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import styles from './pickingModal.module.css';
@@ -10,14 +9,21 @@ interface Pedido {
         codigo: string;
         descripcion: string;
         serie: string;
-        cantidades: Record<number, number>;
+        cantidades: Record<number, number>; // Talla => cantidad solicitada
     }[];
+}
+
+interface Faltante {
+    codigo: string;
+    talla: number;
+    solicitado: number;
+    leido: number;
 }
 
 interface Props {
     pedido: Pedido;
     onClose: () => void;
-    onFinalizar: (pedido: Pedido & { status?: string; faltantes?: any[] }) => void;
+    onFinalizar: (pedido: Pedido & { status?: string; faltantes?: Faltante[] }) => void;
     onGuardarBorrador?: (pedido: Pedido, estado: Record<string, Record<number, number>>) => void;
 }
 
@@ -118,7 +124,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
     );
 
     // Calcular faltantes
-    const calcularFaltantes = () => {
+    const calcularFaltantes = (): Faltante[] => {
         return pedido.items.flatMap(item =>
             Object.entries(item.cantidades)
                 .filter(([talla, solicitada]) =>
@@ -126,7 +132,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
                 )
                 .map(([talla, solicitada]) => ({
                     codigo: item.codigo,
-                    talla,
+                    talla: Number(talla),
                     solicitado: solicitada,
                     leido: pickingStatus[item.codigo]?.[Number(talla)] || 0
                 }))
@@ -139,11 +145,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
         Swal.fire({
             icon: 'warning',
             title: 'Finalizar Picking Parcial',
-            html: `
-                <p>Se detectaron productos faltantes:</p>
-                <ul>${faltantes.map(f => `<li>${f.codigo} T${f.talla}: ${f.leido}/${f.solicitado}</li>`).join('')}</ul>
-                <p>¿Desea finalizar con lo disponible?</p>
-            `,
+            html: `Se detectaron productos faltantes:<ul>${faltantes.map(f => `<li>${f.codigo} T${f.talla}: ${f.leido}/${f.solicitado}</li>`).join('')}</ul><p>¿Desea finalizar con lo disponible?</p>`,
             showCancelButton: true,
             confirmButtonText: 'Sí, finalizar parcial',
             cancelButtonText: 'Cancelar'

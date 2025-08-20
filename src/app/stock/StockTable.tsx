@@ -12,9 +12,21 @@ import styles from './page.module.css';
 
 const tallasOrdenadas = Array.from({ length: 18 }, (_, i) => (27 + i).toString());
 
-export default function StockTable({ data }: { data: any[] }) {
+interface Tallas {
+  [talla: string]: number; // Representa las cantidades por cada talla
+}
+
+interface StockItem {
+  codigo: string;
+  serie: string;
+  descripcion: string;
+  tallas: Tallas;  // Usamos el tipo Tallas que define las cantidades por talla
+  saldo: number;
+}
+
+export default function StockTable({ data }: { data: StockItem[] }) {
   const [sorting, setSorting] = useState([]);
-  const columnHelper = createColumnHelper<any>();
+  const columnHelper = createColumnHelper<StockItem>();
 
   const columns = [
     columnHelper.accessor('codigo', {
