@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // Definimos el tipo para el contexto
 interface UserContextType {
@@ -14,12 +14,23 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 // Componente que proporciona el contexto
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [username, setUsername] = useState<string>(''); // Valor inicial vacío
-  const [userArea, setUserArea] = useState<string>(''); // Valor inicial vacío
+  const [username, setUsername] = useState<string>('');
+  const [userArea, setUserArea] = useState<string>('');
 
-  // Función que actualiza el contexto
+  // Recuperar del localStorage al cargar la página
+  useEffect(() => {
+    const storedUsername = localStorage.getItem('username');
+    const storedUserArea = localStorage.getItem('userArea');
+    if (storedUsername && storedUserArea) {
+      setUsername(storedUsername);
+      setUserArea(storedUserArea);
+    }
+  }, []);
+
+  // Función que actualiza el contexto y también guarda en localStorage
   const setUser = (username: string, userArea: string) => {
-    console.log('Setting user:', username, userArea); // Verifica que setUser se ejecuta
+    localStorage.setItem('username', username);
+    localStorage.setItem('userArea', userArea);
     setUsername(username);
     setUserArea(userArea);
   };
