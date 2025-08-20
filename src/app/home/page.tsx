@@ -9,8 +9,8 @@ import { FeatureCollection, Feature } from 'geojson';
 // Definir un tipo más estricto para las propiedades
 interface AdaptedGeoJsonProperties {
   name?: string;
-  cp?: number[];
-  [key: string]: any; // Permite otras propiedades genéricas si es necesario
+  cp?: number[];  // Tipo más específico para "cp", puede ser un arreglo de números
+  [key: string]: string | number | number[] | undefined;  // Permitir otros tipos de propiedades
 }
 
 interface AdaptedFeature extends Feature {
@@ -27,8 +27,8 @@ const adaptGeoJson = (geoJson: FeatureCollection): AdaptedFeatureCollection => {
     const adaptedFeature = feature as AdaptedFeature;
     adaptedFeature.properties = {
       ...adaptedFeature.properties,
-      name: adaptedFeature.properties?.name || '',
-      cp: adaptedFeature.properties?.cp || [],
+      name: adaptedFeature.properties?.name || '',  // Aseguramos que 'name' no sea null
+      cp: adaptedFeature.properties?.cp || [],     // Aseguramos que 'cp' sea un arreglo, si no, asignamos un arreglo vacío
     };
     return adaptedFeature;
   });

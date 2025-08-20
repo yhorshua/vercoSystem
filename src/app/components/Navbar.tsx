@@ -44,6 +44,7 @@ const Navbar = () => {
         <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
         <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
         <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
+        <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
       </div>
 
       {/* Panel lateral responsive: user + enlaces */}
@@ -71,6 +72,7 @@ const Navbar = () => {
           <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
           <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
            <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
+           <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
         </div>
       </div>
     </nav>
