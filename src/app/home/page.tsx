@@ -1,15 +1,51 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import peruMap from '../../geojson/peru.json'; // Asegúrate que es un FeatureCollection válido
-import { FeatureCollection } from 'geojson';
+import { FeatureCollection, Feature, GeoJsonProperties } from 'geojson';
+
+// Definir un tipo más estricto para las propiedades
+interface AdaptedGeoJsonProperties {
+  name?: string;
+  cp?: number[];
+  [key: string]: any; // Permite otras propiedades genéricas si es necesario
+}
+
+interface AdaptedFeature extends Feature {
+  properties: AdaptedGeoJsonProperties;
+}
+
+interface AdaptedFeatureCollection extends FeatureCollection {
+  features: AdaptedFeature[];
+}
+
+// Adaptar el geoJSON a las propiedades necesarias
+const adaptGeoJson = (geoJson: FeatureCollection): AdaptedFeatureCollection => {
+  const adaptedFeatures = geoJson.features.map((feature) => {
+    const adaptedFeature = feature as AdaptedFeature;
+    adaptedFeature.properties = {
+      ...adaptedFeature.properties,
+      name: adaptedFeature.properties?.name || '',
+      cp: adaptedFeature.properties?.cp || [],
+    };
+    return adaptedFeature;
+  });
+
+  return {
+    ...geoJson,
+    features: adaptedFeatures,
+  };
+};
 
 export default function Home() {
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    echarts.registerMap('peru', peruMap as FeatureCollection);
+    // Adaptar el geoJSON antes de registrarlo
+    const adaptedMap = adaptGeoJson(peruMap as FeatureCollection);
+    echarts.registerMap('peru', adaptedMap); // Registrar el mapa adaptado
     setMapReady(true);
   }, []);
 
