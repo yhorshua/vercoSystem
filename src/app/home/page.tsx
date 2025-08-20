@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import peruMap from '../../geojson/peru.json'; // Asegúrate que es un FeatureCollection válido
-import { FeatureCollection, Feature, GeoJsonProperties } from 'geojson';
+import { FeatureCollection, Feature } from 'geojson';
 
 // Definir un tipo más estricto para las propiedades
 interface AdaptedGeoJsonProperties {
