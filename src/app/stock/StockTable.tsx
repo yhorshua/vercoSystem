@@ -1,15 +1,10 @@
 'use client';
 
-import {
-  createColumnHelper,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-  flexRender,
-} from '@tanstack/react-table';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useReactTable, createColumnHelper, getCoreRowModel, getSortedRowModel, flexRender } from '@tanstack/react-table';
 import styles from './page.module.css';
 
+// Definir el tipo para las tallas y los artículos
 const tallasOrdenadas = Array.from({ length: 18 }, (_, i) => (27 + i).toString());
 
 interface Tallas {
@@ -25,7 +20,7 @@ interface StockItem {
 }
 
 export default function StockTable({ data }: { data: StockItem[] }) {
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]); // Aseguramos que 'sorting' tenga el tipo correcto
   const columnHelper = createColumnHelper<StockItem>();
 
   const columns = [
@@ -56,7 +51,7 @@ export default function StockTable({ data }: { data: StockItem[] }) {
     state: {
       sorting,
     },
-    onSortingChange: setSorting,
+    onSortingChange: setSorting, // Ahora 'onSortingChange' usa correctamente 'setSorting'
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
