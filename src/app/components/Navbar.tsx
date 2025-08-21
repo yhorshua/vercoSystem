@@ -7,7 +7,7 @@ import { useUser } from '../context/UserContext';
 import style from './page.module.css'; // Importamos los estilos de CSS Module
 
 const Navbar = () => {
-  const { username, userArea, logout } = useUser(); // Accedemos al contexto para obtener el username y userArea y la función logout
+  const { username, userArea } = useUser(); // Accedemos al contexto para obtener el username y userArea y la función logout
 
   console.log('Username:', username, 'UserArea:', userArea); // Verifica que estos valores no sean undefined o vacíos
 
