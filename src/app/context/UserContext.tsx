@@ -5,8 +5,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 // Definimos el tipo para el contexto
 interface UserContextType {
   username: string;
-  userArea: string;
-  setUser: (username: string, userArea: string) => void;
+  userArea: 'jefeVentas' | 'vendedor'; // roles posibles
+  setUser: (username: string, userArea: 'jefeVentas' | 'vendedor') => void;
 }
 
 // Creamos el contexto
@@ -15,12 +15,12 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 // Componente que proporciona el contexto
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [username, setUsername] = useState<string>('');
-  const [userArea, setUserArea] = useState<string>('');
+  const [userArea, setUserArea] = useState<'jefeVentas' | 'vendedor'>('vendedor'); // rol predeterminado
 
   // Recuperar del localStorage al cargar la página
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
-    const storedUserArea = localStorage.getItem('userArea');
+    const storedUserArea = localStorage.getItem('userArea') as 'jefeVentas' | 'vendedor';
     if (storedUsername && storedUserArea) {
       setUsername(storedUsername);
       setUserArea(storedUserArea);
@@ -28,7 +28,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Función que actualiza el contexto y también guarda en localStorage
-  const setUser = (username: string, userArea: string) => {
+  const setUser = (username: string, userArea: 'jefeVentas' | 'vendedor') => {
     localStorage.setItem('username', username);
     localStorage.setItem('userArea', userArea);
     setUsername(username);

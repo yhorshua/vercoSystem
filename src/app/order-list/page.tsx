@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './orderList.module.css';
 import PedidoDetalleModal from './PedidoDetalleModal';
 import Swal from 'sweetalert2';
 import { generarProformaPDF } from '../utils/pdfGenerator';
 import PickingModal from './PickingModal';
+import { useUser } from '../context/UserContext'; // Usar el contexto de usuario para obtener el rol
 
 interface Pedido {
   id: string;
@@ -28,22 +29,18 @@ interface Pedido {
   }[];
 }
 
-// Definir los roles posibles
-type RolUsuario = 'jefeVentas' | 'vendedor';
-
 export default function OrderListPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
-
-  const rolUsuario: RolUsuario = 'jefeVentas'; // Puede cambiar a 'vendedor' según el rol
   const [pedidoEnPicking, setPedidoEnPicking] = useState<Pedido | null>(null);
+
+  const { userArea: rolUsuario } = useUser(); // Usamos el contexto para obtener el rol del usuario
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('pedidos') || '[]');
     setPedidos(data);
-  }, []); // Solo cargar los pedidos, sin la alerta
+  }, []); // Solo cargar los pedidos
 
-  // Función para actualizar el estado del pedido
   const actualizarEstadoPedido = (id: string, nuevoEstado: Pedido['estado']) => {
     const actualizados = pedidos.map((pedido) =>
       pedido.id === id ? { ...pedido, estado: nuevoEstado } : pedido
@@ -52,7 +49,6 @@ export default function OrderListPage() {
     localStorage.setItem('pedidos', JSON.stringify(actualizados));
   };
 
-  // Función para manejar el botón de aprobar
   const handleAprobar = (id: string) => {
     const pedido = pedidos.find((p) => p.id === id);
     if (!pedido) return;
@@ -73,7 +69,6 @@ export default function OrderListPage() {
     });
   };
 
-  // Función para manejar el botón de anular
   const handleAnular = async (id: string) => {
     const result = await Swal.fire({
       title: '¿Anular este pedido?',
@@ -90,13 +85,11 @@ export default function OrderListPage() {
     }
   };
 
-  // Función para mostrar los detalles del pedido
   const handleDetalle = (id: string) => {
     const pedido = pedidos.find((p) => p.id === id);
     if (pedido) setPedidoSeleccionado(pedido);
   };
 
-  // Función para generar la guía interna
   const generarGuiaInterna = (pedido: Pedido) => {
     Swal.fire({
       icon: 'info',
@@ -105,7 +98,6 @@ export default function OrderListPage() {
     });
   };
 
-  // Función para emitir la factura
   const emitirFactura = (pedido: Pedido) => {
     Swal.fire({
       icon: 'success',
@@ -114,7 +106,6 @@ export default function OrderListPage() {
     });
   };
 
-  // Función para emitir la guía de remisión
   const emitirGuiaRemision = (pedido: Pedido) => {
     Swal.fire({
       icon: 'question',
@@ -154,7 +145,6 @@ export default function OrderListPage() {
                     Detalle
                   </button>
 
-                  {/* Si el usuario es 'jefeVentas', muestra todos los botones */}
                   {rolUsuario === 'jefeVentas' && pedido.estado === 'Pendiente' && (
                     <button
                       onClick={() => handleAprobar(pedido.id)}
@@ -196,7 +186,6 @@ export default function OrderListPage() {
                     </>
                   )}
 
-                  {/* Si el usuario es 'vendedor', solo puede ver los botones de detalle y anular */}
                   {rolUsuario === 'vendedor' && (
                     <button
                       onClick={() => handleAnular(pedido.id)}
