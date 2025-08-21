@@ -7,6 +7,7 @@ interface UserContextType {
   username: string;
   userArea: 'jefeVentas' | 'vendedor'; // roles posibles
   setUser: (username: string, userArea: 'jefeVentas' | 'vendedor') => void;
+  logout: () => void; // Función logout agregada
 }
 
 // Creamos el contexto
@@ -35,8 +36,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserArea(userArea);
   };
 
+  // Función de logout: limpia los datos del usuario y el localStorage
+  const logout = () => {
+    localStorage.removeItem('username');
+    localStorage.removeItem('userArea');
+    setUsername('');
+    setUserArea(userArea); // O el valor predeterminado que prefieras
+  };
+
   return (
-    <UserContext.Provider value={{ username, userArea, setUser }}>
+    <UserContext.Provider value={{ username, userArea, setUser, logout }}>
       {children}
     </UserContext.Provider>
   );

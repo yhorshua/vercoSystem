@@ -7,7 +7,7 @@ import { useUser } from '../context/UserContext';
 import style from './page.module.css'; // Importamos los estilos de CSS Module
 
 const Navbar = () => {
-  const { username, userArea } = useUser(); // Accedemos al contexto para obtener el username y userArea
+  const { username, userArea, logout } = useUser(); // Accedemos al contexto para obtener el username y userArea y la función logout
 
   console.log('Username:', username, 'UserArea:', userArea); // Verifica que estos valores no sean undefined o vacíos
 
@@ -71,9 +71,27 @@ const Navbar = () => {
           <Link href="/stock" className={style.navbarLink}>Stock</Link>
           <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
           <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
-           <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
-           <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
+          <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
+          <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
         </div>
+
+        {/* Botón de Cerrar Sesión 
+        <div className={style.logoutWrapper}>
+          <button
+            className={style.logoutButton}
+            onClick={logout} // Función de logout del contexto
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión" // Tooltip
+          >
+            <Image
+              src="/img/icon-salir.png" // Usa el ícono que prefieras
+              alt=""
+              width={25}
+              height={25}
+            />
+          </button>
+        </div>
+        */}
       </div>
     </nav>
   );
