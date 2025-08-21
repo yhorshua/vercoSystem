@@ -198,7 +198,7 @@ export default function EtiquetaGenerator() {
 
                         <h4>Tallas</h4>
                         {a.tallas.map((t, j) => (
-                            <div key={j} className={styles.tallaRow}>
+                            <div key={j} className={styles.tallaInputs}>
                                 <input
                                     placeholder="Talla"
                                     value={t.talla}

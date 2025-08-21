@@ -10,7 +10,6 @@
     background: white;
     border-radius: 12px;
     padding: 30px;
-    max-width: 1100px;
     width: 100%; /* Asegura que la tarjeta use el ancho disponible */
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
@@ -64,6 +63,18 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
+}
+
+.tallaInputs {
+    display: flex;
+    flex-direction: column; /* Para apilar los campos verticalmente */
+    gap: 8px;
+    width: 100%;  /* Asegura que ocupe todo el ancho disponible */
+    max-width: 120px;  /* Limita el ancho máximo de los inputs */
+}
+
+.inputSmall {
+    width: 100%; /* Asegura que los inputs ocupen todo el ancho disponible */
 }
 .btnSize {
     background: #0ac013;
