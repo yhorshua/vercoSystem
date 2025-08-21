@@ -18,7 +18,6 @@
 .navbarLogo {
   flex: 0 1 50px; /* Ajusta el espacio que toma el logo */
 }
-
 /* Botón de menú hamburguesa alineado a la izquierda */
 .hamburger {
   display: none; /* Ocultamos el botón en pantallas grandes */
@@ -159,13 +158,25 @@
 
 /* Media Query para pantallas más pequeñas (móviles) */
 @media (max-width: 768px) {
+
+  .navbar {
+    justify-content: space-between; /* Alinea el logo y hamburguesa a los extremos */
+  }
+
+   .navbarLogo {
+  flex: 0 1 50px; /* Ajusta el espacio que toma el logo */
+  margin-left: auto; /* Esto moverá el logo hacia la derecha */
+}
   /* Contenido de usuario y menú de navegación oculto */
-  .navbarCenter {
+ .navbarCenter {
     display: none; /* Ocultamos los enlaces en pantallas pequeñas */
   }
 
-  .navbarRight {
+ .navbarRight {
     display: none; /* Ocultamos la barra de usuario en pantallas pequeñas */
+  }
+.navbarRight.open {
+    display: flex; /* Mostramos el menú cuando esté abierto */
     position: absolute;
     top: 60px; /* Ajustamos el top para que el panel esté debajo del botón hamburguesa */
     left: 0;
@@ -180,13 +191,12 @@
     transition: 0.3s ease-in-out; /* Transición suave para la apertura/cierre */
   }
 
-  .navbarRight.open {
-    display: flex; /* Mostramos el menú cuando esté abierto */
+   .hamburger {
+    display: flex; /* Mostrar el botón en pantallas pequeñas */
+    order: 1; /* El botón hamburguesa va antes del logo */
   }
 
-  .hamburger {
-    display: flex; /* Mostramos el botón en pantallas pequeñas */
-  }
+  
 }
 
 /* Estilos para los enlaces dentro del menú hamburguesa */

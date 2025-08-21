@@ -17,6 +17,10 @@ const Navbar = () => {
     setIsMenuOpen(!isMenuOpen); // Alternar el estado del menú
   };
 
+  const handleLinkClick = () => {
+    setIsMenuOpen(false); // Cierra el menú cuando se hace clic en un enlace
+  };
+
   return (
     <nav className={style.navbar}>
       {/* Logo */}
@@ -66,13 +70,13 @@ const Navbar = () => {
 
         {/* Enlaces para menú responsive */}
         <div className={style.navbarMobileLinks}>
-          <Link href="/register-requested" className={style.navbarLink}>Registrar Pedido</Link>
-          <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
-          <Link href="/stock" className={style.navbarLink}>Stock</Link>
-          <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
-          <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
-          <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
-          <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
+          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>Registrar Pedido</Link>
+          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>Lista de Pedidos</Link>
+          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>Stock</Link>
+          <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>Registro de Cliente</Link>
+          <Link href="/abono" className={style.navbarLink} onClick={handleLinkClick}>Registro de Abono</Link>
+          <Link href="/qr" className={style.navbarLink} onClick={handleLinkClick}>Generador de etiquetas</Link>
+          <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>Inventario</Link>
         </div>
 
         {/* Botón de Cerrar Sesión 
