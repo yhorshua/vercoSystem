@@ -8,6 +8,10 @@ import { generarProformaPDF } from '../utils/pdfGenerator';
 import PickingModal from './PickingModal';
 import { useUser } from '../context/UserContext'; // Usar el contexto de usuario para obtener el rol
 
+// Definimos los roles como constantes
+const JEFEVEN = 'jefeVentas';
+const VENDEDO = 'vendedor';
+
 interface Pedido {
   id: string;
   cliente: {
@@ -34,7 +38,8 @@ export default function OrderListPage() {
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
   const [pedidoEnPicking, setPedidoEnPicking] = useState<Pedido | null>(null);
 
-  const { userArea: rolUsuario } = useUser(); // Usamos el contexto para obtener el rol del usuario
+  // Accedemos al contexto para obtener el rol del usuario
+  const { userArea: rolUsuario } = useUser(); // El rol viene del contexto
 
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('pedidos') || '[]');
@@ -145,7 +150,8 @@ export default function OrderListPage() {
                     Detalle
                   </button>
 
-                  {rolUsuario === 'jefeVentas' && pedido.estado === 'Pendiente' && (
+                  {/* Mostrar botones si el rol es 'jefeVentas' */}
+                  {rolUsuario === JEFEVEN && pedido.estado === 'Pendiente' && (
                     <button
                       onClick={() => handleAprobar(pedido.id)}
                       className={`${styles.button} ${styles.approveButton}`}
@@ -154,7 +160,7 @@ export default function OrderListPage() {
                     </button>
                   )}
 
-                  {rolUsuario === 'jefeVentas' && pedido.estado === 'Aprobado' && (
+                  {rolUsuario === JEFEVEN && pedido.estado === 'Aprobado' && (
                     <>
                       <button
                         onClick={() => setPedidoEnPicking(pedido)}
@@ -186,7 +192,8 @@ export default function OrderListPage() {
                     </>
                   )}
 
-                  {rolUsuario === 'vendedor' && (
+                  {/* Mostrar botón de anulación si el rol es 'vendedor' */}
+                  {rolUsuario === VENDEDO && (
                     <button
                       onClick={() => handleAnular(pedido.id)}
                       className={`${styles.button} ${styles.cancelButton}`}
