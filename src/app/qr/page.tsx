@@ -10,9 +10,9 @@ export default function EtiquetaGenerator() {
     const [fechaInicio, setFechaInicio] = useState('');
     const [fechaFin, setFechaFin] = useState('');
 
-    // Lista de artículos, cada artículo tiene una descripción, color, imagen y tallas con sus cantidades
+    // Lista de artículos, cada artículo tiene una descripción, color y tallas con sus cantidades
     const [articulos, setArticulos] = useState([
-        { descripcion: '', color: '', imagen: '', tallas: [{ talla: '', cantidad: 1 }] },
+        { articulo: '', descripcion: '', color: '', tallas: [{ talla: '', cantidad: 1 }] },
     ]);
 
     // Función para manejar los cambios en los campos de artículo
@@ -27,20 +27,6 @@ export default function EtiquetaGenerator() {
         const nuevos = [...articulos];
         nuevos[indexArticulo].tallas[indexTalla] = { ...nuevos[indexArticulo].tallas[indexTalla], [field]: value };
         setArticulos(nuevos);
-    };
-
-    // Función para manejar el cambio de la imagen
-    const handleImagenChange = (index: number, file: File | null) => {
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const nuevos = [...articulos];
-            // Asignamos la imagen solo al artículo (primera talla) si no tiene imagen asignada
-            nuevos[index].imagen = reader.result as string;
-            setArticulos(nuevos);
-        };
-        reader.readAsDataURL(file);
     };
 
     // Función para agregar una nueva talla dentro de un artículo
@@ -59,7 +45,7 @@ export default function EtiquetaGenerator() {
 
     // Función para agregar un nuevo artículo
     const agregarArticulo = () => {
-        setArticulos([...articulos, { descripcion: '', color: '', imagen: '', tallas: [{ talla: '', cantidad: 1 }] }]);
+        setArticulos([...articulos, { articulo: '', descripcion: '', color: '', tallas: [{ talla: '', cantidad: 1 }] }]);
     };
 
     // Función para eliminar un artículo
@@ -69,84 +55,95 @@ export default function EtiquetaGenerator() {
     };
 
     // Generar el PDF con los artículos y sus etiquetas
-    const generarPDF = () => {
-        const doc = new jsPDF({
-            orientation: 'landscape',
-            unit: 'mm',
-            format: [100, 50],
-        });
+const generarPDF = () => {
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',  // Tamaño A4 (210mm x 297mm)
+    });
 
-        articulos.forEach(({ descripcion, color, imagen, tallas }, idxArt) => {
-            tallas.forEach(({ talla, cantidad }, idxTalla) => {
-                for (let i = 0; i < cantidad; i++) {
-                    const margenX = 3;
-                    const margenY = 3;
-                    const ancho = 94;
-                    const alto = 44;
+    const margenX = 5;  // Margen izquierdo de 5mm
+    const margenY = 5;  // Margen superior de 5mm
+    const anchoEtiqueta = 50;   // 5 cm de ancho (50mm)
+    const altoEtiqueta = 25;    // 2.5 cm de largo (25mm)
+    const espacioEntreEtiquetas = 3;  // 3mm de separación entre etiquetas
 
-                    doc.setLineWidth(0.2);
-                    doc.rect(margenX, margenY, ancho, alto);
-                    doc.line(margenX + 45, margenY, margenX + 45, margenY + alto);
+    let xPos = margenX;
+    let yPos = margenY;
 
-                    // ========== IZQUIERDA ========== 
-                    const logo = new Image();
-                    logo.src = '/img/logoverco2.png';
-                    const logoWidth = 38;
-                    const logoHeight = 12;
-                    const logoX = margenX + (45 - logoWidth) / 2;
-                    const logoY = margenY + 2;
-                    doc.addImage(logo, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    let columnaActual = 0;  // Controlar la columna actual (0 para izquierda, 1 para derecha)
 
-                    if (imagen) {
-                        const imgWidth = 40;   
-                        const imgHeight = 22;  
-                        const imgX = margenX + (45 - imgWidth) / 2;
-                        const imgY = margenY + 15;
-                        doc.addImage(imagen, 'PNG', imgX, imgY, imgWidth, imgHeight);
-                    }
+    articulos.forEach(({ articulo, descripcion, color, tallas }, idxArt) => {
+        tallas.forEach(({ talla, cantidad }, idxTalla) => {
+            for (let i = 0; i < cantidad; i++) {
+                // Ajustamos el tamaño de la fuente para que encaje dentro de la etiqueta
+                doc.setFont('helvetica', 'bold');
 
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(11);
-                    doc.text(descripcion, margenX + 25, margenY + alto - 2, { align: 'center' });
+                // Descripción - centrado
+                doc.setFontSize(10);  // Tamaño de fuente pequeño para el código de artículo
+                const descripcionWidth = doc.getTextWidth(descripcion);
+                const descX = xPos + 1;  // Lado izquierdo
+                doc.text(descripcion, descX, yPos + 2, { maxWidth: anchoEtiqueta - 2 });
 
-                    // ========== DERECHA ========== 
-                    doc.setFillColor(0, 0, 0);
-                    doc.rect(margenX + 46, margenY + 1, 23, 22, 'F');
+                // Color - centrado
+                doc.setFontSize(10);  // Para color más pequeño
+                const colorText = `${color}`;
+                doc.text(colorText, descX, yPos + 7);
 
-                    doc.setTextColor(255, 255, 255);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(9);
-                    doc.text('TALLA', margenX + 57, margenY + 7, { align: 'center' });
-                    doc.setFontSize(18);
-                    doc.text(talla, margenX + 57, margenY + 17, { align: 'center' });
+                // Lado izquierdo de la etiqueta: Código de artículo, talla, descripción, color
+                doc.setFontSize(12);  // Tamaño de fuente pequeño para el código de artículo
+                const articuloText = `${articulo}`;
+                doc.text(articuloText, descX, yPos + 14);
 
-                    doc.setTextColor(0, 0, 0);
-                    doc.setFontSize(10);
-                    doc.text(color, margenX + 72, margenY + 8, { maxWidth: 25 });
+                // Lado derecho de la etiqueta: Tarjeta de producción, fechas
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(4);  // Tamaño más pequeño para las fechas
+                const tarjetaText = `${tarjeta}`;
+                doc.text(tarjetaText, xPos + anchoEtiqueta - 8 - doc.getTextWidth(tarjetaText), yPos + 0);
 
-                    doc.line(margenX + 46, margenY + 27, margenX + ancho, margenY + 27);
+                const fechaTextInicio = `${fechaInicio}`;
+                const fechaTextFin = `${fechaFin}`;
+                doc.text(fechaTextInicio, xPos + anchoEtiqueta - 8 - doc.getTextWidth(fechaTextInicio), yPos + 2);
+                doc.text(fechaTextFin, xPos + anchoEtiqueta - 8 - doc.getTextWidth(fechaTextFin), yPos + 4);
 
-                    const canvas = document.createElement('canvas');
-                    JsBarcode(canvas, `${descripcion}${talla}${tarjeta}`, {
-                        format: 'CODE128',
-                        displayValue: false,
-                        height: 20,
-                    });
-                    const barcodeImg = canvas.toDataURL();
-                    doc.addImage(barcodeImg, 'PNG', margenX + 47, margenY + 30, 46, 10);
+                doc.setFontSize(13); // Tamaño de fuente para la talla
+                doc.text(talla, xPos + anchoEtiqueta - 12 - doc.getTextWidth(talla), yPos + 12);
 
-                    doc.setFontSize(8);
-                    doc.text(`${descripcion}${talla}${tarjeta}`, margenX + 70, margenY + alto - 1, { align: 'center' });
+                // Código de barras
+                const canvas = document.createElement('canvas');
+                JsBarcode(canvas, `${articulo}${talla}`, {
+                    format: 'CODE128',
+                    displayValue: false,
+                    height: 14,  // Altura optimizada
+                    width: 1,  // Ajustado para mejor visibilidad
+                });
+                const barcodeImg = canvas.toDataURL();
+                doc.addImage(barcodeImg, 'PNG', xPos + 2, yPos + 17, anchoEtiqueta - 10, 6);  // El código de barras ocupa toda la parte inferior
 
-                    if (!(idxArt === articulos.length - 1 && idxTalla === tallas.length - 1 && i === cantidad - 1)) {
-                        doc.addPage([100, 50]);
-                    }
+                // Mover la posición para la siguiente etiqueta
+                if (columnaActual === 0) {
+                    // Si estamos en la primera columna, mover a la segunda columna
+                    xPos += anchoEtiqueta + 5;  // Deja un margen entre las etiquetas
+                    columnaActual = 1;  // Cambiar a la segunda columna
+                } else {
+                    // Si ya hemos colocado dos etiquetas, mover a la siguiente fila
+                    xPos = margenX;  // Reiniciar la posición X (primera columna)
+                    yPos += altoEtiqueta + espacioEntreEtiquetas;  // Mover hacia abajo para la siguiente fila
+                    columnaActual = 0;  // Cambiar a la primera columna
                 }
-            });
-        });
 
-        doc.save(`etiquetas_tarjeta_${tarjeta}.pdf`);
-    };
+                // Verificar si hemos alcanzado el final de la página
+                if (yPos + altoEtiqueta > 297 - margenY) {
+                    doc.addPage(); // Agregar una nueva página
+                    yPos = margenY; // Reiniciar la posición Y
+                    columnaActual = 0; // Reiniciar a la primera columna
+                }
+            }
+        });
+    });
+
+    doc.save(`etiquetas_tarjeta_${tarjeta}.pdf`);
+};
 
     return (
         <div className={styles.container}>
@@ -178,6 +175,12 @@ export default function EtiquetaGenerator() {
                 {articulos.map((a, i) => (
                     <div key={i} className={styles.tallaRow}>
                         <input
+                            placeholder="Código Artículo"
+                            value={a.articulo}
+                            onChange={(e) => handleArticuloChange(i, 'articulo', e.target.value)}
+                            className={styles.inputSmall}
+                        />
+                        <input
                             placeholder="Descripción"
                             value={a.descripcion}
                             onChange={(e) => handleArticuloChange(i, 'descripcion', e.target.value)}
@@ -187,12 +190,6 @@ export default function EtiquetaGenerator() {
                             placeholder="Color"
                             value={a.color}
                             onChange={(e) => handleArticuloChange(i, 'color', e.target.value)}
-                            className={styles.inputSmall}
-                        />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImagenChange(i, e.target.files?.[0] || null)}
                             className={styles.inputSmall}
                         />
 

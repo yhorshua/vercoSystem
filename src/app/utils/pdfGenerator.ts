@@ -1,40 +1,16 @@
+'use client';
+
 import pdfMake from 'pdfmake/build/pdfmake';
 import vfsFonts from 'pdfmake/build/vfs_fonts';
 pdfMake.vfs = vfsFonts.vfs;
 
-// Interfaces definidas
-interface Tallas {
-  [talla: string]: number;
-}
-
-interface Item {
-  codigo: string;
-  descripcion: string;
-  serie: string;
-  cantidades: Tallas;
-  total: number;
-  precio: number;
-}
-
-interface Cliente {
-  nombre: string;
-}
-
-interface Pedido {
-  cliente: Cliente;
-  estado: string;
-  totalUnidades: number;
-  totalPrecio: number;
-  items: Item[];
-}
-
-export function generarProformaPDF(pedido: Pedido) {
+export function generarProformaPDF(pedido: any) {
   const fechaActual = new Date().toLocaleDateString('es-PE');
   const totalPares = pedido.totalUnidades;
   const total = pedido.totalPrecio.toFixed(2);
 
   // Generar columna "cantidades por talla" como string: ej. "34/2 35/2 36/2"
-  const body = pedido.items.map((item) => {
+  const body = pedido.items.map((item: any) => {
     const tallas = Object.entries(item.cantidades)
       .map(([talla, cantidad]) => `${talla}/${cantidad}`)
       .join(' ');
@@ -52,7 +28,7 @@ export function generarProformaPDF(pedido: Pedido) {
     ];
   });
 
-  const docDefinition = {
+  const docDefinition: any = {
     content: [
       { text: 'DETALLE DEL PEDIDO', style: 'header' },
       {
