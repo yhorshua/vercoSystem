@@ -12,7 +12,15 @@ import styles from './registerPedido.module.css';
 
 interface Cliente {
   codigo: string;
-  nombre: string;
+  razonSocial: string; // Cambié 'nombre' por 'razonSocial'
+  ruc: string;
+  direccion: string;
+  direccion2?: string;
+  telefono: string;
+  correo: string;
+  departamento: string;
+  provincia: string;
+  distrito: string;
 }
 
 interface Item {
@@ -27,7 +35,7 @@ interface Item {
 interface PedidoTablaProps {
   items: Item[];
   onDelete: (index: number) => void;
-  cliente: Cliente | null;
+  cliente: Cliente | null; // Aquí estamos pasando el cliente completo, que ahora tiene 'razonSocial'
 }
 
 export default function PedidoTabla({ items, onDelete, cliente }: PedidoTablaProps) {

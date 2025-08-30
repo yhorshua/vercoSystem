@@ -10,9 +10,9 @@ export default function EtiquetaGenerator() {
     const [fechaInicio, setFechaInicio] = useState('');
     const [fechaFin, setFechaFin] = useState('');
 
-    // Lista de artículos, cada artículo tiene una descripción, color y tallas con sus cantidades
+    // Lista de artículos, cada artículo tiene una descripción, color, imagen y tallas con sus cantidades
     const [articulos, setArticulos] = useState([
-        { articulo: '', descripcion: '', color: '', tallas: [{ talla: '', cantidad: 1 }] },
+        { descripcion: '', color: '', imagen: '', tallas: [{ talla: '', cantidad: 1 }] },
     ]);
 
     // Función para manejar los cambios en los campos de artículo
@@ -27,6 +27,20 @@ export default function EtiquetaGenerator() {
         const nuevos = [...articulos];
         nuevos[indexArticulo].tallas[indexTalla] = { ...nuevos[indexArticulo].tallas[indexTalla], [field]: value };
         setArticulos(nuevos);
+    };
+
+    // Función para manejar el cambio de la imagen
+    const handleImagenChange = (index: number, file: File | null) => {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const nuevos = [...articulos];
+            // Asignamos la imagen solo al artículo (primera talla) si no tiene imagen asignada
+            nuevos[index].imagen = reader.result as string;
+            setArticulos(nuevos);
+        };
+        reader.readAsDataURL(file);
     };
 
     // Función para agregar una nueva talla dentro de un artículo
@@ -45,10 +59,10 @@ export default function EtiquetaGenerator() {
 
     // Función para agregar un nuevo artículo
     const agregarArticulo = () => {
-        setArticulos([...articulos, { articulo: '', descripcion: '', color: '', tallas: [{ talla: '', cantidad: 1 }] }]);
+        setArticulos([...articulos, { descripcion: '', color: '', imagen: '', tallas: [{ talla: '', cantidad: 1 }] }]);
     };
 
-    // Función para eliminar un artículo
+    // Función para eliminar un artículo    
     const eliminarArticulo = (index: number) => {
         const nuevos = articulos.filter((_, i) => i !== index);
         setArticulos(nuevos);
@@ -57,73 +71,66 @@ export default function EtiquetaGenerator() {
     // Generar el PDF con los artículos y sus etiquetas
 const generarPDF = () => {
     const doc = new jsPDF({
-        orientation: 'portrait',
+        orientation: 'landscape',
         unit: 'mm',
-        format: 'a4',  // Tamaño A4 (210mm x 297mm)
+        format: [100, 50],  // Tamaño de la página (100mm de ancho, 50mm de alto)
     });
 
-    const margenX = 5;  // Margen izquierdo de 5mm
-    const margenY = 5;  // Margen superior de 5mm
-    const anchoEtiqueta = 50;   // 5 cm de ancho (50mm)
-    const altoEtiqueta = 25;    // 2.5 cm de largo (25mm)
-    const espacioEntreEtiquetas = 3;  // 3mm de separación entre etiquetas
+    const margenX = 2;  // Margen izquierdo de 2mm
+    const margenY = 2;  // Margen superior de 2mm
+    const anchoEtiqueta = 50;   // 50mm de ancho para cada mitad de la etiqueta (para 2 columnas)
+    const altoEtiqueta = 23.5;    // 25mm de alto para cada etiqueta (para 2 filas)
+    const espacioEntreEtiquetas = 0.5;  // 2mm de separación entre etiquetas para ajustarlas mejor
 
-    let xPos = margenX;
-    let yPos = margenY;
+    let xPos = margenX;  // Posición inicial X (columna 1)
+    let yPos = margenY;  // Posición inicial Y (fila 1)
+    let columnaActual = 0;  // Control de la columna actual (0 para izquierda, 1 para derecha)
+    let filaActual = 0;  // Control de la fila actual (0 para arriba, 1 para abajo)
 
-    let columnaActual = 0;  // Controlar la columna actual (0 para izquierda, 1 para derecha)
-
-    articulos.forEach(({ articulo, descripcion, color, tallas }, idxArt) => {
+    articulos.forEach(({ descripcion, color, tallas }, idxArt) => {
         tallas.forEach(({ talla, cantidad }, idxTalla) => {
             for (let i = 0; i < cantidad; i++) {
-                // Ajustamos el tamaño de la fuente para que encaje dentro de la etiqueta
-                doc.setFont('helvetica', 'bold');
-
                 // Descripción - centrado
-                doc.setFontSize(10);  // Tamaño de fuente pequeño para el código de artículo
-                const descripcionWidth = doc.getTextWidth(descripcion);
-                const descX = xPos + 1;  // Lado izquierdo
-                doc.text(descripcion, descX, yPos + 2, { maxWidth: anchoEtiqueta - 2 });
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);  // Tamaño de fuente pequeño para la descripción
+                const descX = xPos + 1;  // Lado izquierdo ajustado
+                doc.text(descripcion, descX, yPos + 10, { maxWidth: anchoEtiqueta - 1 });
 
                 // Color - centrado
-                doc.setFontSize(10);  // Para color más pequeño
+                doc.setFontSize(8);  // Para color más pequeño
                 const colorText = `${color}`;
-                doc.text(colorText, descX, yPos + 7);
+                doc.text(colorText, descX, yPos + 6);
 
-                // Lado izquierdo de la etiqueta: Código de artículo, talla, descripción, color
-                doc.setFontSize(12);  // Tamaño de fuente pequeño para el código de artículo
-                const articuloText = `${articulo}`;
-                doc.text(articuloText, descX, yPos + 14);
-
-                // Lado derecho de la etiqueta: Tarjeta de producción, fechas
+                // Tarjeta de producción y fechas
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(4);  // Tamaño más pequeño para las fechas
+                doc.setFontSize(4);  // Para las fechas
                 const tarjetaText = `${tarjeta}`;
-                doc.text(tarjetaText, xPos + anchoEtiqueta - 8 - doc.getTextWidth(tarjetaText), yPos + 0);
+                doc.text(tarjetaText, xPos + anchoEtiqueta - 10 - doc.getTextWidth(tarjetaText), yPos + 2);
 
                 const fechaTextInicio = `${fechaInicio}`;
                 const fechaTextFin = `${fechaFin}`;
-                doc.text(fechaTextInicio, xPos + anchoEtiqueta - 8 - doc.getTextWidth(fechaTextInicio), yPos + 2);
-                doc.text(fechaTextFin, xPos + anchoEtiqueta - 8 - doc.getTextWidth(fechaTextFin), yPos + 4);
+                doc.text(fechaTextInicio, xPos + anchoEtiqueta - 10 - doc.getTextWidth(fechaTextInicio), yPos + 4);
+                doc.text(fechaTextFin, xPos + anchoEtiqueta - 10 - doc.getTextWidth(fechaTextFin), yPos + 6);
 
-                doc.setFontSize(13); // Tamaño de fuente para la talla
-                doc.text(talla, xPos + anchoEtiqueta - 12 - doc.getTextWidth(talla), yPos + 12);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);  // Tamaño de fuente para la talla
+                doc.text(talla, xPos + anchoEtiqueta - 20 - doc.getTextWidth(talla), yPos + 10);
 
-                // Código de barras
+                // Generar código de barras
                 const canvas = document.createElement('canvas');
-                JsBarcode(canvas, `${articulo}${talla}`, {
+                JsBarcode(canvas, `${descripcion}${talla}`, {
                     format: 'CODE128',
                     displayValue: false,
-                    height: 14,  // Altura optimizada
-                    width: 1,  // Ajustado para mejor visibilidad
+                    height: 10,  // Altura optimizada
+                    width: 1,  // Mejor visibilidad
                 });
                 const barcodeImg = canvas.toDataURL();
-                doc.addImage(barcodeImg, 'PNG', xPos + 2, yPos + 17, anchoEtiqueta - 10, 6);  // El código de barras ocupa toda la parte inferior
+                doc.addImage(barcodeImg, 'PNG', xPos + 1, yPos + 14, anchoEtiqueta - 10, 6);  // El código de barras ajustado
 
                 // Mover la posición para la siguiente etiqueta
                 if (columnaActual === 0) {
                     // Si estamos en la primera columna, mover a la segunda columna
-                    xPos += anchoEtiqueta + 5;  // Deja un margen entre las etiquetas
+                    xPos += anchoEtiqueta + espacioEntreEtiquetas;  // Deja un margen entre las etiquetas
                     columnaActual = 1;  // Cambiar a la segunda columna
                 } else {
                     // Si ya hemos colocado dos etiquetas, mover a la siguiente fila
@@ -133,9 +140,10 @@ const generarPDF = () => {
                 }
 
                 // Verificar si hemos alcanzado el final de la página
-                if (yPos + altoEtiqueta > 297 - margenY) {
-                    doc.addPage(); // Agregar una nueva página
-                    yPos = margenY; // Reiniciar la posición Y
+                if (yPos + altoEtiqueta > 50) {
+                    // Si se alcanza el final de la página, agregar una nueva página y restablecer las posiciones
+                    doc.addPage([100, 50]); // Agregar nueva página (misma altura de página)
+                    yPos = margenY; // Reiniciar la posición Y (parte superior)
                     columnaActual = 0; // Reiniciar a la primera columna
                 }
             }
@@ -144,6 +152,7 @@ const generarPDF = () => {
 
     doc.save(`etiquetas_tarjeta_${tarjeta}.pdf`);
 };
+
 
     return (
         <div className={styles.container}>
@@ -175,12 +184,6 @@ const generarPDF = () => {
                 {articulos.map((a, i) => (
                     <div key={i} className={styles.tallaRow}>
                         <input
-                            placeholder="Código Artículo"
-                            value={a.articulo}
-                            onChange={(e) => handleArticuloChange(i, 'articulo', e.target.value)}
-                            className={styles.inputSmall}
-                        />
-                        <input
                             placeholder="Descripción"
                             value={a.descripcion}
                             onChange={(e) => handleArticuloChange(i, 'descripcion', e.target.value)}
@@ -190,6 +193,12 @@ const generarPDF = () => {
                             placeholder="Color"
                             value={a.color}
                             onChange={(e) => handleArticuloChange(i, 'color', e.target.value)}
+                            className={styles.inputSmall}
+                        />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImagenChange(i, e.target.files?.[0] || null)}
                             className={styles.inputSmall}
                         />
 

@@ -1,48 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './clientes.module.css';
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
-
-// Simulación de datos de Perú (puedes ampliar)
-const ubigeoPeru: Record<string, Record<string, string[]>> = {
-  Lima: {
-    Lima: ['Miraflores', 'San Isidro', 'Surco'],
-    Barranca: ['Paramonga', 'Pativilca'],
-  },
-  Cusco: {
-    Cusco: ['Santiago', 'Wanchaq'],
-    Urubamba: ['Yucay', 'Ollantaytambo'],
-  },
-};
-
-// Tipo de cliente
-type Cliente = {
-  codigo: string;
-  ruc: string;
-  razonSocial: string;
-  direccion: string;
-  direccion2: string;
-  telefono: string;
-  correo: string;
-  departamento: string;
-  provincia: string;
-  distrito: string;
-};
-
-// Simula un servicio REST
-const simularRegistroCliente = async (cliente: Omit<Cliente, 'codigo'>): Promise<Cliente> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const codigoGenerado = 'CLI' + Math.floor(Math.random() * 900 + 100);
-      resolve({ codigo: codigoGenerado, ...cliente });
-    }, 500);
-  });
-};
+import { simularRegistroCliente, getClientes, Cliente } from '../register-requested/mockData';
+import { getUbigeoPeru } from './ubigeoData'; // Asegúrate de importar el servicio que creamos
 
 export default function RegisterClientePage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-
+  const [ubigeo, setUbigeo] = useState<Record<string, Record<string, string[]>>>({});
   const [ruc, setRuc] = useState('');
   const [razonSocial, setRazonSocial] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -54,6 +20,30 @@ export default function RegisterClientePage() {
   const [distrito, setDistrito] = useState('');
   const [cargando, setCargando] = useState(false);
 
+  // Cargar clientes desde localStorage y mock al montar el componente
+  useEffect(() => {
+    const clientesGuardados = JSON.parse(localStorage.getItem('clientes') || '[]');
+    const clientesMock = getClientes();  // Aquí obtienes los clientes mock de tu servicio
+
+    // Unir clientes solo si no están duplicados
+    const clientesUnicos = [
+      ...new Map([
+        ...clientesGuardados.map((cliente: Cliente) => [cliente.codigo, cliente]),
+        ...clientesMock.map((cliente: Cliente) => [cliente.codigo, cliente])
+      ]).values()
+    ];
+    setClientes(clientesUnicos);
+
+    // Llamar al simulador de servicio para obtener el ubigeo
+    const loadUbigeo = async () => {
+      const ubigeoData = await getUbigeoPeru();
+      setUbigeo(ubigeoData);
+    };
+
+    loadUbigeo();
+  }, []);
+
+  // Función para agregar un cliente
   const agregarCliente = async () => {
     if (!ruc || !razonSocial || !departamento || !provincia || !distrito) return;
 
@@ -70,8 +60,24 @@ export default function RegisterClientePage() {
         provincia,
         distrito,
       });
-      setClientes((prev) => [...prev, clienteRegistrado]);
 
+      // Verificar si el cliente ya existe en el estado
+      const clienteExiste = clientes.find(cliente => cliente.codigo === clienteRegistrado.codigo);
+      if (clienteExiste) {
+        // Si el cliente ya existe, no agregarlo
+        alert('El cliente ya existe.');
+        return;
+      }
+
+      // Actualizar el estado de los clientes
+      const clientesActualizados = [...clientes, clienteRegistrado];
+      setClientes(clientesActualizados);
+
+      // Guardar el nuevo cliente en localStorage
+      const clientesGuardados = [...clientesActualizados];
+      localStorage.setItem('clientes', JSON.stringify(clientesGuardados));
+
+      // Limpiar los campos
       setRuc('');
       setRazonSocial('');
       setDireccion('');
@@ -88,9 +94,10 @@ export default function RegisterClientePage() {
     }
   };
 
+  // Columnas de la tabla
   const columns = [
     { header: 'Código', accessorKey: 'codigo' },
-    { header: 'RUC', accessorKey: 'ruc' },
+    { header: 'RUC/DNI', accessorKey: 'ruc' },
     { header: 'Razón Social', accessorKey: 'razonSocial' },
     { header: 'Dirección', accessorKey: 'direccion' },
     { header: 'Dirección 2', accessorKey: 'direccion2' },
@@ -101,6 +108,7 @@ export default function RegisterClientePage() {
     { header: 'Distrito', accessorKey: 'distrito' },
   ];
 
+  // Crear la tabla con los datos de los clientes
   const table = useReactTable({
     data: clientes,
     columns,
@@ -130,36 +138,64 @@ export default function RegisterClientePage() {
         <label className={styles.label}>Correo:</label>
         <input className={styles.input} type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} />
 
-        <label className={styles.label}>Departamento:</label>
-        <select className={styles.input} value={departamento} onChange={(e) => {
-          setDepartamento(e.target.value);
-          setProvincia('');
-          setDistrito('');
-        }}>
-          <option value="">Selecciona un departamento</option>
-          {Object.keys(ubigeoPeru).map(dep => (
-            <option key={dep} value={dep}>{dep}</option>
-          ))}
-        </select>
+        <div className={styles.selectContainer}>
+          <label className={styles.label}>Departamento:</label>
+          <select
+            className={styles.input}
+            value={departamento}
+            onChange={(e) => {
+              setDepartamento(e.target.value);
+              setProvincia('');
+              setDistrito('');
+            }}
+          >
+            <option value="">Selecciona un departamento</option>
+            {Object.keys(ubigeo).map((dep) => (
+              <option key={dep} value={dep}>
+                {dep}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <label className={styles.label}>Provincia:</label>
-        <select className={styles.input} value={provincia} onChange={(e) => {
-          setProvincia(e.target.value);
-          setDistrito('');
-        }} disabled={!departamento}>
-          <option value="">Selecciona una provincia</option>
-          {departamento && Object.keys(ubigeoPeru[departamento]).map(prov => (
-            <option key={prov} value={prov}>{prov}</option>
-          ))}
-        </select>
+        <div className={styles.selectContainer}>
+          <label className={styles.label}>Provincia:</label>
+          <select
+            className={styles.input}
+            value={provincia}
+            onChange={(e) => {
+              setProvincia(e.target.value);
+              setDistrito('');
+            }}
+            disabled={!departamento}
+          >
+            <option value="">Selecciona una provincia</option>
+            {departamento &&
+              Object.keys(ubigeo[departamento]).map((prov) => (
+                <option key={prov} value={prov}>
+                  {prov}
+                </option>
+              ))}
+          </select>
+        </div>
 
-        <label className={styles.label}>Distrito:</label>
-        <select className={styles.input} value={distrito} onChange={(e) => setDistrito(e.target.value)} disabled={!provincia}>
-          <option value="">Selecciona un distrito</option>
-          {provincia && ubigeoPeru[departamento][provincia].map(dist => (
-            <option key={dist} value={dist}>{dist}</option>
-          ))}
-        </select>
+        <div className={styles.selectContainer}>
+          <label className={styles.label}>Distrito:</label>
+          <select
+            className={styles.input}
+            value={distrito}
+            onChange={(e) => setDistrito(e.target.value)}
+            disabled={!provincia}
+          >
+            <option value="">Selecciona un distrito</option>
+            {provincia &&
+              ubigeo[departamento][provincia].map((dist) => (
+                <option key={dist} value={dist}>
+                  {dist}
+                </option>
+              ))}
+          </select>
+        </div>
       </div>
 
       <button className={styles.addButton} onClick={agregarCliente} disabled={cargando}>

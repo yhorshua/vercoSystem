@@ -4,47 +4,20 @@ import { useState, useEffect } from 'react';
 import styles from './registerPedido.module.css';
 import ClienteModal from './ClienteModal';
 import PedidoTabla from './PedidoTabla';
+import { getProductoByCodigo } from './mockData';
+import { clientesMock, Cliente } from './mockClientes';
 
 interface Item {
   codigo: string;
   descripcion: string;
   serie: string;
   precio: number;
-  cantidades: Record<number, number>; // Representa la cantidad por talla
+  cantidades: Record<number, number>;
   total: number;
 }
 
-const stockMock: Record<string, {
-  descripcion: string;
-  serie: string;
-  precio: number;
-  stock: Record<number, number>;
-}> = {
-  CH025VT: {
-    descripcion: "Zapatilla Importada Evolution Verde/Turqueza",
-    serie: "A",
-    precio: 89,
-    stock: { 38: 12, 39: 5, 40: 9, 41: 6, 42: 10, 43: 7 },
-  },
-  A3024JF: {
-    descripcion: "Zapatilla Evolution Jade/Fucsia",
-    serie: "A",
-    precio: 75,
-    stock: { 38: 8, 39: 4, 40: 6, 41: 7, 42: 3, 43: 8 },
-  },
-};
-
-const clientesMock = [
-  { codigo: 'CLI001', nombre: 'Supermercado Central' },
-  { codigo: 'CLI002', nombre: 'Zapatería El Paso' },
-  { codigo: 'CLI003', nombre: 'Cliente VIP' },
-  { codigo: 'CLI004', nombre: 'Distribuidora Norte' },
-  { codigo: 'CLI005', nombre: 'Retail Express' },
-  { codigo: 'CLI006', nombre: 'Calzado Estilo' },
-];
-
 export default function RegisterPedidoPage() {
-  const [cliente, setCliente] = useState<{ codigo: string; nombre: string } | null>(null);
+  const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [codigoArticulo, setCodigoArticulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -53,12 +26,11 @@ export default function RegisterPedidoPage() {
   const [cantidades, setCantidades] = useState<Record<number, number>>({});
   const [tallasDisponibles, setTallasDisponibles] = useState<number[]>([]);
   const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});
-  const [items, setItems] = useState<Item[]>([]); // Cambié 'any[]' por 'Item[]'
+  const [items, setItems] = useState<Item[]>([]);
 
   useEffect(() => {
-    const codigoMayus = codigoArticulo.toUpperCase();
-    if (stockMock[codigoMayus]) {
-      const producto = stockMock[codigoMayus];
+    const producto = getProductoByCodigo(codigoArticulo);
+    if (producto) {
       setDescripcion(producto.descripcion);
       setSerie(producto.serie);
       setPrecio(producto.precio);
@@ -110,7 +82,7 @@ export default function RegisterPedidoPage() {
         <input
           className={`${styles.input} ${styles.inputClient}`}
           type="text"
-          value={cliente?.nombre || ''}
+          value={cliente?.razonSocial || ''}
           onClick={() => setShowClienteModal(true)}
           readOnly
           placeholder="Selecciona un cliente"
@@ -166,14 +138,14 @@ export default function RegisterPedidoPage() {
         Agregar al Pedido
       </button>
 
-      <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} />
+      <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} /> {/* Aquí pasamos el cliente completo */}
 
       {showClienteModal && (
         <ClienteModal
           clientes={clientesMock}
           onClose={() => setShowClienteModal(false)}
           onSelect={(clienteSeleccionado) => {
-            setCliente(clienteSeleccionado);
+            setCliente(clienteSeleccionado);  // Asignamos el cliente completo
             setShowClienteModal(false);
           }}
         />
