@@ -22,26 +22,26 @@ export default function RegisterClientePage() {
 
   // Cargar clientes desde localStorage y mock al montar el componente
   useEffect(() => {
-    const clientesGuardados = JSON.parse(localStorage.getItem('clientes') || '[]');
-    const clientesMock = getClientes();  // Aquí obtienes los clientes mock de tu servicio
+  const clientesGuardados = JSON.parse(localStorage.getItem('clientes') || '[]');
+  const clientesMock = getClientes();  // Aquí obtienes los clientes mock de tu servicio
+  
+  // Combinamos ambos conjuntos de datos (localStorage y mock) y aseguramos que no haya duplicados
+  const clientesUnicos = [
+    ...clientesMock,
+    ...clientesGuardados.filter((clienteGuardado: Cliente) => 
+      !clientesMock.some((clienteMock: Cliente) => clienteMock.ruc === clienteGuardado.ruc)
+    ),
+  ];
 
-    // Unir clientes solo si no están duplicados
-    const clientesUnicos = [
-      ...new Map([
-        ...clientesGuardados.map((cliente: Cliente) => [cliente.codigo, cliente]),
-        ...clientesMock.map((cliente: Cliente) => [cliente.codigo, cliente])
-      ]).values()
-    ];
-    setClientes(clientesUnicos);
+  setClientes(clientesUnicos);  // Asigna correctamente el tipo
+  // Llamar al simulador de servicio para obtener el ubigeo
+  const loadUbigeo = async () => {
+    const ubigeoData = await getUbigeoPeru();
+    setUbigeo(ubigeoData);
+  };
 
-    // Llamar al simulador de servicio para obtener el ubigeo
-    const loadUbigeo = async () => {
-      const ubigeoData = await getUbigeoPeru();
-      setUbigeo(ubigeoData);
-    };
-
-    loadUbigeo();
-  }, []);
+  loadUbigeo();
+}, []);
 
   // Función para agregar un cliente
   const agregarCliente = async () => {
@@ -61,21 +61,12 @@ export default function RegisterClientePage() {
         distrito,
       });
 
-      // Verificar si el cliente ya existe en el estado
-      const clienteExiste = clientes.find(cliente => cliente.codigo === clienteRegistrado.codigo);
-      if (clienteExiste) {
-        // Si el cliente ya existe, no agregarlo
-        alert('El cliente ya existe.');
-        return;
-      }
-
       // Actualizar el estado de los clientes
       const clientesActualizados = [...clientes, clienteRegistrado];
       setClientes(clientesActualizados);
 
       // Guardar el nuevo cliente en localStorage
-      const clientesGuardados = [...clientesActualizados];
-      localStorage.setItem('clientes', JSON.stringify(clientesGuardados));
+      localStorage.setItem('clientes', JSON.stringify(clientesActualizados));
 
       // Limpiar los campos
       setRuc('');
@@ -97,7 +88,7 @@ export default function RegisterClientePage() {
   // Columnas de la tabla
   const columns = [
     { header: 'Código', accessorKey: 'codigo' },
-    { header: 'RUC/DNI', accessorKey: 'ruc' },
+    { header: 'RUC', accessorKey: 'ruc' },
     { header: 'Razón Social', accessorKey: 'razonSocial' },
     { header: 'Dirección', accessorKey: 'direccion' },
     { header: 'Dirección 2', accessorKey: 'direccion2' },

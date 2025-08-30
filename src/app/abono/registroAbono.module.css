@@ -1,191 +1,151 @@
 .container {
-  padding: 1.5rem;
-  font-family: Arial, sans-serif;
-  background-color: #f7f7f7;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .heading {
   text-align: center;
-  font-size: 2rem;
+  font-size: 1.8rem;
   margin-bottom: 1.5rem;
-  color: #003366;
-}
-
-
-
-.label {
-  font-weight: bold;
-}
-
-.input,
-.select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.submitButton {
-   padding: 0.4rem 0.8rem;
-  margin-right: 0.5rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-  flex: 0 1 auto;
-  margin: 0.3rem 0.5rem;
-}
-
-.submitButton:hover {
-  background-color: #45a049;
-}
-
-.tableContainer {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
-}
-.table th,
-.table td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-.table th {
-  color: rgb(0, 0, 0);
-  font-weight: bold;
-}
-
-.table tr:hover {
-  background-color: #f1f1f1;
-}
-
-@media (max-width: 600px) {
-  .container {
-    padding: 15px;
-  }
-
-  .formContainer {
-    gap: 10px;
-  }
-
-  .table {
-    font-size: 14px;
-  }
-}
-
-/* Modal Styles */
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.modalContent {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 600px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
-  overflow: auto;
-}
-
-.modalTitle {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  text-align: center;
   color: #0d3b66;
 }
 
-.input {
-  width: 100%;
-  padding: 0.6rem;
-  margin-bottom: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 1rem;
+.inputGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.tableWrapper {
+.label {
+  font-weight: bold;
+  color: #333;
+}
+
+.input {
+  padding: 0.6rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.addButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #245580;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 1.5rem;
+}
+
+.addButton:hover {
+  background-color: #1b4468;
+}
+
+.tableContainer {
+  margin-top: 1rem;
+  border-top: 1px solid #ccc;
+  padding-top: 1rem;
+}
+
+.responsiveWrapper {
   overflow-x: auto;
-  margin-bottom: 1rem;
+  width: 100%;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  min-width: 1200px;
 }
 
 .table th,
 .table td {
-  padding: 0.75rem 1rem;
-  border: 1px solid #ccc;
+  padding: 0.9rem;
   text-align: center;
+  border-bottom: 1px solid #e0e0e0;
   white-space: nowrap;
 }
 
-.selectButton {
-  background-color: #0d6efd;
-  color: white;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
+.table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+  color: #333;
 }
 
-.selectButton:hover {
-  background-color: #0b5ed7;
+.tableCell {
+  text-align: center;
 }
 
-.addButton {
-  background-color: #198754;
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: block;
-  margin: 0 auto;
-  font-size: 1rem;
-  margin-top: 1rem;
+/* Estilos para los selectores */
+.select-container {
+  display: flex;
+  justify-content: center;  /* Centra el contenedor */
+  width: 100%;
+  max-width: 400px;  /* Limitar el ancho del selector */
+  margin: 10px auto;  /* Centrado automático en pantalla */
+  position: relative;
 }
 
-.addButton:hover {
-  background-color: #157347;
+.select-container select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s ease;
+  text-align: center;  /* Centrado del texto */
 }
 
-.closeButton {
-  background-color: #dc3545;
-  color: white;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: block;
-  margin: 1rem auto;
-  font-size: 1rem;
+.select-container select:focus {
+  border-color: #007bff; /* Color al enfocar */
+  outline: none;
 }
 
-.closeButton:hover {
-  background-color: #c82333;
+.select-container select::-webkit-scrollbar {
+  width: 8px;
 }
+
+.select-container select::-webkit-scrollbar-thumb {
+  background-color: #007bff;
+  border-radius: 10px;
+}
+
+.select-container select::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+/* Estilo cuando la lista es larga */
+.select-container select {
+  max-height: 200px;  /* Establecer una altura máxima */
+  overflow-y: auto;  /* Hacer que el contenido sea desplazable */
+}
+
+.select-container option {
+  padding: 8px;
+  font-size: 16px;
+}
+
+/* Asegúrate de que el formulario se vea bien en dispositivos móviles */
+@media (max-width: 600px) {
+  .select-container {
+    max-width: 100%;  /* Los selectores ocuparán todo el ancho en pantallas pequeñas */
+  }
+
+  .select-container select {
+    font-size: 14px;  /* Ajustar el tamaño de la fuente en dispositivos pequeños */
+  }
+}
+
+

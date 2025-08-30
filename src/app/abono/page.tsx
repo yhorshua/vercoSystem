@@ -2,12 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import styles from './registroAbono.module.css'; // CSS Module
-
-interface Cliente {
-  id: string;
-  nombre: string;
-}
+import { getClientes, Cliente } from '../register-requested/mockData'; // Asegúrate de importar el servicio que creamos
+import styles from './registroAbono.module.css';
 
 interface Abono {
   id: string;
@@ -27,15 +23,9 @@ export default function RegistroAbonoPage() {
   const [fechaIngreso, setFechaIngreso] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showClienteModal, setShowClienteModal] = useState(false);
 
-  // Simulamos la obtención de clientes de una API
+  // Simulamos la obtención de clientes de un servicio
   useEffect(() => {
-    // Datos simulados de clientes
-    const clientesSimulados: Cliente[] = [
-      { id: '1', nombre: 'Juan Pérez' },
-      { id: '2', nombre: 'Ana López' },
-      { id: '3', nombre: 'Carlos García' },
-    ];
-
+    const clientesSimulados = getClientes(); // Obtener clientes del servicio
     setClientes(clientesSimulados);
   }, []);
 
@@ -74,7 +64,6 @@ export default function RegistroAbonoPage() {
     <div className={styles.container}>
       <h1 className={styles.heading}>Registro de Abonos</h1>
 
-      {/* Formulario para registrar abono */}
       <div className={styles.formContainer}>
         <label>Cliente</label>
         <input
@@ -128,7 +117,6 @@ export default function RegistroAbonoPage() {
         </button>
       </div>
 
-      {/* Tabla de abonos registrados */}
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
@@ -159,8 +147,8 @@ export default function RegistroAbonoPage() {
         <ClienteModal
           clientes={clientes}
           onClose={() => setShowClienteModal(false)}
-          onSelect={(clienteSeleccionado) => {
-            setClienteSeleccionado(clienteSeleccionado);
+          onSelect={(cliente) => {
+            setClienteSeleccionado(cliente);
             setShowClienteModal(false);
           }}
         />
@@ -203,7 +191,7 @@ function ClienteModal({ clientes, onClose, onSelect }: ClienteModalProps) {
           </thead>
           <tbody>
             {filteredClientes.map((cliente) => (
-              <tr key={cliente.id}>
+              <tr key={cliente.codigo}>
                 <td>{cliente.nombre}</td>
                 <td>
                   <button onClick={() => onSelect(cliente)} className={styles.selectButton}>
