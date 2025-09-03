@@ -68,7 +68,7 @@ export default function RegistroAbonoPage() {
         <label>Cliente</label>
         <input
           type="text"
-          value={clienteSeleccionado?.nombre || ''}
+          value={clienteSeleccionado?.razonSocial || ''}
           onClick={() => setShowClienteModal(true)}
           readOnly
           placeholder="Seleccione un cliente"
@@ -131,7 +131,7 @@ export default function RegistroAbonoPage() {
           <tbody>
             {abonos.map((abono) => (
               <tr key={abono.id}>
-                <td>{abono.cliente.nombre}</td>
+                <td>{abono.cliente.razonSocial}</td>
                 <td>{abono.saldoPendiente}</td>
                 <td>{abono.montoAbonado}</td>
                 <td>{abono.tipoAbono}</td>
@@ -167,7 +167,7 @@ function ClienteModal({ clientes, onClose, onSelect }: ClienteModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredClientes = clientes.filter((cliente) =>
-    cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    cliente.razonSocial.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -192,7 +192,7 @@ function ClienteModal({ clientes, onClose, onSelect }: ClienteModalProps) {
           <tbody>
             {filteredClientes.map((cliente) => (
               <tr key={cliente.codigo}>
-                <td>{cliente.nombre}</td>
+                <td>{cliente.razonSocial}</td>
                 <td>
                   <button onClick={() => onSelect(cliente)} className={styles.selectButton}>
                     Seleccionar
