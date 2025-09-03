@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { getClientes, Cliente } from '../register-requested/mockData'; // Asegúrate de importar el servicio que creamos
 import styles from './registroAbono.module.css';
+import ClienteModal from '../register-requested/ClienteModal'; // Cambia la importación para que sea el segundo componente
 
 interface Abono {
   id: string;
@@ -143,6 +144,7 @@ export default function RegistroAbonoPage() {
       </div>
 
       {/* Modal de selección de cliente */}
+      {/* Modal de selección de cliente */}
       {showClienteModal && (
         <ClienteModal
           clientes={clientes}
@@ -153,60 +155,6 @@ export default function RegistroAbonoPage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-interface ClienteModalProps {
-  clientes: Cliente[];
-  onClose: () => void;
-  onSelect: (cliente: Cliente) => void;
-}
-
-function ClienteModal({ clientes, onClose, onSelect }: ClienteModalProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredClientes = clientes.filter((cliente) =>
-    cliente.razonSocial.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <h2>Seleccionar Cliente</h2>
-        <input
-          type="text"
-          placeholder="Buscar cliente..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={styles.input}
-        />
-
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Seleccionar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredClientes.map((cliente) => (
-              <tr key={cliente.codigo}>
-                <td>{cliente.razonSocial}</td>
-                <td>
-                  <button onClick={() => onSelect(cliente)} className={styles.selectButton}>
-                    Seleccionar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <button className={styles.closeButton} onClick={onClose}>
-          Cerrar
-        </button>
-      </div>
     </div>
   );
 }
