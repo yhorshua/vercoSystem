@@ -10,7 +10,6 @@ export interface Producto {
 }
 export interface Cliente {
   codigo: string;
-  nombre: string;
   ruc: string;
   razonSocial: string;
   direccion: string;
