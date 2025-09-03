@@ -22,26 +22,26 @@ export default function RegisterClientePage() {
 
   // Cargar clientes desde localStorage y mock al montar el componente
   useEffect(() => {
-  const clientesGuardados = JSON.parse(localStorage.getItem('clientes') || '[]');
-  const clientesMock = getClientes();  // Aquí obtienes los clientes mock de tu servicio
-  
-  // Combinamos ambos conjuntos de datos (localStorage y mock) y aseguramos que no haya duplicados
-  const clientesUnicos = [
-    ...clientesMock,
-    ...clientesGuardados.filter((clienteGuardado: Cliente) => 
-      !clientesMock.some((clienteMock: Cliente) => clienteMock.ruc === clienteGuardado.ruc)
-    ),
-  ];
+    const clientesGuardados = JSON.parse(localStorage.getItem('clientes') || '[]');
+    const clientesMock = getClientes();  // Aquí obtienes los clientes mock de tu servicio
+    
+    // Combinamos ambos conjuntos de datos (localStorage y mock) y aseguramos que no haya duplicados
+    const clientesUnicos = [
+      ...clientesMock,
+      ...clientesGuardados.filter((clienteGuardado: Cliente) => 
+        !clientesMock.some((clienteMock: Cliente) => clienteMock.ruc === clienteGuardado.ruc)
+      ),
+    ];
 
-  setClientes(clientesUnicos);  // Asigna correctamente el tipo
-  // Llamar al simulador de servicio para obtener el ubigeo
-  const loadUbigeo = async () => {
-    const ubigeoData = await getUbigeoPeru();
-    setUbigeo(ubigeoData);
-  };
+    setClientes(clientesUnicos);  // Asigna correctamente el tipo
+    // Llamar al simulador de servicio para obtener el ubigeo
+    const loadUbigeo = async () => {
+      const ubigeoData = await getUbigeoPeru();
+      setUbigeo(ubigeoData);
+    };
 
-  loadUbigeo();
-}, []);
+    loadUbigeo();
+  }, []);
 
   // Función para agregar un cliente
   const agregarCliente = async () => {
@@ -61,7 +61,14 @@ export default function RegisterClientePage() {
         distrito,
       });
 
-      // Actualizar el estado de los clientes
+      // Verificar si el cliente ya existe antes de agregarlo
+      const clienteExistente = clientes.some(cliente => cliente.ruc === clienteRegistrado.ruc);
+      if (clienteExistente) {
+        alert('Este cliente ya ha sido registrado');
+        return;
+      }
+
+      // Actualizar el estado de los clientes solo si no es duplicado
       const clientesActualizados = [...clientes, clienteRegistrado];
       setClientes(clientesActualizados);
 
