@@ -6,15 +6,21 @@ import Link from 'next/link'; // Usamos Link para la redirección en Next.js
 import { useUser } from '../context/UserContext';
 import style from './page.module.css'; // Importamos los estilos de CSS Module
 
+// Definimos los roles como constantes
+const JEFEVEN = 'jefeVentas';
+const VENDEDO = 'vendedor';
+
 const Navbar = () => {
-  const { username, userArea } = useUser(); // Accedemos al contexto para obtener el username y userArea y la función logout
-
-  console.log('Username:', username, 'UserArea:', userArea); // Verifica que estos valores no sean undefined o vacíos
-
+  const { username, userArea } = useUser(); // Accedemos al contexto para obtener el username y userArea
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false); // Estado para abrir/cerrar el reporte
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen); // Alternar el estado del menú
+  };
+
+  const toggleReportMenu = () => {
+    setIsReportOpen(!isReportOpen); // Alternar el estado del menú de reportes
   };
 
   const handleLinkClick = () => {
@@ -42,13 +48,46 @@ const Navbar = () => {
 
       {/* Enlaces centrados (solo en desktop) */}
       <div className={style.navbarCenter}>
-        <Link href="/register-requested" className={style.navbarLink}>Registrar Pedido</Link>
-        <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
-        <Link href="/stock" className={style.navbarLink}>Stock</Link>
-        <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
-        <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
-        <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
-        <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
+        {/* Menú Vendedor */}
+        {userArea === VENDEDO && (
+          <>
+            <Link href="/register-requested" className={style.navbarLink}>Registrar Pedido</Link>
+            <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
+            <Link href="/stock" className={style.navbarLink}>Stock</Link>
+            <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
+          </>
+        )}
+
+        {/* Menú Jefe de Ventas */}
+        {userArea === JEFEVEN && (
+          <>
+            <Link href="/register-requested" className={style.navbarLink}>Registrar Pedido</Link>
+            <Link href="/order-list" className={style.navbarLink}>Lista de Pedidos</Link>
+            <Link href="/stock" className={style.navbarLink}>Stock</Link>
+            <Link href="/client" className={style.navbarLink}>Registro de Cliente</Link>
+            <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
+            <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
+            <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
+
+            {/* Menú de reportes */}
+            <div className={style.reportDropdown}>
+              <button onClick={toggleReportMenu} className={style.navbarLink}>
+                Reportes
+              </button>
+              {isReportOpen && (
+                <div className={style.dropdownMenu}>
+                  <Link href="/report-client" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Cliente
+                  </Link>
+                  <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Vendedor
+                  </Link>
+                  {/* Aquí puedes agregar más opciones de reportes */}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Panel lateral responsive: user + enlaces */}
@@ -70,32 +109,47 @@ const Navbar = () => {
 
         {/* Enlaces para menú responsive */}
         <div className={style.navbarMobileLinks}>
-          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>Registrar Pedido</Link>
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>Lista de Pedidos</Link>
-          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>Stock</Link>
-          <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>Registro de Cliente</Link>
-          <Link href="/abono" className={style.navbarLink} onClick={handleLinkClick}>Registro de Abono</Link>
-          <Link href="/qr" className={style.navbarLink} onClick={handleLinkClick}>Generador de etiquetas</Link>
-          <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>Inventario</Link>
-        </div>
+          {/* Menú Vendedor */}
+          {userArea === VENDEDO && (
+            <>
+              <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>Registrar Pedido</Link>
+              <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>Lista de Pedidos</Link>
+              <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>Stock</Link>
+              <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>Registro de Cliente</Link>
+            </>
+          )}
 
-        {/* Botón de Cerrar Sesión 
-        <div className={style.logoutWrapper}>
-          <button
-            className={style.logoutButton}
-            onClick={logout} // Función de logout del contexto
-            aria-label="Cerrar sesión"
-            title="Cerrar sesión" // Tooltip
-          >
-            <Image
-              src="/img/icon-salir.png" // Usa el ícono que prefieras
-              alt=""
-              width={25}
-              height={25}
-            />
-          </button>
+          {/* Menú Jefe de Ventas */}
+          {userArea === JEFEVEN && (
+            <>
+              <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>Registrar Pedido</Link>
+              <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>Lista de Pedidos</Link>
+              <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>Stock</Link>
+              <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>Registro de Cliente</Link>
+              <Link href="/abono" className={style.navbarLink} onClick={handleLinkClick}>Registro de Abono</Link>
+              <Link href="/qr" className={style.navbarLink} onClick={handleLinkClick}>Generador de etiquetas</Link>
+              <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>Inventario</Link>
+
+              {/* Menú de reportes en mobile */}
+              <div className={style.reportDropdown}>
+                <button onClick={toggleReportMenu} className={style.navbarLink}>
+                  Reportes
+                </button>
+                {isReportOpen && (
+                  <div className={style.dropdownMenu}>
+                    <Link href="/report-client" className={style.navbarLink} onClick={handleLinkClick}>
+                      Reporte por Cliente
+                    </Link>
+                    <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
+                      Reporte por Vendedor
+                    </Link>
+                    {/* Agregar más opciones de reportes si es necesario */}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
-        */}
       </div>
     </nav>
   );

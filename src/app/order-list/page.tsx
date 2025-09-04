@@ -32,7 +32,7 @@ interface Pedido {
     precio: number;
     total: number;
     cantidades: Record<number, number>;
-  }[];
+  }[]; 
 }
 
 export default function OrderListPage() {
@@ -42,6 +42,7 @@ export default function OrderListPage() {
   const [search, setSearch] = useState(''); // Filtro por cliente
   const [searchDate, setSearchDate] = useState(''); // Filtro por fecha
   const [searchVendedor, setSearchVendedor] = useState(''); // Filtro por vendedor
+  const [searchEstado, setSearchEstado] = useState(''); // Filtro por estado
 
   // Accedemos al contexto para obtener el rol del usuario
   const { userArea: rolUsuario } = useUser(); // El rol viene del contexto
@@ -131,11 +132,13 @@ export default function OrderListPage() {
     const clienteNombre = pedido.cliente.nombre.toLowerCase() || '';
     const fechaRegistro = pedido.fechaRegistro || '';
     const vendedor = pedido.vendedor || '';
+    const estado = pedido.estado || '';
 
     return (
       (clienteCodigo.includes(search) || clienteNombre.includes(search.toLowerCase())) &&
       (searchDate ? fechaRegistro.includes(searchDate) : true) &&
-      (searchVendedor ? vendedor.includes(searchVendedor) : true)
+      (searchVendedor ? vendedor.includes(searchVendedor) : true) &&
+      (searchEstado ? estado.includes(searchEstado) : true)
     );
   });
 
@@ -168,6 +171,18 @@ export default function OrderListPage() {
           <option value="JOSE NIEVA">JOSE NIEVA</option>
           <option value="MARIA PEREZ">MARIA PEREZ</option>
           {/* Agregar más vendedores según sea necesario */}
+        </select>
+        <select
+          value={searchEstado}
+          onChange={(e) => setSearchEstado(e.target.value)} // Actualiza el estado de 'searchEstado'
+          className={styles.inputField}
+        >
+          <option value="">Seleccionar estado</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Aprobado">Aprobado</option>
+          <option value="Alistado">Alistado</option>
+          <option value="Anulado">Anulado</option>
+          <option value="Facturado">Facturado</option>
         </select>
       </div>
 
@@ -211,6 +226,7 @@ export default function OrderListPage() {
                     </button>
                   )}
 
+                  {/* Mostrar botones para 'jefeVentas' cuando el pedido está aprobado */}
                   {rolUsuario === JEFEVEN && pedido.estado === 'Aprobado' && (
                     <>
                       <button
@@ -243,8 +259,8 @@ export default function OrderListPage() {
                     </>
                   )}
 
-                  {/* Mostrar botón de anulación si el rol es 'vendedor' */}
-                  {rolUsuario === VENDEDO && (
+                  {/* Mostrar botón de anulación si el rol es 'vendedor' o 'jefeVentas' */}
+                  {(rolUsuario === VENDEDO || rolUsuario === JEFEVEN) && pedido.estado !== 'Aprobado' && (
                     <button
                       onClick={() => handleAnular(pedido.id)}
                       className={`${styles.button} ${styles.cancelButton}`}
