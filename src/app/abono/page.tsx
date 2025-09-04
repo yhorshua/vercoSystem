@@ -73,41 +73,51 @@ export default function RegistroAbonoPage() {
           onClick={() => setShowClienteModal(true)}
           readOnly
           placeholder="Seleccione un cliente"
-          className={styles.input}
+          className={styles.inputCliente}
         />
 
-        <div>
-          <label>Saldo Pendiente</label>
-          <input type="number" value={500} disabled className={styles.input} /> {/* Valor simulado */}
+        <div className={styles.inputGroup}>
+          <div>
+            <label>Saldo Pendiente</label>
+            <input type="number" value={500} disabled className={styles.input} />
+          </div>
+
+          <div>
+            <label>Monto del Abono</label>
+            <input
+              type="number"
+              value={monto}
+              onChange={(e) => setMonto(parseFloat(e.target.value))}
+              min="0"
+              className={styles.input}
+            />
+          </div>
         </div>
 
-        <label>Monto del Abono</label>
-        <input
-          type="number"
-          value={monto}
-          onChange={(e) => setMonto(parseFloat(e.target.value))}
-          min="0"
-          className={styles.input}
-        />
+        <div className={styles.inputGroup}>
+          <div>
+            <label>Tipo de Abono</label>
+            <select
+              value={tipoAbono}
+              onChange={(e) => setTipoAbono(e.target.value)}
+              className={styles.select}
+            >
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Deposito</option>
+              <option value="Tarjeta">Letra</option>
+            </select>
+          </div>
 
-        <label>Tipo de Abono</label>
-        <select
-          value={tipoAbono}
-          onChange={(e) => setTipoAbono(e.target.value)}
-          className={styles.select}
-        >
-          <option value="Efectivo">Efectivo</option>
-          <option value="Transferencia">Transferencia</option>
-          <option value="Tarjeta">Tarjeta</option>
-        </select>
-
-        <label>Fecha de Ingreso</label>
-        <input
-          type="date"
-          value={fechaIngreso}
-          onChange={(e) => setFechaIngreso(e.target.value)}
-          className={styles.input}
-        />
+          <div>
+            <label>Fecha de Ingreso</label>
+            <input
+              type="date"
+              value={fechaIngreso}
+              onChange={(e) => setFechaIngreso(e.target.value)}
+              className={styles.input}
+            />
+          </div>
+        </div>
 
         <button
           onClick={handleRegistrarAbono}

@@ -2,150 +2,215 @@
   max-width: 1200px;
   margin: 2rem auto;
   padding: 2rem;
-  background-color: #fff;
+  background-color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra más suave */
 }
 
 .heading {
   text-align: center;
-  font-size: 1.8rem;
+  font-size: 2rem;
   margin-bottom: 1.5rem;
-  color: #0d3b66;
+  color: #1e3a8a; /* Un color azul más suave */
+  font-family: 'Arial', sans-serif;
 }
 
-.inputGroup {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+/* Contenedor principal del formulario */
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Añadimos espacio entre los inputs */
+  width: 100%; /* Para asegurarnos que ocupa todo el espacio */
 }
 
-.label {
-  font-weight: bold;
-  color: #333;
-}
-
-.input {
-  padding: 0.6rem;
+/* Input del cliente (ocupa todo el espacio) */
+.inputCliente {
+  width: 100%; /* Ocupa todo el espacio */
+  padding: 1rem;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 8px;
-  width: 100%;
+  margin-bottom: 1rem;
 }
 
-.addButton {
+/* Inputs generales */
+.input, .select {
+  width: 300px; /* Hacer que ocupen todo el espacio disponible */
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem; /* Espacio entre inputs */
+}
+
+/* Estilo cuando el input o select está en foco */
+.input:focus, .select:focus {
+  border-color: #00fae1;
+  outline: none;
+  box-shadow: 0 0 4px rgba(5, 255, 242, 0.5);
+}
+
+/* Botón de registrar abono */
+.submitButton {
   padding: 0.75rem 1.5rem;
-  background-color: #245580;
+  background-color: #007bff;
   color: white;
   font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-bottom: 1.5rem;
-}
-
-.addButton:hover {
-  background-color: #1b4468;
-}
-
-.tableContainer {
+  transition: background-color 0.3s ease, transform 0.2s ease;
   margin-top: 1rem;
-  border-top: 1px solid #ccc;
-  padding-top: 1rem;
+  width: auto; /* El tamaño se ajusta al contenido */
+  align-self: flex-start; /* Para alinearlo a la izquierda */
 }
 
-.responsiveWrapper {
+.submitButton:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.submitButton:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+/* Contenedor de la tabla */
+.tableContainer {
+  width: 100%;
   overflow-x: auto;
-  width: 100%;
+  margin-top: 20px;
+  -webkit-overflow-scrolling: touch;
+  display: block; /* Cambié de flex a block para evitar problemas de centrado */
 }
 
+/* Tabla responsiva */
 .table {
-  width: 100%;
+  width: 100%; /* Asegura que la tabla ocupe el tamaño mínimo necesario */
   border-collapse: collapse;
-  font-size: 0.9rem;
-  min-width: 1200px;
+  table-layout: auto; /* Cambié para que las celdas se ajusten a su contenido */
 }
 
+/* Estilos de celdas */
 .table th,
 .table td {
-  padding: 0.9rem;
+  padding: 12px;
   text-align: center;
-  border-bottom: 1px solid #e0e0e0;
-  white-space: nowrap;
+  border-bottom: 1px solid #ddd;
+  white-space: nowrap; /* Evitar que el texto se rompa */
+  font-size: 14px;
 }
 
 .table th {
-  background-color: #f5f5f5;
+  background-color: #f8f8f8;
+  color: #000000;
   font-weight: bold;
+}
+
+.table td {
+  background-color: #ffffff;
   color: #333;
+}
+
+.table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.table tr:hover {
+  background-color: #f0f8ff;
 }
 
 .tableCell {
   text-align: center;
 }
 
-/* Estilos para los selectores */
-.select-container {
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;  /* Centra el contenedor */
-  width: 100%;
-  max-width: 400px;  /* Limitar el ancho del selector */
-  margin: 10px auto;  /* Centrado automático en pantalla */
-  position: relative;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-.select-container select {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: border-color 0.3s ease;
-  text-align: center;  /* Centrado del texto */
-}
-
-.select-container select:focus {
-  border-color: #007bff; /* Color al enfocar */
-  outline: none;
-}
-
-.select-container select::-webkit-scrollbar {
-  width: 8px;
-}
-
-.select-container select::-webkit-scrollbar-thumb {
-  background-color: #007bff;
+.modalContent {
+  background-color: white;
+  padding: 2rem;
   border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 800px;
 }
 
-.select-container select::-webkit-scrollbar-track {
-  background-color: #f1f1f1;
+.modalContent h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
 }
 
-/* Estilo cuando la lista es larga */
-.select-container select {
-  max-height: 200px;  /* Establecer una altura máxima */
-  overflow-y: auto;  /* Hacer que el contenido sea desplazable */
+.inputGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Dos inputs por fila, cada uno ocupa el 50% del ancho */
+  gap: 1rem; /* Espacio entre los inputs */
 }
 
-.select-container option {
-  padding: 8px;
-  font-size: 16px;
+.input {
+  width: 100%; /* Se ajustan a todo el ancho disponible */
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem; /* Espacio entre inputs */
 }
 
-/* Asegúrate de que el formulario se vea bien en dispositivos móviles */
-@media (max-width: 600px) {
-  .select-container {
-    max-width: 100%;  /* Los selectores ocuparán todo el ancho en pantallas pequeñas */
+.select {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+/* Cambios responsivos */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+    max-width: 100%;
   }
 
-  .select-container select {
-    font-size: 14px;  /* Ajustar el tamaño de la fuente en dispositivos pequeños */
+  .formContainer {
+    flex-direction: column;
+  }
+
+  .tableContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block; /* Hace que la tabla sea desplazable horizontalmente */
+  }
+
+  .table {
+    min-width: 600px; /* Ajusta el mínimo para que el contenido se vea correctamente */
+  }
+
+  /* Reducción del tamaño de las celdas y los textos en pantallas pequeñas */
+  .table th, .table td {
+    padding: 8px;
+    font-size: 12px; /* Reducir el tamaño de la fuente para móviles */
+  }
+
+
+  .input, .select, .submitButton {
+    font-size: 1rem;
+  }
+
+  .inputGroup {
+    grid-template-columns: 1fr; /* En pantallas pequeñas, los inputs se alinearán en una sola columna */
   }
 }
-
-
