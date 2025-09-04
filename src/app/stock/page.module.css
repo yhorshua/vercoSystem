@@ -96,8 +96,7 @@
   overflow-x: auto;
   margin-top: 20px;
   -webkit-overflow-scrolling: touch;
-  display: flex;
-  justify-content: center;
+  display: block; /* Cambié de flex a block para evitar problemas de centrado */
 }
 
 /* Tabla responsiva */

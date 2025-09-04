@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useReactTable, createColumnHelper, getCoreRowModel, getSortedRowModel, flexRender } from '@tanstack/react-table';
 import styles from './page.module.css';
 
@@ -20,7 +19,6 @@ interface StockItem {
 }
 
 export default function StockTable({ data }: { data: StockItem[] }) {
-  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]); // Aseguramos que 'sorting' tenga el tipo correcto
   const columnHelper = createColumnHelper<StockItem>();
 
   const columns = [
@@ -48,10 +46,6 @@ export default function StockTable({ data }: { data: StockItem[] }) {
   const table = useReactTable({
     data,
     columns,
-    state: {
-      sorting,
-    },
-    onSortingChange: setSorting, // Ahora 'onSortingChange' usa correctamente 'setSorting'
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
