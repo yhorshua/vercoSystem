@@ -13,11 +13,9 @@
   color: #003366;
 }
 
-
 .label {
   font-weight: bold;
 }
-
 
 .tableContainer {
   overflow-x: auto;
@@ -79,29 +77,6 @@
   background-color: #c82333;
 }
 
-@media screen and (max-width: 768px) {
-  .heading {
-    font-size: 1.5rem;
-  }
-
-  .tableContainer {
-    padding: 0.5rem;
-  }
-
-  .table th,
-  .table td {
-    padding: 0.3rem 0.5rem;
-    font-size: 0.85rem;
-    width: 100%;
-  }
-
-  .button {
-    font-size: 0.8rem;
-    padding: 0.3rem 0.6rem;
-  }
-}
-
-
 .approveButton {
   background-color: #28a745;
   color: white;
@@ -135,4 +110,74 @@
   background-color: #dc3545;
   color: white;
   margin-left: 4px;
+}
+
+/* Estilos para los filtros de búsqueda */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  justify-content: flex-start;
+}
+
+.input {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.inputField {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 250px;
+  margin-right: 1rem;
+}
+
+.inputField:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+}
+
+/* Cambios responsivos */
+@media screen and (max-width: 768px) {
+  .heading {
+    font-size: 1.5rem;
+  }
+
+  .tableContainer {
+    padding: 0.5rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  .button {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  /* Filtros responsivos */
+  .filters {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .inputField {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .input {
+    width: 100%;
+    max-width: 300px;
+  }
 }

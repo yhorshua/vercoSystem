@@ -23,6 +23,8 @@ interface Pedido {
   totalUnidades: number;
   totalPrecio: number;
   estado: 'Pendiente' | 'Aprobado' | 'Alistado' | 'Anulado' | 'Facturado';
+  fechaRegistro: string; // Añadimos fecha de registro para el filtro
+  vendedor: string; // Vendedor que gestionó el pedido
   items: {
     codigo: string;
     descripcion: string;
@@ -37,6 +39,9 @@ export default function OrderListPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
   const [pedidoEnPicking, setPedidoEnPicking] = useState<Pedido | null>(null);
+  const [search, setSearch] = useState(''); // Filtro por cliente
+  const [searchDate, setSearchDate] = useState(''); // Filtro por fecha
+  const [searchVendedor, setSearchVendedor] = useState(''); // Filtro por vendedor
 
   // Accedemos al contexto para obtener el rol del usuario
   const { userArea: rolUsuario } = useUser(); // El rol viene del contexto
@@ -120,27 +125,73 @@ export default function OrderListPage() {
     });
   };
 
+  // Filtrado de artículos basado en la búsqueda
+  const filtered = pedidos.filter((pedido) => {
+    const clienteCodigo = pedido.cliente.codigo || '';
+    const clienteNombre = pedido.cliente.nombre.toLowerCase() || '';
+    const fechaRegistro = pedido.fechaRegistro || '';
+    const vendedor = pedido.vendedor || '';
+
+    return (
+      (clienteCodigo.includes(search) || clienteNombre.includes(search.toLowerCase())) &&
+      (searchDate ? fechaRegistro.includes(searchDate) : true) &&
+      (searchVendedor ? vendedor.includes(searchVendedor) : true)
+    );
+  });
+
   return (
     <div className={styles.container}>
       <h1 className={styles.heading}>Lista de Pedidos</h1>
+
+      {/* Filtros de búsqueda */}
+      <div className={styles.filters}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value.toUpperCase())} // Actualiza el estado de 'search'
+          className={styles.inputField}
+          placeholder="Buscar por cliente (código o nombre)"
+        />
+        <input
+          type="date"
+          value={searchDate}
+          onChange={(e) => setSearchDate(e.target.value)} // Actualiza el estado de 'searchDate'
+          className={styles.inputField}
+          placeholder="Filtrar por fecha"
+        />
+        <select
+          value={searchVendedor}
+          onChange={(e) => setSearchVendedor(e.target.value)} // Actualiza el estado de 'searchVendedor'
+          className={styles.inputField}
+        >
+          <option value="">Seleccionar vendedor</option>
+          <option value="JOSE NIEVA">JOSE NIEVA</option>
+          <option value="MARIA PEREZ">MARIA PEREZ</option>
+          {/* Agregar más vendedores según sea necesario */}
+        </select>
+      </div>
 
       <div className={styles.tableContainer}>
         <table className={styles.table}>
           <thead>
             <tr>
+              <th>Vendedor</th>
               <th>Cliente</th>
               <th>Total Unidades</th>
               <th>Total Precio</th>
+              <th>Fecha de Registro</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {pedidos.map((pedido) => (
+            {filtered.map((pedido) => (
               <tr key={pedido.id}>
+                <td>{pedido.vendedor}</td>
                 <td>{pedido.cliente.nombre}</td>
                 <td>{pedido.totalUnidades}</td>
                 <td>{pedido.totalPrecio.toFixed(2)}</td>
+                <td>{pedido.fechaRegistro}</td>
                 <td>{pedido.estado}</td>
                 <td>
                   <button
