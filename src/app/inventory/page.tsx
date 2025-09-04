@@ -80,14 +80,14 @@ export default function StockPage() {
     }
 
     // Actualizar la cantidad del artículo en el stock
-   const updatedStock = stock.map(item => {
-  if (item.codigo === codigoArticulo) {
-    const updatedTallas = { ...item.tallas, [talla]: (item.tallas[talla] || 0) + 1 };
+    const updatedStock = stock.map(item => {
+      if (item.codigo === codigoArticulo) {
+        const updatedTallas = { ...item.tallas, [talla]: (item.tallas[talla] || 0) + 1 };
 
-    return { ...item, tallas: updatedTallas };
-  }
-  return item;
-});
+        return { ...item, tallas: updatedTallas };
+      }
+      return item;
+    });
 
     setStock(updatedStock); // Actualizar el estado del stock
     setCodigoBarras(''); // Limpiar el campo de código de barras
