@@ -129,7 +129,7 @@ export default function OrderListPage() {
   // Filtrado de artículos basado en la búsqueda
   const filtered = pedidos.filter((pedido) => {
     const clienteCodigo = pedido.cliente.codigo || '';
-    const clienteNombre = pedido.cliente.nombre.toLowerCase() || '';
+    const clienteNombre = pedido.cliente.nombre || '';
     const fechaRegistro = pedido.fechaRegistro || '';
     const vendedor = pedido.vendedor || '';
     const estado = pedido.estado || '';

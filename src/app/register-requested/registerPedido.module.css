@@ -17,7 +17,7 @@
 
 .inputGroup {
   display: grid;
-  grid-template-columns: 180px 1fr 140px 2fr 60px 1fr;
+  grid-template-columns: 180px 1fr 120px 1fr 120px 1fr;
   align-items: center;
   gap: 0.5rem 1rem;
   margin-bottom: 1rem;
@@ -181,6 +181,32 @@
   background-color: #089861;
 }
 
+
+.labelDocument {
+width: 100%;
+  grid-column: span 2;
+}
+
+.inputDocument {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.scanButton {
+  background-color: #007bff;
+  color: white;
+  padding: 0.5rem 1rem;
+  margin-left: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.scanButton:hover {
+  background-color: #0056b3;
+}
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .inputGroup {

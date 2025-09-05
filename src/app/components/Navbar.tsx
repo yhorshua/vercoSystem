@@ -68,6 +68,7 @@ const Navbar = () => {
             <Link href="/abono" className={style.navbarLink}>Registro de Abono</Link>
             <Link href="/qr" className={style.navbarLink}>Generador de etiquetas</Link>
             <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
+            <Link href="/sale" className={style.navbarLink}>Venta</Link>
 
             {/* Menú de reportes */}
             <div className={style.reportDropdown}>
@@ -135,6 +136,7 @@ const Navbar = () => {
               <Link href="/abono" className={style.navbarLink} onClick={handleLinkClick}>Registro de Abono</Link>
               <Link href="/qr" className={style.navbarLink} onClick={handleLinkClick}>Generador de etiquetas</Link>
               <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>Inventario</Link>
+              <Link href="/sale" className={style.navbarLink}>Venta</Link>
 
               {/* Menú de reportes en mobile */}
               <div className={style.reportDropdown}>
