@@ -5,8 +5,8 @@ import Swal from 'sweetalert2';
 import styles from '../register-requested/registerPedido.module.css';
 import PedidoTabla from '../register-requested/PedidoTabla';
 import { getProductoByCodigo } from '../register-requested/mockData';
-import { clientesMock, Cliente } from '../register-requested/./mockClientes';
-import { BrowserMultiFormatReader } from '@zxing/library'; // Importamos la librería para escanear
+import { clientesMock, Cliente } from '../register-requested/mockClientes';
+import { BrowserMultiFormatReader } from '@zxing/library'; // Importamos la librería para escanear códigos de barras
 
 interface Item {
   codigo: string;
@@ -34,97 +34,65 @@ export default function RegisterSalePage() {
   const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});  // Stock por talla
   const [items, setItems] = useState<Item[]>([]);
   const [scanning, setScanning] = useState(false); // Estado para manejar el escaneo
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Guardar el stream de la cámara
 
   // Función para manejar el tipo de documento
   const handleTipoDocumentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTipoDocumento(e.target.value);
   };
 
- const handleScanButtonClick = async () => {
-  setScanning(true);
-  try {
-    // Verificar si el navegador soporta getUserMedia
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error("La cámara no está disponible en este dispositivo.");
-    }
-
-    // Solicitar acceso a la cámara
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-    });
-
-    const videoElement = document.createElement("video");
-    videoElement.srcObject = stream;
-    videoElement.setAttribute("playsinline", "true");
-    videoElement.play();
-
-    const scanner = new BrowserMultiFormatReader();
-    scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
-      if (result) {
-        setCodigoArticulo(result.getText());
-        stopScanning(); // Detener el escaneo después de obtener el resultado
+  const handleScanButtonClick = async () => {
+    setScanning(true); // Activamos el escaneo
+    try {
+      // Verificar si el navegador soporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("La cámara no está disponible en este dispositivo.");
       }
-      if (error) {
-        console.error(error); // Manejar errores
-      }
-    });
-  } catch (error) {
-    // Aseguramos que 'error' sea tratado como un objeto de tipo Error
-    if (error instanceof Error) {
+
+      // Solicitar acceso a la cámara
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }, // Para usar la cámara trasera del dispositivo
+      });
+
+      // Asignamos el stream a un estado para poder visualizarlo
+      setCameraStream(stream);
+
+      // Crear un video element y asignar el stream
+      const videoElement = document.createElement('video');
+      videoElement.srcObject = stream;
+      videoElement.setAttribute('playsinline', 'true');
+      videoElement.play();
+
+      // Usar la librería ZXing para escanear el código
+      const scanner = new BrowserMultiFormatReader();
+      scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
+        if (result) {
+          setCodigoArticulo(result.getText()); // Al escanear el código, lo asignamos al estado
+          stopScanning(); // Detener el escaneo después de obtener el resultado
+        }
+        if (error) {
+          console.error(error); // Manejar errores
+        }
+      });
+    } catch (error) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.message || "No se pudo acceder a la cámara.",
+        text: error instanceof Error ? error.message : "Error al acceder a la cámara.",
       });
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Error desconocido",
-        text: "Ocurrió un error inesperado.",
-      });
+      stopScanning(); // Detener el escaneo si ocurre un error
     }
-    stopScanning();
-  }
-};
-
-  useEffect(() => {
-    if (scanning) {
-      const scanner = new BrowserMultiFormatReader();
-      
-      // Usamos la API getUserMedia para acceder a la cámara del dispositivo
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then((stream) => {
-          const videoElement = document.createElement('video');
-          videoElement.srcObject = stream;
-          videoElement.setAttribute('playsinline', 'true');
-          videoElement.play();
-
-          scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
-            if (result) {
-              setCodigoArticulo(result.getText()); // Establecer el código escaneado en el input
-              stopScanning(); // Detener el escaneo después de obtener el resultado
-            }
-            if (error) {
-              console.error(error); // Manejar errores
-            }
-          });
-        })
-        .catch((err) => console.error("Error al acceder a la cámara: ", err));
-    }
-
-    return () => {
-      // Limpiar scanner cuando el componente se desmonta o dejamos de escanear
-      setScanning(false);
-    };
-  }, [scanning]);
+  };
 
   const stopScanning = () => {
     setScanning(false); // Detener el escaneo
+    if (cameraStream) {
+      const tracks = cameraStream.getTracks();
+      tracks.forEach(track => track.stop()); // Detener la cámara
+    }
   };
 
-
-
-  
+  // Efecto para cargar el producto basado en el código escaneado
   useEffect(() => {
     const producto = getProductoByCodigo(codigoArticulo);
     if (producto) {
@@ -190,67 +158,15 @@ export default function RegisterSalePage() {
 
       {/* Campos adicionales cuando se selecciona DNI */}
       {tipoDocumento === 'DNI' && (
-        <>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>Nombres:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={nombres}
-              onChange={(e) => setNombres(e.target.value)}
-            />
-            <label className={styles.label}>Apellidos:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={apellidos}
-              onChange={(e) => setApellidos(e.target.value)}
-            />
-            <label className={styles.label}>Correo:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-            />
-            <label className={styles.label}>Celular:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={celular}
-              onChange={(e) => setCelular(e.target.value)}
-            />
-          </div>
-        </>
-      )}
-
-      {/* Campos adicionales cuando se selecciona RUC */}
-      {tipoDocumento === 'RUC' && (
-        <>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>Razón Social:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={nombres}  // Usamos 'nombres' para razón social
-              onChange={(e) => setNombres(e.target.value)}
-            />
-            <label className={styles.label}>Correo:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-            />
-            <label className={styles.label}>Celular:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={celular}
-              onChange={(e) => setCelular(e.target.value)}
-            />
-          </div>
-        </>
+        <div className={styles.inputGroup}>
+          <label className={styles.label}>Nombres:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={nombres}
+            onChange={(e) => setNombres(e.target.value)}
+          />
+        </div>
       )}
 
       {/* Código del artículo */}
@@ -262,13 +178,20 @@ export default function RegisterSalePage() {
           value={codigoArticulo}
           onChange={(e) => setCodigoArticulo(e.target.value.toUpperCase())}
         />
-       <button
-            className={styles.scanButton}
-            onClick={handleScanButtonClick}
-          >
-            {scanning ? 'Escaneando...' : 'Escanear Producto'}
-          </button>
+        <button
+          className={styles.scanButton}
+          onClick={handleScanButtonClick}
+        >
+          {scanning ? 'Escaneando...' : 'Escanear Producto'}
+        </button>
       </div>
+
+      {/* Mostrar video de la cámara mientras escaneamos */}
+      {scanning && (
+        <div className={styles.cameraContainer}>
+          <video id="camera" width="200" height="200" autoPlay></video>
+        </div>
+      )}
 
       <div className={styles.inputGroup}>
         <label className={styles.label}>Descripción:</label>
