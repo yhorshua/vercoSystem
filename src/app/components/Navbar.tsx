@@ -82,10 +82,16 @@ const Navbar = () => {
                   <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
                     Reporte por Vendedor
                   </Link>
-                  {/* Aquí puedes agregar más opciones de reportes */}
+                  <Link href="/report-pedidos" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Pedidos
+                  </Link>
+                  <Link href="/report-fechas" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Fecha
+                  </Link>
                 </div>
               )}
             </div>
+
           </>
         )}
       </div>
@@ -143,10 +149,16 @@ const Navbar = () => {
                     <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
                       Reporte por Vendedor
                     </Link>
-                    {/* Agregar más opciones de reportes si es necesario */}
+                    <Link href="/report-pedidos" className={style.navbarLink} onClick={handleLinkClick}>
+                      Reporte por Pedidos
+                    </Link>
+                    <Link href="/report-fechas" className={style.navbarLink} onClick={handleLinkClick}>
+                      Reporte por Fecha
+                    </Link>
                   </div>
                 )}
               </div>
+
             </>
           )}
         </div>
