@@ -38,50 +38,52 @@ export default function RegisterSalePage() {
   };
 
   const handleScanButtonClick = async () => {
-    if (scanning) return; // Evita abrir la cámara si ya está escaneando
-    setScanning(true); // Activamos el escaneo
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("La cámara no está disponible en este dispositivo.");
-      }
-
-      // Solicitar acceso a la cámara
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }, // Para usar la cámara trasera del dispositivo
-      });
-
-      // Asignamos el stream a un estado para poder visualizarlo
-      setCameraStream(stream);
-
-      // Crear un video element y asignar el stream
-      const videoElement = document.createElement('video');
-      videoElement.srcObject = stream;
-      videoElement.setAttribute('playsinline', 'true');  // Importante para que funcione en iPhone
-      videoElement.play();  // Inicia la reproducción
-      document.getElementById('camera-container')?.appendChild(videoElement);  // Asegúrate de que el contenedor existe
-
-      // Usar la librería ZXing para escanear el código
-      const scanner = new BrowserMultiFormatReader();
-      scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
-        if (result) {
-          setCodigoArticulo(result.getText()); // Al escanear el código, lo asignamos al estado
-          playBeepSound(); // Reproducir sonido de escaneo
-          stopScanning(); // Detener el escaneo después de obtener el resultado
-        }
-        if (error) {
-          console.error(error); // Manejar errores
-        }
-      });
-      setScannerInitialized(true);
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error instanceof Error ? error.message : "Error al acceder a la cámara.",
-      });
-      stopScanning(); // Detener el escaneo si ocurre un error
+  if (scanning) return; // Evita abrir la cámara si ya está escaneando
+  setScanning(true); // Activamos el escaneo
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("La cámara no está disponible en este dispositivo.");
     }
-  };
+
+    // Solicitar acceso a la cámara
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }, // Usar la cámara trasera
+    });
+
+    // Asignamos el stream a un estado para poder visualizarlo
+    setCameraStream(stream);
+
+    // Crear un video element y asignar el stream
+    const videoElement = document.createElement('video');
+    videoElement.srcObject = stream;
+    videoElement.setAttribute('playsinline', 'true');  // Importante para que funcione en iPhone
+    videoElement.play();  // Inicia la reproducción
+    document.getElementById('camera-container')?.appendChild(videoElement);  // Asegúrate de que el contenedor exista
+
+    // Usar la librería ZXing para escanear el código
+    const scanner = new BrowserMultiFormatReader();
+    scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
+      if (result) {
+        console.log('Escaneado exitoso', result); // Asegúrate de ver si llega el resultado
+        setCodigoArticulo(result.getText()); // Al escanear el código, lo asignamos al estado
+        playBeepSound(); // Reproducir sonido de escaneo
+        stopScanning(); // Detener el escaneo después de obtener el resultado
+      }
+      if (error) {
+        console.error('Error en escaneo', error); // Manejar errores y ver qué pasa en la consola
+      }
+    });
+    setScannerInitialized(true);
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error instanceof Error ? error.message : "Error al acceder a la cámara.",
+    });
+    stopScanning(); // Detener el escaneo si ocurre un error
+  }
+};
+
 
   const playBeepSound = () => {
     const beep = new Audio('/beep.mp3'); // Asegúrate de tener un archivo beep.mp3 en tu proyecto
