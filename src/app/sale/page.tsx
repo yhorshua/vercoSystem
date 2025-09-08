@@ -19,12 +19,7 @@ interface Item {
 
 export default function RegisterSalePage() {
   const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
-  const [showClienteModal, setShowClienteModal] = useState(false);
   const [tipoDocumento, setTipoDocumento] = useState<string>('');  // Tipo de documento (DNI, RUC, etc.)
-  const [nombres, setNombres] = useState<string>('');  // Nombres del cliente
-  const [apellidos, setApellidos] = useState<string>('');  // Apellidos del cliente
-  const [correo, setCorreo] = useState<string>('');  // Correo del cliente
-  const [celular, setCelular] = useState<string>('');  // Celular del cliente
   const [codigoArticulo, setCodigoArticulo] = useState('');  // Código del artículo
   const [descripcion, setDescripcion] = useState('');  // Descripción del artículo
   const [serie, setSerie] = useState('');  // Serie del artículo
@@ -35,6 +30,7 @@ export default function RegisterSalePage() {
   const [items, setItems] = useState<Item[]>([]);
   const [scanning, setScanning] = useState(false); // Estado para manejar el escaneo
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Guardar el stream de la cámara
+  const [scannerInitialized, setScannerInitialized] = useState(false); // Para controlar la inicialización del escáner
 
   // Función para manejar el tipo de documento
   const handleTipoDocumentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -42,9 +38,9 @@ export default function RegisterSalePage() {
   };
 
   const handleScanButtonClick = async () => {
+    if (scanning) return; // Evita abrir la cámara si ya está escaneando
     setScanning(true); // Activamos el escaneo
     try {
-      // Verificar si el navegador soporta getUserMedia
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("La cámara no está disponible en este dispositivo.");
       }
@@ -69,12 +65,14 @@ export default function RegisterSalePage() {
       scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
         if (result) {
           setCodigoArticulo(result.getText()); // Al escanear el código, lo asignamos al estado
+          playBeepSound(); // Reproducir sonido de escaneo
           stopScanning(); // Detener el escaneo después de obtener el resultado
         }
         if (error) {
           console.error(error); // Manejar errores
         }
       });
+      setScannerInitialized(true);
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -83,6 +81,11 @@ export default function RegisterSalePage() {
       });
       stopScanning(); // Detener el escaneo si ocurre un error
     }
+  };
+
+  const playBeepSound = () => {
+    const beep = new Audio('/beep.mp3'); // Asegúrate de tener un archivo beep.mp3 en tu proyecto
+    beep.play();
   };
 
   const stopScanning = () => {
@@ -143,31 +146,7 @@ export default function RegisterSalePage() {
     <div className={styles.container}>
       <h1 className={styles.heading}>Registrar Venta</h1>
 
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>Tipo de Documento:</label>
-        <select
-          className={`${styles.inputDocument} ${styles.labelDocument}`}
-          value={tipoDocumento}
-          onChange={handleTipoDocumentoChange}
-        >
-          <option value="">Seleccionar Tipo de Documento</option>
-          <option value="DNI">DNI</option>
-          <option value="RUC">RUC</option>
-          <option value="Carnet de Extranjería">Carnet de Extranjería</option>
-        </select>
-      </div>
-
-      {tipoDocumento === 'DNI' && (
-        <div className={styles.inputGroup}>
-          <label className={styles.label}>Nombres:</label>
-          <input
-            className={`${styles.inputDocument} ${styles.labelDocument}`}
-            type="text"
-            value={nombres}
-            onChange={(e) => setNombres(e.target.value)}
-          />
-        </div>
-      )}
+      {/* Aquí van los campos de tipo de documento, nombre, etc. */}
 
       <div className={styles.inputGroup}>
         <label className={styles.label}>Código del artículo:</label>
@@ -180,14 +159,22 @@ export default function RegisterSalePage() {
         <button
           className={styles.scanButton}
           onClick={handleScanButtonClick}
+          disabled={scanning}
         >
           {scanning ? 'Escaneando...' : 'Escanear Producto'}
         </button>
       </div>
 
+      {/* Mostrar cámara y el diseño de escáner con líneas rojas */}
       {scanning && (
         <div className={styles.cameraContainer} id="camera-container">
-          {/* Video de la cámara será mostrado aquí */}
+          <div className={styles.scannerOverlay}>
+            {/* Las líneas rojas para el área de escaneo */}
+            <div className={styles.redLineTop}></div>
+            <div className={styles.redLineBottom}></div>
+            <div className={styles.redLineLeft}></div>
+            <div className={styles.redLineRight}></div>
+          </div>
         </div>
       )}
 
@@ -200,6 +187,7 @@ export default function RegisterSalePage() {
         <input className={`${styles.input} ${styles.inputPrecio}`} type="number" value={precio} onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)} />
       </div>
 
+      {/* Cantidades por talla */}
       <div className={styles.tallasContainer}>
         <label className={styles.tallasLabel}>Cantidades por talla:</label>
         <div className={styles.tallasGrid}>
@@ -215,14 +203,6 @@ export default function RegisterSalePage() {
             </div>
           ))}
         </div>
-        <div className={styles.tallasGrid}>
-          {tallasDisponibles.map((talla) => (
-            <div key={talla} className={styles.tallaInput}>
-              <label className={styles.tallaLabel}>Stock {talla}</label>
-              <input className={styles.tallaField} type="number" value={stockPorTalla[talla]} readOnly />
-            </div>
-          ))}
-        </div>
       </div>
 
       <button
@@ -233,7 +213,7 @@ export default function RegisterSalePage() {
         Agregar al Pedido
       </button>
 
-      <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} /> {/* Aquí pasamos el cliente completo */}
+      <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} />
     </div>
   );
 }
