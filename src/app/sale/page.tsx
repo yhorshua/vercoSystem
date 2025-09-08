@@ -60,8 +60,9 @@ export default function RegisterSalePage() {
       // Crear un video element y asignar el stream
       const videoElement = document.createElement('video');
       videoElement.srcObject = stream;
-      videoElement.setAttribute('playsinline', 'true');
-      videoElement.play();
+      videoElement.setAttribute('playsinline', 'true');  // Importante para que funcione en iPhone
+      videoElement.play();  // Inicia la reproducción
+      document.getElementById('camera-container')?.appendChild(videoElement);  // Asegúrate de que el contenedor existe
 
       // Usar la librería ZXing para escanear el código
       const scanner = new BrowserMultiFormatReader();
@@ -156,7 +157,6 @@ export default function RegisterSalePage() {
         </select>
       </div>
 
-      {/* Campos adicionales cuando se selecciona DNI */}
       {tipoDocumento === 'DNI' && (
         <div className={styles.inputGroup}>
           <label className={styles.label}>Nombres:</label>
@@ -169,7 +169,6 @@ export default function RegisterSalePage() {
         </div>
       )}
 
-      {/* Código del artículo */}
       <div className={styles.inputGroup}>
         <label className={styles.label}>Código del artículo:</label>
         <input
@@ -186,10 +185,9 @@ export default function RegisterSalePage() {
         </button>
       </div>
 
-      {/* Mostrar video de la cámara mientras escaneamos */}
       {scanning && (
-        <div className={styles.cameraContainer}>
-          <video id="camera" width="200" height="200" autoPlay></video>
+        <div className={styles.cameraContainer} id="camera-container">
+          {/* Video de la cámara será mostrado aquí */}
         </div>
       )}
 
