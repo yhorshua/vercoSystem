@@ -36,7 +36,6 @@ export default function RegisterSalePage() {
   const handleTipoDocumentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTipoDocumento(e.target.value);
   };
-
 const handleScanButtonClick = async () => {
   if (scanning) return; // Evita abrir la cámara si ya está escaneando
   setScanning(true); // Activamos el escaneo
@@ -46,13 +45,13 @@ const handleScanButtonClick = async () => {
     }
 
     // Solicitar acceso a la cámara
-  const stream = await navigator.mediaDevices.getUserMedia({
-  video: {
-    facingMode: "environment",
-    width: { ideal: 1280 },  // Resolução mínima
-    height: { ideal: 720 }, // Resolução mínima
-  },
-});
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },  // Resolução mínima
+          height: { ideal: 720 }, // Resolução mínima
+        },
+      });
 
     // Asignamos el stream a un estado para poder visualizarlo
     setCameraStream(stream);
@@ -66,20 +65,36 @@ const handleScanButtonClick = async () => {
 
     // Usar la librería ZXing para escanear el código
     const scanner = new BrowserMultiFormatReader();
-    const scanInterval = setInterval(() => {
-      scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
-        if (result) {
-          console.log('Escaneado exitoso', result);
-          setCodigoArticulo(result.getText());
-          playBeepSound(); // Reproducir sonido de escaneo
-          stopScanning();
-          clearInterval(scanInterval); // Detener la búsqueda en intervalos
+    scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
+      if (result) {
+        console.log('Escaneado exitoso', result); // Asegúrate de ver si llega el resultado
+
+        const codigoCompleto = result.getText(); // Código completo escaneado
+
+        // Obtener los primeros 7 dígitos para el código de artículo
+        const codigoArticulo = codigoCompleto.substring(0, 7); // Los primeros 7 caracteres
+        setCodigoArticulo(codigoArticulo); // Asignamos al campo de código de artículo
+
+        // Obtener la talla de los dígitos 8 y 9
+        const tallaEscaneada = parseInt(codigoCompleto.substring(7, 9)); // Los dígitos 8 y 9
+
+        // Validar la talla
+        if (tallasDisponibles.includes(tallaEscaneada)) {
+          // Si la talla está en el rango de tallas disponibles, agregar 1 a esa talla
+          const cantidadActual = cantidades[tallaEscaneada] || 0;
+          setCantidades((prev) => ({
+            ...prev,
+            [tallaEscaneada]: cantidadActual + 1,
+          }));
         }
-        if (error) {
-          console.error('Error en escaneo', error);
-        }
-      });
-    }, 500); // Escanear cada 500ms, ajusta el intervalo según sea necesario
+
+        playBeepSound(); // Reproducir sonido de escaneo
+        stopScanning(); // Detener el escaneo después de obtener el resultado
+      }
+      if (error) {
+        console.error('Error en escaneo', error); // Manejar errores y ver qué pasa en la consola
+      }
+    });
 
   } catch (error) {
     Swal.fire({
@@ -87,10 +102,9 @@ const handleScanButtonClick = async () => {
       title: "Error",
       text: error instanceof Error ? error.message : "Error al acceder a la cámara.",
     });
-    stopScanning();
+    stopScanning(); // Detener el escaneo si ocurre un error
   }
 };
-
 
   const playBeepSound = () => {
     const beep = new Audio('/beep.mp3'); // Asegúrate de tener un archivo beep.mp3 en tu proyecto
