@@ -36,6 +36,7 @@ export default function RegisterSalePage() {
   const handleTipoDocumentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTipoDocumento(e.target.value);
   };
+  
 const handleScanButtonClick = async () => {
   if (scanning) return; // Evita abrir la cámara si ya está escaneando
   setScanning(true); // Activamos el escaneo
@@ -98,7 +99,7 @@ const handleScanButtonClick = async () => {
           console.error("Artículo no encontrado:", codigoArticulo);
         }
 
-        playBeepSound(); // Reproducir sonido de escaneo
+        playBeepSound(); // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
         stopScanning(); // Detener el escaneo después de obtener el resultado
       }
       if (error) {
