@@ -29,9 +29,8 @@ export default function RegisterSalePage() {
   const [scanning, setScanning] = useState(false); // Estado para manejar el escaneo
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Guardar el stream de la cámara
   const inputRef = useRef<HTMLInputElement>(null); // Referencia para el input de código de artículo
-    const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
+  const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
   const [tipoDocumento, setTipoDocumento] = useState<string>('');  // Tipo de documento (DNI, RUC, etc.)
-
 
   // Función para reproducir el sonido del escaneo (beep)
   const playBeepSound = () => {
@@ -163,14 +162,14 @@ export default function RegisterSalePage() {
     }
   }, [codigoArticulo]);
 
-    const handleCantidadChange = (talla: number, value: string) => {
+  const handleCantidadChange = (talla: number, value: string) => {
     const cantidad = parseInt(value) || 0;
     const disponible = stockPorTalla[talla] || 0;
     if (cantidad < 0 || cantidad > disponible) return;
     setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
   };
 
-const handleDeleteItem = (index: number) => {
+  const handleDeleteItem = (index: number) => {
     const nuevosItems = items.filter((_, i) => i !== index);
     setItems(nuevosItems);
   };
