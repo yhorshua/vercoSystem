@@ -125,24 +125,40 @@ export default function RegisterSalePage() {
     }
   };
 
-  // Manejador para detectar la entrada del lector de código de barras (por teclado)
-  const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const barcode = e.target.value.trim();  // Código escaneado
-    if (barcode.length >= 7) {
-      setCodigoArticulo(barcode.substring(0, 7)); // Obtener los primeros 7 caracteres
-      const tallaEscaneada = parseInt(barcode.substring(7, 9)); // Obtener los dígitos 8 y 9 (talla)
-      // Validar la talla y realizar la acción de agregar al stock
-      const producto = getProductoByCodigo(barcode.substring(0, 7));
-      if (producto && producto.stock[tallaEscaneada]) {
+ // Manejador para detectar la entrada del lector de código de barras (por teclado)
+const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const barcode = e.target.value.trim();  // Código escaneado
+
+  // Verificar que el código de barras tiene al menos 7 caracteres
+  if (barcode.length >= 7) {
+    setCodigoArticulo(barcode.substring(0, 7)); // Obtener los primeros 7 caracteres
+
+    // Obtener los dígitos 8 y 9 (talla)
+    const tallaEscaneada = parseInt(barcode.substring(7, 9)); 
+    
+    // Validar la talla y realizar la acción de agregar al stock
+    const producto = getProductoByCodigo(barcode.substring(0, 7));
+
+    if (producto) {
+      // Si el producto existe, validamos la talla
+      if (producto.stock[tallaEscaneada]) {
+        // Si la talla está disponible, agregar 1 a la cantidad
         const cantidadActual = cantidades[tallaEscaneada] || 0;
         setCantidades((prev) => ({
           ...prev,
           [tallaEscaneada]: cantidadActual + 1,
         }));
+      } else {
+        console.error("Talla no válida para este artículo:", tallaEscaneada);
       }
-      playBeepSound(); // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
+    } else {
+      console.error("Artículo no encontrado:", barcode);
     }
-  };
+
+    // Reproducir sonido solo cuando el escaneo fue exitoso
+    playBeepSound();
+  }
+};
 
   // Efecto para cargar el producto basado en el código escaneado
   useEffect(() => {
