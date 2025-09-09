@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import styles from '../register-requested/registerPedido.module.css';
 import PedidoTabla from '../register-requested/PedidoTabla';
@@ -18,8 +18,6 @@ interface Item {
 }
 
 export default function RegisterSalePage() {
-  const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
-  const [tipoDocumento, setTipoDocumento] = useState<string>('');  // Tipo de documento (DNI, RUC, etc.)
   const [codigoArticulo, setCodigoArticulo] = useState('');  // Código del artículo
   const [descripcion, setDescripcion] = useState('');  // Descripción del artículo
   const [serie, setSerie] = useState('');  // Serie del artículo
@@ -30,11 +28,10 @@ export default function RegisterSalePage() {
   const [items, setItems] = useState<Item[]>([]); 
   const [scanning, setScanning] = useState(false); // Estado para manejar el escaneo
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Guardar el stream de la cámara
+  const inputRef = useRef<HTMLInputElement>(null); // Referencia para el input de código de artículo
+    const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
+  const [tipoDocumento, setTipoDocumento] = useState<string>('');  // Tipo de documento (DNI, RUC, etc.)
 
-  // Función para manejar el tipo de documento
-  const handleTipoDocumentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTipoDocumento(e.target.value);
-  };
 
   // Función para reproducir el sonido del escaneo (beep)
   const playBeepSound = () => {
@@ -51,6 +48,7 @@ export default function RegisterSalePage() {
     }
   };
 
+  // Manejador para el escaneo usando la cámara
   const handleScanButtonClick = async () => {
     if (scanning) return; // Evita abrir la cámara si ya está escaneando
     setScanning(true); // Activamos el escaneo
@@ -61,11 +59,7 @@ export default function RegisterSalePage() {
 
       // Solicitar acceso a la cámara
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },  // Resolución mínima
-          height: { ideal: 720 }, // Resolución mínima
-        },
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
       });
 
       // Asignamos el stream a un estado para poder visualizarlo
@@ -106,15 +100,16 @@ export default function RegisterSalePage() {
                 [tallaEscaneada]: cantidadActual + 1,
               }));
             } else {
-              // Si la talla no está disponible
               console.error("Talla no válida para este artículo:", tallaEscaneada);
             }
           } else {
             console.error("Artículo no encontrado:", codigoArticulo);
           }
 
-          playBeepSound(); // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
-          stopScanning(); // Detener el escaneo después de obtener el resultado
+          // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
+          playBeepSound();
+          // Detener el escaneo después de obtener el resultado
+          stopScanning(); 
         }
 
         if (error) {
@@ -131,6 +126,26 @@ export default function RegisterSalePage() {
     }
   };
 
+  // Manejador para detectar la entrada del lector de código de barras (por teclado)
+  const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const barcode = e.target.value.trim();  // Código escaneado
+    if (barcode.length >= 7) {
+      setCodigoArticulo(barcode.substring(0, 7)); // Obtener los primeros 7 caracteres
+      const tallaEscaneada = parseInt(barcode.substring(7, 9)); // Obtener los dígitos 8 y 9 (talla)
+      // Validar la talla y realizar la acción de agregar al stock
+      const producto = getProductoByCodigo(barcode.substring(0, 7));
+      if (producto && producto.stock[tallaEscaneada]) {
+        const cantidadActual = cantidades[tallaEscaneada] || 0;
+        setCantidades((prev) => ({
+          ...prev,
+          [tallaEscaneada]: cantidadActual + 1,
+        }));
+      }
+      playBeepSound(); // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
+    }
+  };
+
+  // Efecto para cargar el producto basado en el código escaneado
   useEffect(() => {
     const producto = getProductoByCodigo(codigoArticulo);
     if (producto) {
@@ -148,14 +163,14 @@ export default function RegisterSalePage() {
     }
   }, [codigoArticulo]);
 
-  const handleCantidadChange = (talla: number, value: string) => {
+    const handleCantidadChange = (talla: number, value: string) => {
     const cantidad = parseInt(value) || 0;
     const disponible = stockPorTalla[talla] || 0;
     if (cantidad < 0 || cantidad > disponible) return;
     setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
   };
 
-  const handleDeleteItem = (index: number) => {
+const handleDeleteItem = (index: number) => {
     const nuevosItems = items.filter((_, i) => i !== index);
     setItems(nuevosItems);
   };
@@ -186,7 +201,7 @@ export default function RegisterSalePage() {
           className={styles.input}
           type="text"
           value={codigoArticulo}
-          onChange={(e) => setCodigoArticulo(e.target.value.toUpperCase())}
+          onChange={handleBarcodeInput}  // Detectar el código de barras de lectores
         />
         <button
           className={styles.scanButton}
