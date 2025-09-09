@@ -37,7 +37,7 @@ export default function RegisterSalePage() {
     setTipoDocumento(e.target.value);
   };
 
-  const handleScanButtonClick = async () => {
+const handleScanButtonClick = async () => {
   if (scanning) return; // Evita abrir la cámara si ya está escaneando
   setScanning(true); // Activamos el escaneo
   try {
@@ -46,9 +46,13 @@ export default function RegisterSalePage() {
     }
 
     // Solicitar acceso a la cámara
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }, // Usar la cámara trasera
-    });
+  const stream = await navigator.mediaDevices.getUserMedia({
+  video: {
+    facingMode: "environment",
+    width: { ideal: 1280 },  // Resolução mínima
+    height: { ideal: 720 }, // Resolução mínima
+  },
+});
 
     // Asignamos el stream a un estado para poder visualizarlo
     setCameraStream(stream);
@@ -62,25 +66,28 @@ export default function RegisterSalePage() {
 
     // Usar la librería ZXing para escanear el código
     const scanner = new BrowserMultiFormatReader();
-    scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
-      if (result) {
-        console.log('Escaneado exitoso', result); // Asegúrate de ver si llega el resultado
-        setCodigoArticulo(result.getText()); // Al escanear el código, lo asignamos al estado
-        playBeepSound(); // Reproducir sonido de escaneo
-        stopScanning(); // Detener el escaneo después de obtener el resultado
-      }
-      if (error) {
-        console.error('Error en escaneo', error); // Manejar errores y ver qué pasa en la consola
-      }
-    });
-    setScannerInitialized(true);
+    const scanInterval = setInterval(() => {
+      scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
+        if (result) {
+          console.log('Escaneado exitoso', result);
+          setCodigoArticulo(result.getText());
+          playBeepSound(); // Reproducir sonido de escaneo
+          stopScanning();
+          clearInterval(scanInterval); // Detener la búsqueda en intervalos
+        }
+        if (error) {
+          console.error('Error en escaneo', error);
+        }
+      });
+    }, 500); // Escanear cada 500ms, ajusta el intervalo según sea necesario
+
   } catch (error) {
     Swal.fire({
       icon: "error",
       title: "Error",
       text: error instanceof Error ? error.message : "Error al acceder a la cámara.",
     });
-    stopScanning(); // Detener el escaneo si ocurre un error
+    stopScanning();
   }
 };
 
