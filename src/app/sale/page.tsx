@@ -48,8 +48,8 @@ const handleScanButtonClick = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "environment",
-          width: { ideal: 1280 },  // Resolução mínima
-          height: { ideal: 720 }, // Resolução mínima
+          width: { ideal: 1280 },  // Resolución mínima
+          height: { ideal: 720 }, // Resolución mínima
         },
       });
 
@@ -76,16 +76,26 @@ const handleScanButtonClick = async () => {
         setCodigoArticulo(codigoArticulo); // Asignamos al campo de código de artículo
 
         // Obtener la talla de los dígitos 8 y 9
-        const tallaEscaneada = parseInt(codigoCompleto.substring(7, 9)); // Los dígitos 8 y 9
+        const tallaEscaneada = parseInt(codigoCompleto.substring(7, 9)); // Los dígitos 8 y 9 (talla)
 
-        // Validar la talla
-        if (tallasDisponibles.includes(tallaEscaneada)) {
-          // Si la talla está en el rango de tallas disponibles, agregar 1 a esa talla
-          const cantidadActual = cantidades[tallaEscaneada] || 0;
-          setCantidades((prev) => ({
-            ...prev,
-            [tallaEscaneada]: cantidadActual + 1,
-          }));
+        // Obtener las tallas disponibles del artículo escaneado
+        const producto = getProductoByCodigo(codigoArticulo); // Simulación de consulta a la base de datos
+
+        if (producto) {
+          // Validar si la talla escaneada está en las tallas disponibles para el artículo
+          if (producto.stock[tallaEscaneada]) {
+            // Si la talla está disponible en el stock, agregar 1 a la cantidad
+            const cantidadActual = cantidades[tallaEscaneada] || 0;
+            setCantidades((prev) => ({
+              ...prev,
+              [tallaEscaneada]: cantidadActual + 1,
+            }));
+          } else {
+            // Si la talla no está disponible
+            console.error("Talla no válida para este artículo:", tallaEscaneada);
+          }
+        } else {
+          console.error("Artículo no encontrado:", codigoArticulo);
         }
 
         playBeepSound(); // Reproducir sonido de escaneo
