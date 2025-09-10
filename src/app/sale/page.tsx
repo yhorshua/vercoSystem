@@ -29,12 +29,14 @@ export default function RegisterSalePage() {
   const [cantidades, setCantidades] = useState<Record<number, number>>({});  // Cantidades por talla
   const [tallasDisponibles, setTallasDisponibles] = useState<number[]>([]);  // Tallas disponibles
   const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});  // Stock por talla
-  const [items, setItems] = useState<Item[]>([]); 
+  const [items, setItems] = useState<Item[]>([]);
   const [scanning, setScanning] = useState(false); // Estado para manejar el escaneo
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Guardar el stream de la cámara
   const inputRef = useRef<HTMLInputElement>(null); // Referencia para el input de código de artículo
   const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
   const [tipoDocumento, setTipoDocumento] = useState<string>('');  // Tipo de documento (DNI, RUC, etc.)
+  const [numeroDocumento, setNumeroDocumento] = useState<string>('');  // Número de DNI o RUC
+
 
   // Función para reproducir el sonido del escaneo (beep)
   const playBeepSound = () => {
@@ -118,7 +120,7 @@ export default function RegisterSalePage() {
           // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
           playBeepSound();
           // Detener el escaneo después de obtener el resultado
-          stopScanning(); 
+          stopScanning();
         }
 
         if (error) {
@@ -173,7 +175,7 @@ export default function RegisterSalePage() {
     }
   }, [codigoArticulo]);
 
- const handleCantidadChange = (talla: number, value: string) => {
+  const handleCantidadChange = (talla: number, value: string) => {
     const cantidad = parseInt(value) || 0;
     const disponible = stockPorTalla[talla] || 0;
 
@@ -190,7 +192,7 @@ export default function RegisterSalePage() {
     setItems(nuevosItems);
   };
 
- const agregarItem = () => {
+  const agregarItem = () => {
     const total = Object.values(cantidades).reduce((sum, val) => sum + val, 0);
 
     // Verificar que no se superen los stocks
@@ -224,7 +226,7 @@ export default function RegisterSalePage() {
     <div className={styles.container}>
       <h1 className={styles.heading}>Registrar Venta</h1>
 
-        <div className={styles.inputGroup}>
+      <div className={styles.inputGroup}>
         <label className={styles.label}>Tipo de Documento:</label>
         <select
           className={`${styles.inputDocument} ${styles.labelDocument}`}
@@ -242,6 +244,13 @@ export default function RegisterSalePage() {
       {tipoDocumento === 'DNI' && (
         <>
           <div className={styles.inputGroup}>
+            <label className={styles.label}>Número de DNI:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="text"
+              value={numeroDocumento}
+              onChange={(e) => setNumeroDocumento(e.target.value)}
+            />
             <label className={styles.label}>Nombres:</label>
             <input
               className={`${styles.inputDocument} ${styles.labelDocument}`}
@@ -278,6 +287,13 @@ export default function RegisterSalePage() {
       {tipoDocumento === 'RUC' && (
         <>
           <div className={styles.inputGroup}>
+             <label className={styles.label}>Número de RUC:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="text"
+              value={numeroDocumento}
+              onChange={(e) => setNumeroDocumento(e.target.value)}
+            />
             <label className={styles.label}>Razón Social:</label>
             <input
               className={`${styles.inputDocument} ${styles.labelDocument}`}
