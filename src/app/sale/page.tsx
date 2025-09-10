@@ -224,7 +224,7 @@ export default function RegisterSalePage() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.heading}>Registrar Venta</h1>
+      <h1 className={styles.heading}>Registros de Ventas</h1>
 
       <div className={styles.inputGroup}>
         <label className={styles.label}>Tipo de Documento:</label>
