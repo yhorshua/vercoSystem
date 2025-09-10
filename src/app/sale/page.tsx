@@ -18,6 +18,10 @@ interface Item {
 }
 
 export default function RegisterSalePage() {
+  const [nombres, setNombres] = useState<string>('');  // Nombres del cliente
+  const [apellidos, setApellidos] = useState<string>('');  // Apellidos del cliente
+  const [correo, setCorreo] = useState<string>('');  // Correo del cliente
+  const [celular, setCelular] = useState<string>('');  // Celular del cliente
   const [codigoArticulo, setCodigoArticulo] = useState('');  // Código del artículo
   const [descripcion, setDescripcion] = useState('');  // Descripción del artículo
   const [serie, setSerie] = useState('');  // Serie del artículo
@@ -46,6 +50,12 @@ export default function RegisterSalePage() {
       tracks.forEach(track => track.stop()); // Detener la cámara
     }
   };
+
+  const handleTipoDocumentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTipoDocumento(e.target.value);
+  };
+
+
 
   // Manejador para el escaneo usando la cámara
   const handleScanButtonClick = async () => {
@@ -194,6 +204,85 @@ export default function RegisterSalePage() {
   return (
     <div className={styles.container}>
       <h1 className={styles.heading}>Registrar Venta</h1>
+
+        <div className={styles.inputGroup}>
+        <label className={styles.label}>Tipo de Documento:</label>
+        <select
+          className={`${styles.inputDocument} ${styles.labelDocument}`}
+          value={tipoDocumento}
+          onChange={handleTipoDocumentoChange}
+        >
+          <option value="">Seleccionar Tipo de Documento</option>
+          <option value="DNI">DNI</option>
+          <option value="RUC">RUC</option>
+          <option value="Carnet de Extranjería">Carnet de Extranjería</option>
+        </select>
+      </div>
+
+      {/* Campos adicionales cuando se selecciona DNI */}
+      {tipoDocumento === 'DNI' && (
+        <>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Nombres:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="text"
+              value={nombres}
+              onChange={(e) => setNombres(e.target.value)}
+            />
+            <label className={styles.label}>Apellidos:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="text"
+              value={apellidos}
+              onChange={(e) => setApellidos(e.target.value)}
+            />
+            <label className={styles.label}>Correo:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+            />
+            <label className={styles.label}>Celular:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="text"
+              value={celular}
+              onChange={(e) => setCelular(e.target.value)}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Campos adicionales cuando se selecciona RUC */}
+      {tipoDocumento === 'RUC' && (
+        <>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Razón Social:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="text"
+              value={nombres}  // Usamos 'nombres' para razón social
+              onChange={(e) => setNombres(e.target.value)}
+            />
+            <label className={styles.label}>Correo:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+            />
+            <label className={styles.label}>Celular:</label>
+            <input
+              className={`${styles.inputDocument} ${styles.labelDocument}`}
+              type="text"
+              value={celular}
+              onChange={(e) => setCelular(e.target.value)}
+            />
+          </div>
+        </>
+      )}
 
       <div className={styles.inputGroup}>
         <label className={styles.label}>Código del artículo:</label>
