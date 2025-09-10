@@ -9,6 +9,7 @@ import style from './page.module.css'; // Importamos los estilos de CSS Module
 // Definimos los roles como constantes
 const JEFEVEN = 'jefeVentas';
 const VENDEDO = 'vendedor';
+const TIENDA = 'tienda'; // Nuevo rol para tienda
 
 const Navbar = () => {
   const { username, userArea } = useUser(); // Accedemos al contexto para obtener el username y userArea
@@ -92,7 +93,38 @@ const Navbar = () => {
                 </div>
               )}
             </div>
+          </>
+        )}
 
+        {/* Menú Tienda (Solo Stock, Inventory, Sale y Reportes) */}
+        {userArea === TIENDA && (
+          <>
+            <Link href="/stock" className={style.navbarLink}>Stock</Link>
+            <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
+            <Link href="/sale" className={style.navbarLink}>Venta</Link>
+
+            {/* Menú de reportes */}
+            <div className={style.reportDropdown}>
+              <button onClick={toggleReportMenu} className={style.navbarLink}>
+                Reportes
+              </button>
+              {isReportOpen && (
+                <div className={style.dropdownMenu}>
+                  <Link href="/report-client" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Cliente
+                  </Link>
+                  <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Vendedor
+                  </Link>
+                  <Link href="/report-pedidos" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Pedidos
+                  </Link>
+                  <Link href="/report-fechas" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte por Fecha
+                  </Link>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

@@ -15,7 +15,7 @@ export default function LoginPage() {
   const { setUser } = useUser(); // Accede a setUser para actualizar los datos en el contexto
 
   const handleLogin = () => {
-    // Validación de las credenciales para los dos usuarios
+    // Validación de las credenciales para los tres roles
     if (username === 'ventas@verco.com.pe' && password === '123456') {
       // Si el usuario es 'ventas@verco.com.pe', asignar rol 'jefeVentas'
       setUser(username, 'jefeVentas');
@@ -31,6 +31,15 @@ export default function LoginPage() {
       Swal.fire({
         icon: 'success',
         title: '¡Bienvenido Vendedor!',
+        text: 'Has iniciado sesión correctamente.',
+      });
+      router.push('/home');
+    } else if (username === 'tienda@verco.com.pe' && password === '123456') {
+      // Si el usuario es 'tienda@verco.com.pe', asignar rol 'tienda'
+      setUser(username, 'tienda');
+      Swal.fire({
+        icon: 'success',
+        title: '¡Bienvenido Tienda!',
         text: 'Has iniciado sesión correctamente.',
       });
       router.push('/home');
