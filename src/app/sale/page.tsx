@@ -173,10 +173,15 @@ export default function RegisterSalePage() {
     }
   }, [codigoArticulo]);
 
-  const handleCantidadChange = (talla: number, value: string) => {
+ const handleCantidadChange = (talla: number, value: string) => {
     const cantidad = parseInt(value) || 0;
     const disponible = stockPorTalla[talla] || 0;
-    if (cantidad < 0 || cantidad > disponible) return;
+
+    if (cantidad < 0 || cantidad > disponible) {
+      // Si la cantidad es mayor que el stock, restablecer al máximo disponible
+      setCantidades((prev) => ({ ...prev, [talla]: disponible }));
+      return;
+    }
     setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
   };
 
@@ -185,8 +190,18 @@ export default function RegisterSalePage() {
     setItems(nuevosItems);
   };
 
-  const agregarItem = () => {
+ const agregarItem = () => {
     const total = Object.values(cantidades).reduce((sum, val) => sum + val, 0);
+
+    // Verificar que no se superen los stocks
+    for (const talla in cantidades) {
+      const cantidad = cantidades[parseInt(talla)];
+      if (cantidad > (stockPorTalla[parseInt(talla)] || 0)) {
+        alert(`La cantidad de talla ${talla} excede el stock disponible`);
+        return;
+      }
+    }
+
     if (!codigoArticulo || total === 0) return;
     const nuevoItem: Item = { codigo: codigoArticulo.toUpperCase(), descripcion, serie, precio, cantidades, total };
     setItems([...items, nuevoItem]);
@@ -199,7 +214,11 @@ export default function RegisterSalePage() {
     setStockPorTalla({});
   };
 
-  const botonAgregarDeshabilitado = !codigoArticulo || Object.values(cantidades).reduce((sum, val) => sum + val, 0) === 0;
+
+  const botonAgregarDeshabilitado =
+    !codigoArticulo ||
+    Object.values(cantidades).reduce((sum, val) => sum + val, 0) === 0 ||
+    Object.keys(cantidades).some((talla) => cantidades[parseInt(talla)] > stockPorTalla[parseInt(talla)]);
 
   return (
     <div className={styles.container}>
@@ -333,6 +352,14 @@ export default function RegisterSalePage() {
                 value={cantidades[talla] || ''}
                 onChange={(e) => handleCantidadChange(talla, e.target.value)}
               />
+            </div>
+          ))}
+        </div>
+        <div className={styles.tallasGrid}>
+          {tallasDisponibles.map((talla) => (
+            <div key={talla} className={styles.tallaInput}>
+              <label className={styles.tallaLabel}>Stock {talla}</label>
+              <input className={styles.tallaField} type="number" value={stockPorTalla[talla]} readOnly />
             </div>
           ))}
         </div>
