@@ -36,7 +36,11 @@ export default function RegisterSalePage() {
   const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
   const [tipoDocumento, setTipoDocumento] = useState<string>('');  // Tipo de documento (DNI, RUC, etc.)
   const [numeroDocumento, setNumeroDocumento] = useState<string>('');  // Número de DNI o RUC
-
+  const [accion, setAccion] = useState<string>('venta'); // "cambio" por defecto
+  const [descuento, setDescuento] = useState<number>(0); // Descuento en porcentaje
+  const [totalConDescuento, setTotalConDescuento] = useState<number>(0); // Total con descuento
+  const [metodoPago, setMetodoPago] = useState<string>('efectivo'); // Método de pago
+  const [tipoDocumentoVenta, setTipoDocumentoVenta] = useState<string>('boleta'); // Tipo de documento (Boleta o Factura)
 
   // Función para reproducir el sonido del escaneo (beep)
   const playBeepSound = () => {
@@ -137,6 +141,8 @@ export default function RegisterSalePage() {
     }
   };
 
+
+
   // Manejador para detectar la entrada del lector de código de barras (por teclado)
   const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const barcode = e.target.value.trim();  // Código escaneado
@@ -221,6 +227,41 @@ export default function RegisterSalePage() {
     !codigoArticulo ||
     Object.values(cantidades).reduce((sum, val) => sum + val, 0) === 0 ||
     Object.keys(cantidades).some((talla) => cantidades[parseInt(talla)] > stockPorTalla[parseInt(talla)]);
+  const handleDescuentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const descuentoSeleccionado = parseInt(e.target.value); // Valor del descuento seleccionado
+    setDescuento(descuentoSeleccionado); // Actualizar el estado del descuento
+
+    // Calcular el precio con descuento (por par)
+    const precioConDescuento = precio - (precio * (descuentoSeleccionado / 100)); // Precio con el descuento aplicado
+
+    // Calcular el total con descuento para la cantidad seleccionada (multiplicar por la cantidad total)
+    const cantidadTotal = Object.values(cantidades).reduce((sum, val) => sum + val, 0); // Obtener la cantidad total de pares
+
+    // Calcular el total con descuento basado en el precio con descuento por par
+    const totalConDescuento = precioConDescuento * cantidadTotal;
+
+    setTotalConDescuento(totalConDescuento); // Actualizar el total con descuento
+  };
+
+  // Si las cantidades cambian, recalcular el total con descuento
+  useEffect(() => {
+    // Recalcular el total con descuento cada vez que cambian las cantidades
+    const cantidadTotal = Object.values(cantidades).reduce((sum, val) => sum + val, 0); // Obtener la cantidad total de pares
+    const precioConDescuento = precio - (precio * (descuento / 100)); // Calcular el precio con descuento
+    const totalConDescuento = precioConDescuento * cantidadTotal; // Calcular el total con descuento
+
+    setTotalConDescuento(totalConDescuento); // Actualizar el total con descuento
+  }, [cantidades, descuento, precio]); // Dependencias para recalcular
+
+  const handleMetodoPagoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setMetodoPago(e.target.value); // Actualizar el método de pago seleccionado
+  };
+
+  const handleTipoDocumentoVentaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTipoDocumentoVenta(e.target.value); // Actualizar el tipo de documento (Boleta o Factura)
+  };
+
+
 
   return (
     <div className={styles.container}>
@@ -287,7 +328,7 @@ export default function RegisterSalePage() {
       {tipoDocumento === 'RUC' && (
         <>
           <div className={styles.inputGroup}>
-             <label className={styles.label}>Número de RUC:</label>
+            <label className={styles.label}>Número de RUC:</label>
             <input
               className={`${styles.inputDocument} ${styles.labelDocument}`}
               type="text"
@@ -355,6 +396,67 @@ export default function RegisterSalePage() {
         <label className={styles.label}>Precio Unitario:</label>
         <input className={`${styles.input} ${styles.inputPrecio}`} type="number" value={precio} onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)} />
       </div>
+
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>Descuento por par (%):</label>
+        <select
+          className={styles.input}
+          value={descuento} // Estado que guarda el descuento
+          onChange={handleDescuentoChange}
+        >
+          <option value="0">0%</option>
+          <option value="10">10%</option>
+          <option value="15">15%</option>
+          <option value="20">20%</option>
+          <option value="25">25%</option>
+          <option value="30">30%</option>
+          <option value="35">35%</option>
+          <option value="40">40%</option>
+          <option value="45">45%</option>
+          <option value="50">50%</option>
+        </select>
+
+        <div>
+          <label className={styles.label}>Total con descuento: </label>
+          <input
+            className={`${styles.input} ${styles.input}`}
+            value={totalConDescuento.toFixed(2)}  // Mostrar el total con descuento
+            readOnly
+          />
+
+        </div>
+      </div>
+
+      <div className={styles.inputGroup}>
+      
+        <label className={styles.label}>Método de Pago:</label>
+        <select
+          className={styles.input}
+          value={metodoPago}
+          onChange={handleMetodoPagoChange}
+        >
+          <option value="efectivo">Efectivo</option>
+          <option value="yape">Yape</option>
+          <option value="plin">Plin</option>
+          <option value="tarjetaDebito">Tarjeta Débito</option>
+          <option value="tarjetaCredito">Tarjeta Crédito</option>
+          <option value="yapeEfectivo">Yape/Efectivo</option>
+          <option value="obsequio">Obsequio</option>
+        </select>
+      </div>
+
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>Tipo de Documento:</label>
+        <select
+          className={styles.input}
+          value={tipoDocumentoVenta}
+          onChange={handleTipoDocumentoVentaChange}
+        >
+          <option value="boleta">Boleta</option>
+          <option value="factura">Factura</option>
+        </select>
+      </div>
+
 
       <div className={styles.tallasContainer}>
         <label className={styles.tallasLabel}>Cantidades por talla:</label>

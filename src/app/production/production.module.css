@@ -1,0 +1,137 @@
+/* Estilos base */
+.container {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.ingresoProduccionContainer {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 500px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Estilos para los campos de entrada */
+.input[type='text'],
+.input[type='number'] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.input[type='text']:focus,
+.input[type='number']:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.button {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+/* Estilos para los detalles del artículo */
+.articuloDetalles {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.articuloDetalles h3 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.articuloDetalles p {
+  color: #555;
+  font-size: 14px;
+}
+
+.articuloDetalles ul {
+  padding-left: 20px;
+  list-style-type: none;
+}
+
+.articuloDetalles ul li {
+  color: #555;
+  font-size: 14px;
+}
+
+/* Estilos para el contenedor de la tarjeta de producción */
+.cardContainer {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cardContainer input {
+  width: 80%;
+  padding: 10px;
+  font-size: 16px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.cardContainer button {
+  margin-top: 10px;
+  background-color: #28a745;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 5px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+
+.cardContainer button:hover {
+  background-color: #218838;
+}
+
+/* Estilos para el mensaje de error o éxito */
+.swal2-popup {
+  font-size: 16px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.swal2-title {
+  font-size: 18px;
+  color: #333;
+  text-align: center;
+}
+
+.swal2-content {
+  font-size: 14px;
+  color: #555;
+}
