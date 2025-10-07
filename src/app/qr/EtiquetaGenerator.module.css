@@ -1,17 +1,19 @@
 .container {
     display: flex;
-    justify-content: center; /* Centra horizontalmente */
-    align-items: center; /* Centra verticalmente */
+    justify-content: center;
+    align-items: flex-start;
     padding: 20px;
     background: #f4f6f9;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .card {
     background: white;
     border-radius: 12px;
-    padding: 30px;
-    width: 100%; /* Asegura que la tarjeta use el ancho disponible */
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .title {
@@ -51,40 +53,44 @@
 }
 
 .inputSmall {
-    width: 140px; /* Aumenta el tamaño del input */
-    padding: 8px 12px;
+    width: 150px;
+    margin: 5px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 14px;
 }
 
-.tallaRow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+.inputLarge {
+    width: 300px;
+    padding: 10px;
+    margin: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.categoriaSelect {
+    margin: 10px 0;
+}
+
+.tallasWrapper {
+    margin-top: 10px;
+}
+
+.tallasGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
 }
 
 .tallaInputs {
     display: flex;
-    flex-direction: column; /* Para apilar los campos verticalmente */
+    flex-direction: column;
     gap: 8px;
-    width: 100%;  /* Asegura que ocupe todo el ancho disponible */
-    max-width: 120px;  /* Limita el ancho máximo de los inputs */
+    max-width: 120px;
 }
 
-.inputSmall {
-    width: 100%; /* Asegura que los inputs ocupen todo el ancho disponible */
-}
-.btnSize {
-    background: #0ac013;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 10px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
 .btnDelete {
     background: #f44336;
     color: white;
@@ -93,6 +99,7 @@
     padding: 6px 10px;
     cursor: pointer;
     transition: background 0.2s ease;
+    margin-top: 15px;
 }
 
 .btnDelete:hover {
