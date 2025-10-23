@@ -19,6 +19,7 @@ export default function LoginPage() {
 
       // Guarda token en localStorage (opcional)
       localStorage.setItem('access_token', data.access_token);
+      document.cookie = `access_token=${data.access_token}; path=/; max-age=86400;`; // dura 1 día
 
       // Actualiza contexto global
       setUser({

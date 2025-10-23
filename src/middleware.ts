@@ -3,11 +3,14 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('access_token')?.value || null;
-
-  // ✅ Rutas públicas donde no se necesita token
   const publicPaths = ['/login', '/register'];
 
-  // Si no hay token y la ruta no es pública, redirige al login
+  // Si ya tiene token e intenta ir al login, mándalo al home
+  if (token && request.nextUrl.pathname === '/login') {
+    return NextResponse.redirect(new URL('/home', request.url));
+  }
+
+  // Si no tiene token y no está en una ruta pública, redirigir al login
   if (!token && !publicPaths.includes(request.nextUrl.pathname)) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
@@ -15,7 +18,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// ✅ Aplica el middleware a todas las rutas excepto las públicas
+// Aplica a todas las rutas menos las públicas
 export const config = {
   matcher: ['/((?!login|register|_next|api|favicon.ico|img).*)'],
 };
