@@ -1,52 +1,58 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-// Definimos el tipo para el contexto
-interface UserContextType {
-  username: string;
-  userArea: 'jefeVentas' | 'vendedor' | 'tienda'; // Añadido el rol "tienda"
-  setUser: (username: string, userArea: 'jefeVentas' | 'vendedor' | 'tienda') => void; // Actualizado para aceptar "tienda"
+// 🔹 Definimos el tipo de usuario
+export interface User {
+  email: string;
+  fullName: string;
+  role: string;
+  token: string;
 }
 
-// Creamos el contexto
+// 🔹 Definimos el tipo del contexto
+interface UserContextType {
+  user: User | null;
+  setUser: (user: User | null) => void;
+  logout: () => void;
+}
+
+// 🔹 Creamos el contexto
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Componente que proporciona el contexto
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [username, setUsername] = useState<string>('');
-  const [userArea, setUserArea] = useState<'jefeVentas' | 'vendedor' | 'tienda'>('vendedor'); // rol predeterminado actualizado
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
 
-  // Recuperar del localStorage al cargar la página
+  // ✅ Recuperar usuario del localStorage si existe
   useEffect(() => {
-    const storedUsername = localStorage.getItem('username');
-    const storedUserArea = localStorage.getItem('userArea') as 'jefeVentas' | 'vendedor' | 'tienda'; // Permitimos "tienda" también
-    if (storedUsername && storedUserArea) {
-      setUsername(storedUsername);
-      setUserArea(storedUserArea);
+    const token = localStorage.getItem('access_token');
+    const savedUser = localStorage.getItem('user_data');
+
+    if (token && savedUser) {
+      setUser(JSON.parse(savedUser));
     }
   }, []);
 
-  // Función que actualiza el contexto y también guarda en localStorage
-  const setUser = (username: string, userArea: 'jefeVentas' | 'vendedor' | 'tienda') => {
-    localStorage.setItem('username', username);
-    localStorage.setItem('userArea', userArea);
-    setUsername(username);
-    setUserArea(userArea);
+  // ✅ Cerrar sesión
+  const logout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_data');
+    setUser(null);
+    router.push('/login');
   };
 
   return (
-    <UserContext.Provider value={{ username, userArea, setUser }}>
+    <UserContext.Provider value={{ user, setUser, logout }}>
       {children}
     </UserContext.Provider>
   );
 };
 
-// Hook para acceder al contexto en cualquier parte de la aplicación
+// 🔹 Hook para usar el contexto
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
+  if (!context) throw new Error('useUser debe usarse dentro de UserProvider');
   return context;
 };

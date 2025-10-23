@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const { username } = useUser();
+  const { user } = useUser(); // ✅ ahora tomamos 'user'
   const pathname = usePathname();
 
-  const showNavbar = pathname !== '/login' && !!username;
+  // ✅ mostramos navbar solo si hay usuario logueado
+  const showNavbar = pathname !== '/login' && !!user;
 
   return (
     <>

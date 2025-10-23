@@ -4,50 +4,42 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Swal from 'sweetalert2';
-import { useUser } from '../context/UserContext'; // Importamos el hook del contexto
+import { useUser } from '../context/UserContext';
+import { loginService } from '../services/authServices';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { setUser } = useUser();
 
-  // Accedemos al contexto para poder actualizar los datos del usuario
-  const { setUser } = useUser(); // Accede a setUser para actualizar los datos en el contexto
+  const handleLogin = async () => {
+    try {
+      const data = await loginService(email, password);
 
-  const handleLogin = () => {
-    // Validación de las credenciales para los tres roles
-    if (username === 'ventas@verco.com.pe' && password === '123456') {
-      // Si el usuario es 'ventas@verco.com.pe', asignar rol 'jefeVentas'
-      setUser(username, 'jefeVentas');
+      // Guarda token en localStorage (opcional)
+      localStorage.setItem('access_token', data.access_token);
+
+      // Actualiza contexto global
+      setUser({
+        email: data.user.email,
+        fullName: data.user.full_name,
+        role: data.user.role.name_role,
+        token: data.access_token,
+      });
+
       Swal.fire({
         icon: 'success',
-        title: '¡Bienvenido Jefe de Ventas!',
+        title: `¡Bienvenido ${data.user.role.name_role}!`,
         text: 'Has iniciado sesión correctamente.',
       });
+
       router.push('/home');
-    } else if (username === 'vendedor@verco.com.pe' && password === '123456') {
-      // Si el usuario es 'vendedor@verco.com.pe', asignar rol 'vendedor'
-      setUser(username, 'vendedor');
-      Swal.fire({
-        icon: 'success',
-        title: '¡Bienvenido Vendedor!',
-        text: 'Has iniciado sesión correctamente.',
-      });
-      router.push('/home');
-    } else if (username === 'tienda@verco.com.pe' && password === '123456') {
-      // Si el usuario es 'tienda@verco.com.pe', asignar rol 'tienda'
-      setUser(username, 'tienda');
-      Swal.fire({
-        icon: 'success',
-        title: '¡Bienvenido Tienda!',
-        text: 'Has iniciado sesión correctamente.',
-      });
-      router.push('/home');
-    } else {
+    } catch (error: any) {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'Credenciales incorrectas',
+        text: error.message || 'Credenciales incorrectas',
       });
     }
   };
@@ -55,19 +47,16 @@ export default function LoginPage() {
   return (
     <div className="login-container">
       <div className="logo">
-        <Image
-          src="/img/verco_logo.png" // Asegúrate de tener el logo en la carpeta public
-          alt="VERCO Logo"
-          width={200}
-          height={200}
-        />
+        <Image src="/img/verco_logo.png" alt="VERCO Logo" width={200} height={200} />
       </div>
+
       <h2 className="title">Iniciar sesión</h2>
+
       <input
         type="text"
-        placeholder="Usuario"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Correo electrónico"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         className="input-field"
       />
       <input
@@ -77,6 +66,7 @@ export default function LoginPage() {
         onChange={(e) => setPassword(e.target.value)}
         className="input-field"
       />
+
       <button onClick={handleLogin} className="login-button">
         Iniciar sesión
       </button>
