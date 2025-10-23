@@ -31,7 +31,7 @@ export default function LoginPage() {
 
       Swal.fire({
         icon: 'success',
-        title: `¡Bienvenido ${data.user.role.name_role}!`,
+        title: `¡Bienvenido ${data.user.full_name}!`,
         text: 'Has iniciado sesión correctamente.',
       });
 
