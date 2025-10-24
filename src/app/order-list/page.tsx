@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Swal from 'sweetalert2';
 import styles from './orderList.module.css';
 import PedidoDetalleModal from './PedidoDetalleModal';
-import Swal from 'sweetalert2';
-import { generarProformaPDF } from '../utils/pdfGenerator';
 import PickingModal from './PickingModal';
-import { useUser } from '../context/UserContext'; // Usar el contexto de usuario para obtener el rol
+import { generarProformaPDF } from '../utils/pdfGenerator';
+import { useUser } from '../context/UserContext';
 
-// Definimos los roles como constantes
-const JEFEVEN = 'jefeVentas';
+const JEFEVEN = 'jefeventas';
 const VENDEDO = 'vendedor';
 
 interface Pedido {
@@ -23,8 +23,8 @@ interface Pedido {
   totalUnidades: number;
   totalPrecio: number;
   estado: 'Pendiente' | 'Aprobado' | 'Alistado' | 'Anulado' | 'Facturado';
-  fechaRegistro: string; // Añadimos fecha de registro para el filtro
-  vendedor: string; // Vendedor que gestionó el pedido
+  fechaRegistro: string;
+  vendedor: string;
   items: {
     codigo: string;
     descripcion: string;
@@ -32,25 +32,35 @@ interface Pedido {
     precio: number;
     total: number;
     cantidades: Record<number, number>;
-  }[]; 
+  }[];
 }
 
 export default function OrderListPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
   const [pedidoEnPicking, setPedidoEnPicking] = useState<Pedido | null>(null);
-  const [search, setSearch] = useState(''); // Filtro por cliente
-  const [searchDate, setSearchDate] = useState(''); // Filtro por fecha
-  const [searchVendedor, setSearchVendedor] = useState(''); // Filtro por vendedor
-  const [searchEstado, setSearchEstado] = useState(''); // Filtro por estado
+  const [search, setSearch] = useState('');
+  const [searchDate, setSearchDate] = useState('');
+  const [searchVendedor, setSearchVendedor] = useState('');
+  const [searchEstado, setSearchEstado] = useState('');
+  const { user } = useUser();
+  const router = useRouter();
 
-  // Accedemos al contexto para obtener el rol del usuario
-  const { userArea: rolUsuario } = useUser(); // El rol viene del contexto
+  const rolUsuario = user?.role?.toLowerCase() || '';
 
+  // Proteger acceso sin token
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      router.push('/login');
+    }
+  }, [router]);
+
+  // Cargar pedidos almacenados
   useEffect(() => {
     const data = JSON.parse(localStorage.getItem('pedidos') || '[]');
     setPedidos(data);
-  }, []); // Solo cargar los pedidos
+  }, []);
 
   const actualizarEstadoPedido = (id: string, nuevoEstado: Pedido['estado']) => {
     const actualizados = pedidos.map((pedido) =>
@@ -126,7 +136,7 @@ export default function OrderListPage() {
     });
   };
 
-  // Filtrado de artículos basado en la búsqueda
+  // Filtrado
   const filtered = pedidos.filter((pedido) => {
     const clienteCodigo = pedido.cliente.codigo || '';
     const clienteNombre = pedido.cliente.nombre || '';
@@ -146,35 +156,33 @@ export default function OrderListPage() {
     <div className={styles.container}>
       <h1 className={styles.heading}>Lista de Pedidos</h1>
 
-      {/* Filtros de búsqueda */}
+      {/* Filtros */}
       <div className={styles.filters}>
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value.toUpperCase())} // Actualiza el estado de 'search'
+          onChange={(e) => setSearch(e.target.value.toUpperCase())}
           className={styles.inputField}
-          placeholder="Buscar por cliente (código o nombre)"
+          placeholder="Buscar por cliente"
         />
         <input
           type="date"
           value={searchDate}
-          onChange={(e) => setSearchDate(e.target.value)} // Actualiza el estado de 'searchDate'
+          onChange={(e) => setSearchDate(e.target.value)}
           className={styles.inputField}
-          placeholder="Filtrar por fecha"
         />
         <select
           value={searchVendedor}
-          onChange={(e) => setSearchVendedor(e.target.value)} // Actualiza el estado de 'searchVendedor'
+          onChange={(e) => setSearchVendedor(e.target.value)}
           className={styles.inputField}
         >
           <option value="">Seleccionar vendedor</option>
           <option value="JOSE NIEVA">JOSE NIEVA</option>
           <option value="MARIA PEREZ">MARIA PEREZ</option>
-          {/* Agregar más vendedores según sea necesario */}
         </select>
         <select
           value={searchEstado}
-          onChange={(e) => setSearchEstado(e.target.value)} // Actualiza el estado de 'searchEstado'
+          onChange={(e) => setSearchEstado(e.target.value)}
           className={styles.inputField}
         >
           <option value="">Seleccionar estado</option>
@@ -194,7 +202,7 @@ export default function OrderListPage() {
               <th>Cliente</th>
               <th>Total Unidades</th>
               <th>Total Precio</th>
-              <th>Fecha de Registro</th>
+              <th>Fecha</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
@@ -216,7 +224,6 @@ export default function OrderListPage() {
                     Detalle
                   </button>
 
-                  {/* Mostrar botones si el rol es 'jefeVentas' */}
                   {rolUsuario === JEFEVEN && pedido.estado === 'Pendiente' && (
                     <button
                       onClick={() => handleAprobar(pedido.id)}
@@ -226,7 +233,6 @@ export default function OrderListPage() {
                     </button>
                   )}
 
-                  {/* Mostrar botones para 'jefeVentas' cuando el pedido está aprobado */}
                   {rolUsuario === JEFEVEN && pedido.estado === 'Aprobado' && (
                     <>
                       <button
@@ -235,21 +241,18 @@ export default function OrderListPage() {
                       >
                         Picking
                       </button>
-
                       <button
                         onClick={() => generarGuiaInterna(pedido)}
                         className={`${styles.button} ${styles.guiaButton}`}
                       >
                         Guía Interna
                       </button>
-
                       <button
                         onClick={() => emitirFactura(pedido)}
                         className={`${styles.button} ${styles.facturaButton}`}
                       >
-                        Emitir Factura
+                        Factura
                       </button>
-
                       <button
                         onClick={() => emitirGuiaRemision(pedido)}
                         className={`${styles.button} ${styles.guiaRemisionButton}`}
@@ -259,16 +262,16 @@ export default function OrderListPage() {
                     </>
                   )}
 
-                  {/* Mostrar botón de anulación si el rol es 'vendedor' o 'jefeVentas' */}
-                  {(rolUsuario === VENDEDO || rolUsuario === JEFEVEN) && pedido.estado !== 'Aprobado' && (
-                    <button
-                      onClick={() => handleAnular(pedido.id)}
-                      className={`${styles.button} ${styles.cancelButton}`}
-                      disabled={pedido.estado === 'Anulado'}
-                    >
-                      Anular
-                    </button>
-                  )}
+                  {(rolUsuario === VENDEDO || rolUsuario === JEFEVEN) &&
+                    pedido.estado !== 'Aprobado' && (
+                      <button
+                        onClick={() => handleAnular(pedido.id)}
+                        className={`${styles.button} ${styles.cancelButton}`}
+                        disabled={pedido.estado === 'Anulado'}
+                      >
+                        Anular
+                      </button>
+                    )}
                 </td>
               </tr>
             ))}
@@ -277,10 +280,7 @@ export default function OrderListPage() {
       </div>
 
       {pedidoSeleccionado && (
-        <PedidoDetalleModal
-          pedido={pedidoSeleccionado}
-          onClose={() => setPedidoSeleccionado(null)}
-        />
+        <PedidoDetalleModal pedido={pedidoSeleccionado} onClose={() => setPedidoSeleccionado(null)} />
       )}
 
       {pedidoEnPicking && (
