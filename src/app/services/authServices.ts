@@ -14,9 +14,9 @@ export interface LoginResponse {
     state_user: boolean;
   };
 }
-
+//https://backend-api-verco-577899268055.us-central1.run.app/auth/login
 export const loginService = async (email: string, password: string): Promise<LoginResponse> => {
-  const response = await fetch("https://backend-api-verco-577899268055.us-central1.run.app/auth/login", {
+  const response = await fetch("", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
