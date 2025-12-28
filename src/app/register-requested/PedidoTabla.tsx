@@ -9,7 +9,7 @@ import {
 import Swal from 'sweetalert2';
 import styles from './registerPedido.module.css';
 import { useMemo, useState } from 'react';
-import type { ItemUI } from '../sale/types';
+import type { ItemUI } from '../components/types';
 
 import { registerSale, CreateSalePayload, type PaymentMethod } from '../services/saleServices';
 
@@ -30,9 +30,7 @@ type PedidoTablaProps = {
   items: ItemUI[];
   onDelete: (index: number) => void;
   cliente: Cliente | null;
-
   user: { token: string; warehouseId: number; userId: number } | null;
-
   onSaleRegistered?: () => void;
 };
 
@@ -271,11 +269,11 @@ export default function PedidoTabla({
           ? { numeroOperacion: numeroOperacion.trim() }
           : payment_method === 'yapeEfectivo'
             ? {
-                yapeMonto: montoYapeNum,
-                yapeOperacion: operacionYape.trim(),
-                efectivoEntregadoMixto: efectivoEntregadoMixtoNum,
-                vueltoMixto: vueltoMixto,
-              }
+              yapeMonto: montoYapeNum,
+              yapeOperacion: operacionYape.trim(),
+              efectivoEntregadoMixto: efectivoEntregadoMixtoNum,
+              vueltoMixto: vueltoMixto,
+            }
             : payment_method === 'obsequio'
               ? { motivoObsequio: motivoObsequio.trim(), autorizadoPor: autorizadoPor.trim() || undefined }
               : undefined;

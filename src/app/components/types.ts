@@ -1,3 +1,4 @@
+// src/app/sale/types.ts
 export interface ItemUI {
   codigo: string;
   descripcion: string;

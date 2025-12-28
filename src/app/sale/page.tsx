@@ -17,7 +17,7 @@ import { registerSale, CreateSalePayload } from '../services/saleServices';
 import { GETDNI } from '../services/dniServices';
 import { GETRUC } from '../services/rucServices';
 import type { PaymentMethod } from '../services/saleServices';
-import type { ItemUI } from './types';
+import type { ItemUI } from '../components/types';
 
 // =======================
 // Tipos mínimos esperados del BACK
