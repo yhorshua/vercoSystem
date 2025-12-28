@@ -317,3 +317,78 @@ width: 100%;
     display: none; /* Oculta columna Serie y Eliminar */
   }
 }
+.formFooter {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+}
+
+.paymentPanel {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.panelTitle {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.paymentGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputError {
+  border: 1px solid #e11d48 !important;
+}
+
+.helperError {
+  color: #e11d48;
+  font-size: 12px;
+}
+
+.registrarButton {
+  white-space: nowrap;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+}
+
+@media (max-width: 900px) {
+  .formFooter {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .registrarButton {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .paymentGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .formFooter {
+    grid-template-columns: 1fr;
+  }
+
+  .paymentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+

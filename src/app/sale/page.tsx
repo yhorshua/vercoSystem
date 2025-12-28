@@ -1,218 +1,396 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
+import { BrowserMultiFormatReader } from '@zxing/library';
+
 import styles from '../register-requested/registerPedido.module.css';
 import PedidoTabla from '../register-requested/PedidoTabla';
-import { getProductoByCodigo } from '../register-requested/mockData';
-import { clientesMock, Cliente } from '../register-requested/mockClientes';
-import { BrowserMultiFormatReader } from '@zxing/library'; // Importamos la librería para escanear códigos de barras
+import { Cliente } from '../register-requested/mockClientes';
 
-interface Item {
+import { useUser } from '../context/UserContext';
+import { getProductStockByWarehouseAndCode } from '../services/stockServices';
+
+import { registerSale, CreateSalePayload } from '../services/saleServices';
+
+// ✅ NUEVO: servicios de consulta DNI/RUC
+import { GETDNI } from '../services/dniServices';
+import { GETRUC } from '../services/rucServices';
+import type { PaymentMethod } from '../services/saleServices';
+// =======================
+// Tipos mínimos esperados del BACK
+// =======================
+type ApiStockRow = {
+  stock_id?: number;
+  id?: number;
+  warehouse_id: number;
+  product_id: number;
+  product_size_id: number | null;
+  size: string | null; // "38","39"...
+  quantity: number;
+  unit_of_measure: string;
+};
+
+type ApiProductResponse = {
+  product_id: number;
+  article_code: string;
+  article_description: string;
+  article_series: string;
+  unit_price: number;
+  manufacturing_cost?: number;
+  status: boolean;
+  stock: ApiStockRow[];
+};
+
+// =======================
+// UI types (estos SÍ tienen IDs)
+// =======================
+export interface ItemUI {
   codigo: string;
   descripcion: string;
   serie: string;
   precio: number;
-  cantidades: Record<number, number>;
-  total: number;
+
+  cantidades: Record<number, number>; // talla -> qty
+  total: number; // total pares
+
+  product_id: number;
+  unit_of_measure: string;
+
+  // tallaNum -> product_size_id
+  sizeIdBySizeNumber: Record<number, number>;
 }
 
 export default function RegisterSalePage() {
-  const [nombres, setNombres] = useState<string>('');  // Nombres del cliente
-  const [apellidos, setApellidos] = useState<string>('');  // Apellidos del cliente
-  const [correo, setCorreo] = useState<string>('');  // Correo del cliente
-  const [celular, setCelular] = useState<string>('');  // Celular del cliente
-  const [codigoArticulo, setCodigoArticulo] = useState('');  // Código del artículo
-  const [descripcion, setDescripcion] = useState('');  // Descripción del artículo
-  const [serie, setSerie] = useState('');  // Serie del artículo
-  const [precio, setPrecio] = useState(0);  // Precio del artículo
-  const [cantidades, setCantidades] = useState<Record<number, number>>({});  // Cantidades por talla
-  const [tallasDisponibles, setTallasDisponibles] = useState<number[]>([]);  // Tallas disponibles
-  const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});  // Stock por talla
-  const [items, setItems] = useState<Item[]>([]);
-  const [scanning, setScanning] = useState(false); // Estado para manejar el escaneo
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null); // Guardar el stream de la cámara
-  const inputRef = useRef<HTMLInputElement>(null); // Referencia para el input de código de artículo
-  const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
-  const [tipoDocumento, setTipoDocumento] = useState<string>('');  // Tipo de documento (DNI, RUC, etc.)
-  const [numeroDocumento, setNumeroDocumento] = useState<string>('');  // Número de DNI o RUC
-  const [accion, setAccion] = useState<string>('venta'); // "cambio" por defecto
-  const [descuento, setDescuento] = useState<number>(0); // Descuento en porcentaje
-  const [totalConDescuento, setTotalConDescuento] = useState<number>(0); // Total con descuento
-  const [metodoPago, setMetodoPago] = useState<string>('efectivo'); // Método de pago
-  const [tipoDocumentoVenta, setTipoDocumentoVenta] = useState<string>('boleta'); // Tipo de documento (Boleta o Factura)
+  const { user } = useUser();
 
-  // Función para reproducir el sonido del escaneo (beep)
+  // Cliente (tu UI)
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [celular, setCelular] = useState('');
+  const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [tipoDocumento, setTipoDocumento] = useState<string>('');
+  const [numeroDocumento, setNumeroDocumento] = useState<string>('');
+
+  // ✅ NUEVO (solo para UI de consulta)
+  const [loadingDoc, setLoadingDoc] = useState(false);
+  const [docFetched, setDocFetched] = useState(false);
+
+  // Producto actual
+  const [codigoArticulo, setCodigoArticulo] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [serie, setSerie] = useState('');
+  const [precio, setPrecio] = useState(0);
+
+  const [cantidades, setCantidades] = useState<Record<number, number>>({});
+  const [tallasDisponibles, setTallasDisponibles] = useState<number[]>([]);
+  const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});
+
+  // para payload
+  const [currentProductId, setCurrentProductId] = useState<number | null>(null);
+  const [currentUnitOfMeasure, setCurrentUnitOfMeasure] = useState<string>('PAR');
+  const [currentSizeIdBySizeNumber, setCurrentSizeIdBySizeNumber] = useState<Record<number, number>>({});
+
+  // carrito
+  const [items, setItems] = useState<ItemUI[]>([]);
+
+  // descuento y pago
+  const [descuento, setDescuento] = useState<number>(0);
+  const [totalConDescuento, setTotalConDescuento] = useState<number>(0);
+  const [metodoPago, setMetodoPago] = useState<PaymentMethod>('efectivo');
+  const [tipoDocumentoVenta, setTipoDocumentoVenta] = useState<string>('boleta');
+
+  // escaneo
+  const [scanning, setScanning] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const playBeepSound = () => {
-    const beep = new Audio('/beep.mp3'); // Asegúrate de tener un archivo beep.mp3
-    beep.play();
+    const beep = new Audio('/beep.mp3');
+    void beep.play();
   };
 
-  // Detener el escaneo y liberar la cámara
   const stopScanning = () => {
-    setScanning(false); // Detener el escaneo
-    if (cameraStream) {
-      const tracks = cameraStream.getTracks();
-      tracks.forEach(track => track.stop()); // Detener la cámara
-    }
+    setScanning(false);
+    if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
   };
 
-  const handleTipoDocumentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTipoDocumento(e.target.value);
+  const toSizeNumber = (sizeStr: string): number | null => {
+    const n = Number(sizeStr);
+    return Number.isFinite(n) ? n : null;
   };
 
+  const buildFromApi = (data: ApiProductResponse) => {
+    const stockMap: Record<number, number> = {};
+    const sizes: number[] = [];
+    const sizeIdMap: Record<number, number> = {};
 
+    for (const row of data.stock ?? []) {
+      if (!row.size) continue;
+      const sizeNum = toSizeNumber(row.size);
+      if (sizeNum === null) continue;
 
-  // Manejador para el escaneo usando la cámara
-  const handleScanButtonClick = async () => {
-    if (scanning) return; // Evita abrir la cámara si ya está escaneando
-    setScanning(true); // Activamos el escaneo
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("La cámara no está disponible en este dispositivo.");
+      sizes.push(sizeNum);
+      stockMap[sizeNum] = (stockMap[sizeNum] || 0) + Number(row.quantity || 0);
+
+      // ✅ si viene product_size_id
+      if (row.product_size_id) {
+        sizeIdMap[sizeNum] = row.product_size_id;
       }
-
-      // Solicitar acceso a la cámara
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-
-      // Asignamos el stream a un estado para poder visualizarlo
-      setCameraStream(stream);
-
-      // Crear un video element y asignar el stream
-      const videoElement = document.createElement('video');
-      videoElement.srcObject = stream;
-      videoElement.setAttribute('playsinline', 'true');
-      videoElement.play();
-      document.getElementById('camera-container')?.appendChild(videoElement);
-
-      // Usar la librería ZXing para escanear el código
-      const scanner = new BrowserMultiFormatReader();
-      scanner.decodeFromVideoDevice(null, videoElement, (result, error) => {
-        if (result) {
-          console.log('Escaneado exitoso', result); // Asegúrate de ver si llega el resultado
-
-          const codigoCompleto = result.getText(); // Código completo escaneado
-
-          // Obtener los primeros 7 dígitos para el código de artículo
-          const codigoArticulo = codigoCompleto.substring(0, 7); // Los primeros 7 caracteres
-          setCodigoArticulo(codigoArticulo); // Asignamos al campo de código de artículo
-
-          // Obtener la talla de los dígitos 8 y 9
-          const tallaEscaneada = parseInt(codigoCompleto.substring(7, 9)); // Los dígitos 8 y 9 (talla)
-
-          // Obtener las tallas disponibles del artículo escaneado
-          const producto = getProductoByCodigo(codigoArticulo); // Simulación de consulta a la base de datos
-
-          if (producto) {
-            // Validar si la talla escaneada está en las tallas disponibles para el artículo
-            if (producto.stock[tallaEscaneada]) {
-              // Si la talla está disponible en el stock, agregar 1 a la cantidad
-              const cantidadActual = cantidades[tallaEscaneada] || 0;
-              setCantidades((prev) => ({
-                ...prev,
-                [tallaEscaneada]: cantidadActual + 1,
-              }));
-            } else {
-              console.error("Talla no válida para este artículo:", tallaEscaneada);
-            }
-          } else {
-            console.error("Artículo no encontrado:", codigoArticulo);
-          }
-
-          // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
-          playBeepSound();
-          // Detener el escaneo después de obtener el resultado
-          stopScanning();
-        }
-
-        if (error) {
-          console.error('Error en escaneo', error); // Manejar errores y ver qué pasa en la consola
-        }
-      });
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error instanceof Error ? error.message : "Error al acceder a la cámara.",
-      });
-      stopScanning(); // Detener el escaneo si ocurre un error
     }
+
+    sizes.sort((a, b) => a - b);
+
+    return {
+      descripcion: data.article_description ?? '',
+      serie: data.article_series ?? '',
+      precio: Number(data.unit_price ?? 0),
+      productId: Number(data.product_id ?? 0),
+      unitOfMeasure: data.stock?.[0]?.unit_of_measure ?? 'PAR',
+      tallasDisponibles: [...new Set(sizes)],
+      stockPorTalla: stockMap,
+      sizeIdBySizeNumber: sizeIdMap,
+    };
   };
 
-
-
-  // Manejador para detectar la entrada del lector de código de barras (por teclado)
-  const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const barcode = e.target.value.trim();  // Código escaneado
-    setCodigoArticulo(barcode); // Actualizar directamente el estado
-
-    if (barcode.length >= 7) {
-      const tallaEscaneada = parseInt(barcode.substring(7, 9)); // Obtener los dígitos 8 y 9 (talla)
-      // Validar la talla y realizar la acción de agregar al stock
-      const producto = getProductoByCodigo(barcode.substring(0, 7));
-      if (producto && producto.stock[tallaEscaneada]) {
-        const cantidadActual = cantidades[tallaEscaneada] || 0;
-        setCantidades((prev) => ({
-          ...prev,
-          [tallaEscaneada]: cantidadActual + 1,
-        }));
-      }
-      playBeepSound(); // Reproducir sonido de escaneo solo cuando el escaneo fue exitoso
-    }
-  };
-
-  // Efecto para cargar el producto basado en el código escaneado
+  // =======================
+  // ✅ Consulta stock por warehouse + articleCode (debounce)
+  // =======================
   useEffect(() => {
-    const producto = getProductoByCodigo(codigoArticulo);
-    if (producto) {
-      setDescripcion(producto.descripcion);
-      setSerie(producto.serie);
-      setPrecio(producto.precio);
-      setTallasDisponibles(Object.keys(producto.stock).map(Number));
-      setStockPorTalla(producto.stock);
-    } else {
+    if (!user?.token) return;
+    if (!user?.warehouseId) return;
+
+    const code = codigoArticulo.trim().toUpperCase();
+
+    if (code.length < 7) {
       setDescripcion('');
       setSerie('');
       setPrecio(0);
       setTallasDisponibles([]);
       setStockPorTalla({});
+      setCurrentProductId(null);
+      setCurrentUnitOfMeasure('PAR');
+      setCurrentSizeIdBySizeNumber({});
+      return;
     }
-  }, [codigoArticulo]);
+
+    const t = setTimeout(async () => {
+      try {
+        const data: ApiProductResponse = await getProductStockByWarehouseAndCode(
+          user.warehouseId,
+          code.substring(0, 7),
+          user.token
+        );
+
+        const mapped = buildFromApi(data);
+
+        setDescripcion(mapped.descripcion);
+        setSerie(mapped.serie);
+        setPrecio(mapped.precio);
+        setCurrentProductId(mapped.productId);
+        setCurrentUnitOfMeasure(mapped.unitOfMeasure);
+        setTallasDisponibles(mapped.tallasDisponibles);
+        setStockPorTalla(mapped.stockPorTalla);
+        setCurrentSizeIdBySizeNumber(mapped.sizeIdBySizeNumber);
+      } catch (err: any) {
+        // Limpia si no existe
+        setDescripcion('');
+        setSerie('');
+        setPrecio(0);
+        setTallasDisponibles([]);
+        setStockPorTalla({});
+        setCurrentProductId(null);
+        setCurrentUnitOfMeasure('PAR');
+        setCurrentSizeIdBySizeNumber({});
+        console.error(err?.message || err);
+      }
+    }, 300);
+
+    return () => clearTimeout(t);
+  }, [codigoArticulo, user?.token, user?.warehouseId]);
+
+  // ✅ NUEVO: consulta DNI/RUC según selección (debounce)
+  useEffect(() => {
+    if (!tipoDocumento) return;
+
+    const n = (numeroDocumento || '').trim();
+    setDocFetched(false);
+
+    const isDniOk = tipoDocumento === 'DNI' && /^\d{8}$/.test(n);
+    const isRucOk = tipoDocumento === 'RUC' && /^\d{11}$/.test(n);
+
+    if (!isDniOk && !isRucOk) return;
+
+    const t = setTimeout(async () => {
+      try {
+        setLoadingDoc(true);
+
+        if (tipoDocumento === 'DNI') {
+          const data = await GETDNI(n);
+          setNombres(data?.nombres ?? '');
+          setApellidos(`${data?.apellido_paterno ?? ''} ${data?.apellido_materno ?? ''}`.trim());
+        }
+
+        if (tipoDocumento === 'RUC') {
+          const data = await GETRUC(n);
+          const razon =
+            data?.razon_social ??
+            data?.razonSocial ??
+            data?.nombre_o_razon_social ??
+            '';
+          setNombres(razon);
+          setApellidos('');
+        }
+
+        setDocFetched(true);
+      } catch (e: any) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Consulta fallida',
+          text: e?.message || 'No se pudo consultar el documento',
+        });
+      } finally {
+        setLoadingDoc(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(t);
+  }, [tipoDocumento, numeroDocumento]);
+
+  // total descuento
+  useEffect(() => {
+    const cantidadTotal = Object.values(cantidades).reduce((sum, v) => sum + (Number(v) || 0), 0);
+    const precioConDesc = precio - precio * (descuento / 100);
+    setTotalConDescuento(precioConDesc * cantidadTotal);
+  }, [cantidades, descuento, precio]);
+
+  // Escaneo por cámara
+  const handleScanButtonClick = async () => {
+    if (scanning) return;
+    setScanning(true);
+
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('La cámara no está disponible.');
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+
+      setCameraStream(stream);
+
+      const videoElement = document.createElement('video');
+      videoElement.srcObject = stream;
+      videoElement.setAttribute('playsinline', 'true');
+      await videoElement.play();
+      document.getElementById('camera-container')?.appendChild(videoElement);
+
+      const scanner = new BrowserMultiFormatReader();
+
+      scanner.decodeFromVideoDevice(null, videoElement, (result) => {
+        if (result) {
+          const codigoCompleto = result.getText().toUpperCase();
+          const code7 = codigoCompleto.substring(0, 7);
+          setCodigoArticulo(code7);
+
+          // talla (si viene 2 dígitos)
+          if (codigoCompleto.length >= 9) {
+            const tallaEscaneada = Number.parseInt(codigoCompleto.substring(7, 9), 10);
+            const disponible = stockPorTalla[tallaEscaneada] || 0;
+
+            if (disponible > 0) {
+              setCantidades((prev) => {
+                const actual = prev[tallaEscaneada] || 0;
+                if (actual + 1 <= disponible) return { ...prev, [tallaEscaneada]: actual + 1 };
+                return prev;
+              });
+            }
+          }
+
+          playBeepSound();
+          stopScanning();
+        }
+      });
+    } catch (error: any) {
+      Swal.fire({ icon: 'error', title: 'Error', text: error?.message || 'Error al acceder a la cámara.' });
+      stopScanning();
+    }
+  };
+
+  // lector por teclado
+  const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.trim().toUpperCase();
+    const code7 = raw.substring(0, 7);
+    setCodigoArticulo(code7);
+
+    if (raw.length >= 9) {
+      const tallaEscaneada = Number.parseInt(raw.substring(7, 9), 10);
+      const disponible = stockPorTalla[tallaEscaneada] || 0;
+      if (disponible > 0) {
+        setCantidades((prev) => {
+          const actual = prev[tallaEscaneada] || 0;
+          if (actual + 1 <= disponible) return { ...prev, [tallaEscaneada]: actual + 1 };
+          return prev;
+        });
+      }
+      playBeepSound();
+    }
+  };
 
   const handleCantidadChange = (talla: number, value: string) => {
-    const cantidad = parseInt(value) || 0;
+    const cantidad = Number.parseInt(value, 10) || 0;
     const disponible = stockPorTalla[talla] || 0;
 
-    if (cantidad < 0 || cantidad > disponible) {
-      // Si la cantidad es mayor que el stock, restablecer al máximo disponible
+    if (cantidad < 0) return;
+    if (cantidad > disponible) {
       setCantidades((prev) => ({ ...prev, [talla]: disponible }));
       return;
     }
     setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
   };
 
-  const handleDeleteItem = (index: number) => {
-    const nuevosItems = items.filter((_, i) => i !== index);
-    setItems(nuevosItems);
-  };
-
   const agregarItem = () => {
-    const total = Object.values(cantidades).reduce((sum, val) => sum + val, 0);
+    const total = Object.values(cantidades).reduce((sum, v) => sum + (Number(v) || 0), 0);
+    if (!codigoArticulo || total === 0) return;
 
-    // Verificar que no se superen los stocks
-    for (const talla in cantidades) {
-      const cantidad = cantidades[parseInt(talla)];
-      if (cantidad > (stockPorTalla[parseInt(talla)] || 0)) {
-        alert(`La cantidad de talla ${talla} excede el stock disponible`);
+    if (!currentProductId) {
+      Swal.fire({ icon: 'warning', title: 'Producto no encontrado', text: 'Ese código no existe en tu stock.' });
+      return;
+    }
+
+    // validar stock y mapeo
+    for (const tallaStr of Object.keys(cantidades)) {
+      const talla = Number(tallaStr);
+      const cant = cantidades[talla] || 0;
+      const disp = stockPorTalla[talla] || 0;
+
+      if (cant > disp) {
+        Swal.fire({ icon: 'warning', title: 'Stock insuficiente', text: `Talla ${talla} excede stock (${disp})` });
+        return;
+      }
+
+      const sizeId = currentSizeIdBySizeNumber[talla];
+      if (!sizeId && cant > 0) {
+        Swal.fire({ icon: 'warning', title: 'Talla inválida', text: `No existe product_size_id para talla ${talla}` });
         return;
       }
     }
 
-    if (!codigoArticulo || total === 0) return;
-    const nuevoItem: Item = { codigo: codigoArticulo.toUpperCase(), descripcion, serie, precio, cantidades, total };
-    setItems([...items, nuevoItem]);
+    const nuevo: ItemUI = {
+      codigo: codigoArticulo.toUpperCase(),
+      descripcion,
+      serie,
+      precio,
+      cantidades: { ...cantidades },
+      total,
+      product_id: currentProductId,
+      unit_of_measure: currentUnitOfMeasure,
+      sizeIdBySizeNumber: { ...currentSizeIdBySizeNumber },
+    };
+
+    setItems((prev) => [...prev, nuevo]);
+
+    // limpiar producto actual
     setCodigoArticulo('');
     setDescripcion('');
     setSerie('');
@@ -220,48 +398,92 @@ export default function RegisterSalePage() {
     setCantidades({});
     setTallasDisponibles([]);
     setStockPorTalla({});
+    setCurrentProductId(null);
+    setCurrentUnitOfMeasure('PAR');
+    setCurrentSizeIdBySizeNumber({});
   };
 
+  const handleDeleteItem = (index: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const botonAgregarDeshabilitado =
     !codigoArticulo ||
-    Object.values(cantidades).reduce((sum, val) => sum + val, 0) === 0 ||
-    Object.keys(cantidades).some((talla) => cantidades[parseInt(talla)] > stockPorTalla[parseInt(talla)]);
-  const handleDescuentoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const descuentoSeleccionado = parseInt(e.target.value); // Valor del descuento seleccionado
-    setDescuento(descuentoSeleccionado); // Actualizar el estado del descuento
+    Object.values(cantidades).reduce((sum, v) => sum + (Number(v) || 0), 0) === 0 ||
+    Object.keys(cantidades).some((t) => (cantidades[Number(t)] || 0) > (stockPorTalla[Number(t)] || 0));
 
-    // Calcular el precio con descuento (por par)
-    const precioConDescuento = precio - (precio * (descuentoSeleccionado / 100)); // Precio con el descuento aplicado
+  // =====================================================
+  // ✅ REGISTRAR VENTA (BD)
+  // =====================================================
+  const handleRegisterSale = async () => {
+    if (!user?.token) {
+      Swal.fire({ icon: 'warning', title: 'Sesión', text: 'No hay token. Inicia sesión.' });
+      return;
+    }
+    if (!user?.warehouseId || !user?.userId) {
+      Swal.fire({ icon: 'warning', title: 'Usuario', text: 'Falta warehouseId o userId.' });
+      return;
+    }
+    if (!items.length) {
+      Swal.fire({ icon: 'warning', title: 'Carrito vacío', text: 'Agrega productos antes de registrar.' });
+      return;
+    }
 
-    // Calcular el total con descuento para la cantidad seleccionada (multiplicar por la cantidad total)
-    const cantidadTotal = Object.values(cantidades).reduce((sum, val) => sum + val, 0); // Obtener la cantidad total de pares
+    const payloadItems: CreateSalePayload['items'] = [];
 
-    // Calcular el total con descuento basado en el precio con descuento por par
-    const totalConDescuento = precioConDescuento * cantidadTotal;
+    for (const it of items) {
+      const tallas = Object.keys(it.cantidades).map(Number);
 
-    setTotalConDescuento(totalConDescuento); // Actualizar el total con descuento
+      for (const talla of tallas) {
+        const qty = Number(it.cantidades[talla] || 0);
+        if (qty <= 0) continue;
+
+        const product_size_id = it.sizeIdBySizeNumber[talla];
+
+        if (!product_size_id) {
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Talla sin ID',
+            text: `No existe product_size_id para la talla ${talla} del artículo ${it.codigo}`,
+          });
+          return;
+        }
+
+        payloadItems.push({
+          product_id: it.product_id,
+          product_size_id: product_size_id ?? null,
+          quantity: qty,
+          unit_of_measure: it.unit_of_measure || 'PAR',
+        });
+      }
+    }
+
+    if (!payloadItems.length) {
+      Swal.fire({ icon: 'warning', title: 'Sin cantidades', text: 'No hay cantidades válidas para registrar.' });
+      return;
+    }
+
+    const payload: CreateSalePayload = {
+      warehouse_id: user.warehouseId,
+      user_id: user.userId,
+      payment_method: metodoPago,
+      items: payloadItems,
+    };
+
+    try {
+      const res = await registerSale(payload, user.token);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Venta registrada',
+        text: `Código: ${res?.sale?.sale_code ?? ''}`,
+      });
+
+      setItems([]);
+    } catch (e: any) {
+      Swal.fire({ icon: 'error', title: 'Error', text: e?.message || 'No se pudo registrar la venta' });
+    }
   };
-
-  // Si las cantidades cambian, recalcular el total con descuento
-  useEffect(() => {
-    // Recalcular el total con descuento cada vez que cambian las cantidades
-    const cantidadTotal = Object.values(cantidades).reduce((sum, val) => sum + val, 0); // Obtener la cantidad total de pares
-    const precioConDescuento = precio - (precio * (descuento / 100)); // Calcular el precio con descuento
-    const totalConDescuento = precioConDescuento * cantidadTotal; // Calcular el total con descuento
-
-    setTotalConDescuento(totalConDescuento); // Actualizar el total con descuento
-  }, [cantidades, descuento, precio]); // Dependencias para recalcular
-
-  const handleMetodoPagoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setMetodoPago(e.target.value); // Actualizar el método de pago seleccionado
-  };
-
-  const handleTipoDocumentoVentaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTipoDocumentoVenta(e.target.value); // Actualizar el tipo de documento (Boleta o Factura)
-  };
-
-
 
   return (
     <div className={styles.container}>
@@ -272,7 +494,7 @@ export default function RegisterSalePage() {
         <select
           className={`${styles.inputDocument} ${styles.labelDocument}`}
           value={tipoDocumento}
-          onChange={handleTipoDocumentoChange}
+          onChange={(e) => setTipoDocumento(e.target.value)}
         >
           <option value="">Seleccionar Tipo de Documento</option>
           <option value="DNI">DNI</option>
@@ -281,98 +503,89 @@ export default function RegisterSalePage() {
         </select>
       </div>
 
-      {/* Campos adicionales cuando se selecciona DNI */}
       {tipoDocumento === 'DNI' && (
-        <>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>Número de DNI:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={numeroDocumento}
-              onChange={(e) => setNumeroDocumento(e.target.value)}
-            />
-            <label className={styles.label}>Nombres:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={nombres}
-              onChange={(e) => setNombres(e.target.value)}
-            />
-            <label className={styles.label}>Apellidos:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={apellidos}
-              onChange={(e) => setApellidos(e.target.value)}
-            />
-            <label className={styles.label}>Correo:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-            />
-            <label className={styles.label}>Celular:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={celular}
-              onChange={(e) => setCelular(e.target.value)}
-            />
-          </div>
-        </>
+        <div className={styles.inputGroup}>
+          <label className={styles.label}>Número de DNI:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={numeroDocumento}
+            onChange={(e) => setNumeroDocumento(e.target.value)}
+          />
+          {loadingDoc && <small style={{ marginLeft: 8 }}>Consultando...</small>}
+          {docFetched && !loadingDoc && <small style={{ marginLeft: 8 }}>✅ Encontrado</small>}
+
+          <label className={styles.label}>Nombres:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={nombres}
+            onChange={(e) => setNombres(e.target.value)}
+          />
+          <label className={styles.label}>Apellidos:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={apellidos}
+            onChange={(e) => setApellidos(e.target.value)}
+          />
+          <label className={styles.label}>Correo:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="email"
+            value={correo}
+            onChange={(e) => setCorreo(e.target.value)}
+          />
+          <label className={styles.label}>Celular:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={celular}
+            onChange={(e) => setCelular(e.target.value)}
+          />
+        </div>
       )}
 
-      {/* Campos adicionales cuando se selecciona RUC */}
       {tipoDocumento === 'RUC' && (
-        <>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>Número de RUC:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={numeroDocumento}
-              onChange={(e) => setNumeroDocumento(e.target.value)}
-            />
-            <label className={styles.label}>Razón Social:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={nombres}  // Usamos 'nombres' para razón social
-              onChange={(e) => setNombres(e.target.value)}
-            />
-            <label className={styles.label}>Correo:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-            />
-            <label className={styles.label}>Celular:</label>
-            <input
-              className={`${styles.inputDocument} ${styles.labelDocument}`}
-              type="text"
-              value={celular}
-              onChange={(e) => setCelular(e.target.value)}
-            />
-          </div>
-        </>
+        <div className={styles.inputGroup}>
+          <label className={styles.label}>Número de RUC:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={numeroDocumento}
+            onChange={(e) => setNumeroDocumento(e.target.value)}
+          />
+          {loadingDoc && <small style={{ marginLeft: 8 }}>Consultando...</small>}
+          {docFetched && !loadingDoc && <small style={{ marginLeft: 8 }}>✅ Encontrado</small>}
+
+          <label className={styles.label}>Razón Social:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={nombres}
+            onChange={(e) => setNombres(e.target.value)}
+          />
+          <label className={styles.label}>Correo:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="email"
+            value={correo}
+            onChange={(e) => setCorreo(e.target.value)}
+          />
+          <label className={styles.label}>Celular:</label>
+          <input
+            className={`${styles.inputDocument} ${styles.labelDocument}`}
+            type="text"
+            value={celular}
+            onChange={(e) => setCelular(e.target.value)}
+          />
+        </div>
       )}
 
       <div className={styles.inputGroup}>
         <label className={styles.label}>Código del artículo:</label>
-        <input
-          className={styles.input}
-          type="text"
-          value={codigoArticulo}
-          onChange={handleBarcodeInput}  // Detectar el código de barras de lectores
-        />
-        <button
-          className={styles.scanButton}
-          onClick={handleScanButtonClick}
-          disabled={scanning}
-        >
+        <input className={styles.input} type="text" value={codigoArticulo} onChange={handleBarcodeInput} ref={inputRef} />
+        <button className={styles.scanButton} onClick={handleScanButtonClick} disabled={scanning}>
           {scanning ? 'Escaneando...' : 'Escanear Producto'}
         </button>
       </div>
@@ -394,72 +607,33 @@ export default function RegisterSalePage() {
         <label className={styles.label}>Serie:</label>
         <input className={`${styles.input} ${styles.inputSerie}`} value={serie} readOnly />
         <label className={styles.label}>Precio Unitario:</label>
-        <input className={`${styles.input} ${styles.inputPrecio}`} type="number" value={precio} onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)} />
+        <input
+          className={`${styles.input} ${styles.inputPrecio}`}
+          type="number"
+          value={precio}
+          onChange={(e) => setPrecio(Number.parseFloat(e.target.value) || 0)}
+        />
       </div>
 
       <div className={styles.inputGroup}>
         <label className={styles.label}>Descuento por par (%):</label>
-        <select
-          className={styles.input}
-          value={descuento} // Estado que guarda el descuento
-          onChange={handleDescuentoChange}
-        >
-          <option value="0">0%</option>
-          <option value="10">10%</option>
-          <option value="15">15%</option>
-          <option value="20">20%</option>
-          <option value="25">25%</option>
-          <option value="30">30%</option>
-          <option value="35">35%</option>
-          <option value="40">40%</option>
-          <option value="45">45%</option>
-          <option value="50">50%</option>
+        <select className={styles.input} value={descuento} onChange={(e) => setDescuento(Number(e.target.value))}>
+          {[0, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((d) => (
+            <option key={d} value={d}>
+              {d}%
+            </option>
+          ))}
         </select>
 
         <div>
           <label className={styles.label}>Total con descuento: </label>
-          <input
-            className={`${styles.input} ${styles.input}`}
-            value={totalConDescuento.toFixed(2)}  // Mostrar el total con descuento
-            readOnly
-          />
-
+          <input className={styles.input} value={totalConDescuento.toFixed(2)} readOnly />
         </div>
       </div>
 
-      <div className={styles.inputGroup}>
-      
-        <label className={styles.label}>Método de Pago:</label>
-        <select
-          className={styles.input}
-          value={metodoPago}
-          onChange={handleMetodoPagoChange}
-        >
-          <option value="efectivo">Efectivo</option>
-          <option value="yape">Yape</option>
-          <option value="plin">Plin</option>
-          <option value="tarjetaDebito">Tarjeta Débito</option>
-          <option value="tarjetaCredito">Tarjeta Crédito</option>
-          <option value="yapeEfectivo">Yape/Efectivo</option>
-          <option value="obsequio">Obsequio</option>
-        </select>
-      </div>
-
-      <div className={styles.inputGroup}>
-        <label className={styles.label}>Tipo de Documento:</label>
-        <select
-          className={styles.input}
-          value={tipoDocumentoVenta}
-          onChange={handleTipoDocumentoVentaChange}
-        >
-          <option value="boleta">Boleta</option>
-          <option value="factura">Factura</option>
-        </select>
-      </div>
-
-
       <div className={styles.tallasContainer}>
         <label className={styles.tallasLabel}>Cantidades por talla:</label>
+
         <div className={styles.tallasGrid}>
           {tallasDisponibles.map((talla) => (
             <div key={talla} className={styles.tallaInput}>
@@ -467,31 +641,51 @@ export default function RegisterSalePage() {
               <input
                 className={styles.tallaField}
                 type="number"
-                value={cantidades[talla] || ''}
+                value={cantidades[talla] ?? ''}
                 onChange={(e) => handleCantidadChange(talla, e.target.value)}
               />
             </div>
           ))}
         </div>
+
         <div className={styles.tallasGrid}>
           {tallasDisponibles.map((talla) => (
             <div key={talla} className={styles.tallaInput}>
               <label className={styles.tallaLabel}>Stock {talla}</label>
-              <input className={styles.tallaField} type="number" value={stockPorTalla[talla]} readOnly />
+              <input className={styles.tallaField} type="number" value={stockPorTalla[talla] ?? 0} readOnly />
             </div>
           ))}
         </div>
       </div>
 
-      <button
-        className={styles.addButton}
-        onClick={agregarItem}
-        disabled={botonAgregarDeshabilitado}
-      >
+      {/* Tipo doc venta */}
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>Tipo de Documento:</label>
+        <select className={styles.input} value={tipoDocumentoVenta} onChange={(e) => setTipoDocumentoVenta(e.target.value)}>
+          <option value="boleta">Boleta</option>
+          <option value="factura">Factura</option>
+        </select>
+      </div>
+
+      <button className={styles.addButton} onClick={agregarItem} disabled={botonAgregarDeshabilitado}>
         Agregar al Pedido
       </button>
 
-      <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} />
+      <PedidoTabla
+        items={items}
+        onDelete={handleDeleteItem}
+        cliente={cliente}
+        user={
+          user?.token && user?.warehouseId && user?.userId
+            ? { token: user.token, warehouseId: user.warehouseId, userId: user.userId }
+            : null
+        }
+        onSaleRegistered={() => {
+          setItems([]);
+          Swal.fire({ icon: 'success', title: 'Listo', text: 'Carrito limpiado.' });
+        }}
+      />
+
     </div>
   );
-};
+}

@@ -1,3 +1,5 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 // src/services/authService.ts
 export interface LoginResponse {
   access_token: string;
@@ -10,13 +12,15 @@ export interface LoginResponse {
     cellphone: string;
     rol_id: number;
     role: { id: number; name_role: string };
+    warehouse_id: number; // ✅ AGREGA ESTO
     date_register: string;
     state_user: boolean;
   };
 }
-//https://backend-api-verco-577899268055.us-central1.run.app/auth/login
+
+
 export const loginService = async (email: string, password: string): Promise<LoginResponse> => {
-  const response = await fetch("https://verco-func-d2f4hrhjbfesg8cj.eastus-01.azurewebsites.net/auth/login", {
+  const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),

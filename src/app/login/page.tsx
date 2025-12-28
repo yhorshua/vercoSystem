@@ -17,17 +17,23 @@ export default function LoginPage() {
     try {
       const data = await loginService(email, password);
 
-      // Guarda token en localStorage (opcional)
+      // ✅ Guardar token
       localStorage.setItem('access_token', data.access_token);
-      document.cookie = `access_token=${data.access_token}; path=/; max-age=86400;`; // dura 1 día
+      document.cookie = `access_token=${data.access_token}; path=/; max-age=86400;`;
 
-      // Actualiza contexto global
-      setUser({
+      // ✅ Crear el objeto que tu app necesita
+      const userData = {
         email: data.user.email,
         fullName: data.user.full_name,
         role: data.user.role.name_role,
         token: data.access_token,
-      });
+        userId: data.user.id,                 // ✅
+        warehouseId: data.user.warehouse_id,   // ✅
+      };
+
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user_data', JSON.stringify(userData));
+      setUser(userData);
 
       Swal.fire({
         icon: 'success',
