@@ -90,6 +90,7 @@ const handleLogout = () => {
             <Link href="/inventory" className={style.navbarLink}>Inventario</Link>
             <Link href="/sale" className={style.navbarLink}>Venta</Link>
             <Link href="/merchandise" className={style.navbarLink}>Ingreso a Stock</Link>
+            <Link href="/caja" className={style.navbarLink}>Caja</Link>
           </>
         )}
       </div>
