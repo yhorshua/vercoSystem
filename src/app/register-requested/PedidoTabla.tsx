@@ -9,8 +9,9 @@ import {
 import Swal from 'sweetalert2';
 import styles from './registerPedido.module.css';
 import { useMemo, useState } from 'react';
+import type { ItemUI } from '../sale/types';
 
-import { registerSale, CreateSalePayload, PaymentMethod } from '../services/saleServices';
+import { registerSale, CreateSalePayload, type PaymentMethod } from '../services/saleServices';
 
 interface Cliente {
   codigo: string;
@@ -25,42 +26,15 @@ interface Cliente {
   distrito: string;
 }
 
-export interface Item {
-  codigo: string;
-  descripcion: string;
-  serie: string;
-  precio: number;
-  cantidades: Record<number, number>;
-  total: number;
-
-  product_id: number;
-  unit_of_measure: string;
-  sizeIdBySizeNumber: Record<number, number>;
-}
-
-interface PedidoTablaProps {
-  items: Item[];
+type PedidoTablaProps = {
+  items: ItemUI[];
   onDelete: (index: number) => void;
   cliente: Cliente | null;
 
-  // ✅ para registrar en BD
-  user: {
-    token: string;
-    warehouseId: number;
-    userId: number;
-  } | null;
+  user: { token: string; warehouseId: number; userId: number } | null;
 
   onSaleRegistered?: () => void;
-}
-
-type MetodoPago =
-  | 'efectivo'
-  | 'yape'
-  | 'plin'
-  | 'tarjetaDebito'
-  | 'tarjetaCredito'
-  | 'yapeEfectivo'
-  | 'obsequio';
+};
 
 export default function PedidoTabla({
   items,
@@ -72,7 +46,7 @@ export default function PedidoTabla({
   const totalUnidades = items.reduce((sum, item) => sum + item.total, 0);
   const totalPrecio = items.reduce((sum, item) => sum + item.total * item.precio, 0);
 
-  const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
+  const [metodoPago, setMetodoPago] = useState<PaymentMethod>('efectivo');
   const [tipoDocumentoVenta, setTipoDocumentoVenta] = useState<'boleta' | 'factura'>('boleta');
 
   // ====== EFECTIVO ======
@@ -112,7 +86,7 @@ export default function PedidoTabla({
     return numeroOperacion.trim().length < 6;
   }, [requiereOperacion, numeroOperacion]);
 
-  // ====== YAPE / EFECTIVO (mixto) ======
+  // ====== MIXTO ======
   const [montoYape, setMontoYape] = useState<string>('');
   const [operacionYape, setOperacionYape] = useState<string>('');
   const [efectivoEntregadoMixto, setEfectivoEntregadoMixto] = useState<string>('');
@@ -193,7 +167,7 @@ export default function PedidoTabla({
   // =======================
   // TABLA
   // =======================
-  const columns: ColumnDef<Item>[] = [
+  const columns: ColumnDef<ItemUI>[] = [
     { accessorKey: 'codigo', header: 'Artículo', cell: (info) => info.getValue() as any },
     { accessorKey: 'descripcion', header: 'Descripción', cell: (info) => info.getValue() as any },
     { accessorKey: 'serie', header: 'Serie', cell: (info) => info.getValue() as any },
@@ -235,7 +209,7 @@ export default function PedidoTabla({
   });
 
   // =======================
-  // ✅ REGISTRAR VENTA BD
+  // REGISTRAR VENTA BD
   // =======================
   const handleRegistrarVentaBD = async () => {
     if (!user?.token || !user?.warehouseId || !user?.userId) {
@@ -257,7 +231,6 @@ export default function PedidoTabla({
       return;
     }
 
-    // 1) items payload
     const payloadItems: CreateSalePayload['items'] = [];
 
     for (const it of items) {
@@ -286,13 +259,7 @@ export default function PedidoTabla({
       }
     }
 
-    if (!payloadItems.length) {
-      Swal.fire({ icon: 'warning', title: 'Sin cantidades', text: 'No hay cantidades válidas para registrar.' });
-      return;
-    }
-
-    // 2) payment payload (llaves exactas del DTO del back)
-    const payment_method = metodoPago as PaymentMethod;
+    const payment_method = metodoPago;
 
     const payment: CreateSalePayload['payment'] =
       payment_method === 'efectivo'
@@ -304,11 +271,11 @@ export default function PedidoTabla({
           ? { numeroOperacion: numeroOperacion.trim() }
           : payment_method === 'yapeEfectivo'
             ? {
-              yapeMonto: montoYapeNum,
-              yapeOperacion: operacionYape.trim(),
-              efectivoEntregadoMixto: efectivoEntregadoMixtoNum,
-              vueltoMixto: vueltoMixto,
-            }
+                yapeMonto: montoYapeNum,
+                yapeOperacion: operacionYape.trim(),
+                efectivoEntregadoMixto: efectivoEntregadoMixtoNum,
+                vueltoMixto: vueltoMixto,
+              }
             : payment_method === 'obsequio'
               ? { motivoObsequio: motivoObsequio.trim(), autorizadoPor: autorizadoPor.trim() || undefined }
               : undefined;
@@ -319,9 +286,7 @@ export default function PedidoTabla({
       payment_method,
       payment,
       items: payloadItems,
-
-      // ⚠️ si tu back ya tiene document_type en DTO, descomenta:
-      // document_type: tipoDocumentoVenta,
+      // document_type: tipoDocumentoVenta, // si tu back lo soporta
     };
 
     const confirm = await Swal.fire({
@@ -397,14 +362,11 @@ export default function PedidoTabla({
         </table>
       </div>
 
-      {/* Footer pago */}
       <div className={styles.formFooter}>
-        {/* Documento */}
-     
-        {/* Método pago */}
         <div className={styles.inputGroup}>
           <label className={styles.label}>Método de Pago:</label>
           <select
+            className={styles.input}
             value={metodoPago}
             onChange={(e) => setMetodoPago(e.target.value as PaymentMethod)}
           >
@@ -418,195 +380,6 @@ export default function PedidoTabla({
           </select>
         </div>
 
-        {/* EFECTIVO */}
-        {metodoPago === 'efectivo' && (
-          <div className={styles.paymentPanel}>
-            <h4 className={styles.panelTitle}>Pago en efectivo</h4>
-            <div className={styles.paymentGrid}>
-              <div className={styles.field}>
-                <label className={styles.label}>Total (S/)</label>
-                <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Efectivo entregado (S/)</label>
-                <input
-                  className={`${styles.input} ${efectivoInvalido ? styles.inputError : ''}`}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={efectivoEntregado}
-                  onChange={(e) => setEfectivoEntregado(e.target.value)}
-                  placeholder="Ej: 100.00"
-                />
-                {efectivoInvalido && (
-                  <small className={styles.helperError}>
-                    El efectivo entregado debe ser mayor o igual al total.
-                  </small>
-                )}
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Vuelto (S/)</label>
-                <input className={styles.input} value={vueltoEfectivo.toFixed(2)} readOnly />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* YAPE/PLIN/TARJETAS */}
-        {(metodoPago === 'yape' ||
-          metodoPago === 'plin' ||
-          metodoPago === 'tarjetaDebito' ||
-          metodoPago === 'tarjetaCredito') && (
-            <div className={styles.paymentPanel}>
-              <h4 className={styles.panelTitle}>
-                {metodoPago === 'yape' && 'Pago con Yape'}
-                {metodoPago === 'plin' && 'Pago con Plin'}
-                {metodoPago === 'tarjetaDebito' && 'Pago con Tarjeta Débito'}
-                {metodoPago === 'tarjetaCredito' && 'Pago con Tarjeta Crédito'}
-              </h4>
-
-              <div className={styles.paymentGrid}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Total (S/)</label>
-                  <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-                </div>
-
-                <div className={styles.field}>
-                  <label className={styles.label}>N° Operación / Voucher</label>
-                  <input
-                    className={`${styles.input} ${operacionInvalida ? styles.inputError : ''}`}
-                    value={numeroOperacion}
-                    onChange={(e) => setNumeroOperacion(e.target.value)}
-                    placeholder="Ej: 000123456"
-                  />
-                  {operacionInvalida && (
-                    <small className={styles.helperError}>
-                      Ingresa un número de operación válido (mín. 6 caracteres).
-                    </small>
-                  )}
-                </div>
-
-                <div className={styles.field}>
-                  <label className={styles.label}>Monto (S/)</label>
-                  <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* MIXTO */}
-        {metodoPago === 'yapeEfectivo' && (
-          <div className={styles.paymentPanel}>
-            <h4 className={styles.panelTitle}>Pago mixto (Yape + Efectivo)</h4>
-
-            <div className={styles.paymentGrid}>
-              <div className={styles.field}>
-                <label className={styles.label}>Total (S/)</label>
-                <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Monto Yape (S/)</label>
-                <input
-                  className={`${styles.input} ${mixtoInvalido ? styles.inputError : ''}`}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={montoYape}
-                  onChange={(e) => setMontoYape(e.target.value)}
-                  placeholder="Ej: 50.00"
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>N° Operación Yape</label>
-                <input
-                  className={`${styles.input} ${mixtoInvalido ? styles.inputError : ''}`}
-                  value={operacionYape}
-                  onChange={(e) => setOperacionYape(e.target.value)}
-                  placeholder="Ej: 000123456"
-                />
-              </div>
-            </div>
-
-            <div className={styles.paymentGrid} style={{ marginTop: 12 }}>
-              <div className={styles.field}>
-                <label className={styles.label}>Monto en efectivo (S/)</label>
-                <input className={styles.input} value={montoEfectivoMixto.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Efectivo entregado (S/)</label>
-                <input
-                  className={`${styles.input} ${mixtoInvalido ? styles.inputError : ''}`}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={efectivoEntregadoMixto}
-                  onChange={(e) => setEfectivoEntregadoMixto(e.target.value)}
-                  placeholder="Ej: 60.00"
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Vuelto (S/)</label>
-                <input className={styles.input} value={vueltoMixto.toFixed(2)} readOnly />
-              </div>
-
-              {mixtoInvalido && (
-                <small className={styles.helperError}>
-                  Verifica: monto Yape (0 &lt; yape &lt; total), operación válida y efectivo entregado ≥ monto efectivo.
-                </small>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* OBSEQUIO */}
-        {metodoPago === 'obsequio' && (
-          <div className={styles.paymentPanel}>
-            <h4 className={styles.panelTitle}>Obsequio</h4>
-
-            <div className={styles.paymentGrid}>
-              <div className={styles.field}>
-                <label className={styles.label}>Total (S/)</label>
-                <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Motivo (obligatorio)</label>
-                <input
-                  className={`${styles.input} ${obsequioInvalido ? styles.inputError : ''}`}
-                  value={motivoObsequio}
-                  onChange={(e) => setMotivoObsequio(e.target.value)}
-                  placeholder="Ej: Promoción / compensación"
-                />
-                {obsequioInvalido && (
-                  <small className={styles.helperError}>
-                    Ingresa un motivo válido (mín. 5 caracteres).
-                  </small>
-                )}
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Autorizado por (opcional)</label>
-                <input
-                  className={styles.input}
-                  value={autorizadoPor}
-                  onChange={(e) => setAutorizadoPor(e.target.value)}
-                  placeholder="Ej: Administrador"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ BOTÓN BD */}
         <button
           className={styles.registrarButton}
           onClick={handleRegistrarVentaBD}

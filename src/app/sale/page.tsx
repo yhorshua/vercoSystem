@@ -17,6 +17,8 @@ import { registerSale, CreateSalePayload } from '../services/saleServices';
 import { GETDNI } from '../services/dniServices';
 import { GETRUC } from '../services/rucServices';
 import type { PaymentMethod } from '../services/saleServices';
+import type { ItemUI } from './types';
+
 // =======================
 // Tipos mínimos esperados del BACK
 // =======================
@@ -42,24 +44,6 @@ type ApiProductResponse = {
   stock: ApiStockRow[];
 };
 
-// =======================
-// UI types (estos SÍ tienen IDs)
-// =======================
-export interface ItemUI {
-  codigo: string;
-  descripcion: string;
-  serie: string;
-  precio: number;
-
-  cantidades: Record<number, number>; // talla -> qty
-  total: number; // total pares
-
-  product_id: number;
-  unit_of_measure: string;
-
-  // tallaNum -> product_size_id
-  sizeIdBySizeNumber: Record<number, number>;
-}
 
 export default function RegisterSalePage() {
   const { user } = useUser();
