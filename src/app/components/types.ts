@@ -1,4 +1,4 @@
-// src/app/sale/types.ts
+// src/app/components/types.ts
 export interface ItemUI {
   codigo: string;
   descripcion: string;
