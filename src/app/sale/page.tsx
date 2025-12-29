@@ -635,7 +635,7 @@ export default function RegisterSalePage() {
         <div className={styles.tallasGrid}>
           {tallasDisponibles.map((talla) => (
             <div key={talla} className={styles.tallaInput}>
-              <label className={styles.tallaLabel}>Stock {talla}</label>
+              <label className={styles.tallaLabel}>Talla: {talla}</label>
               <input className={styles.tallaField} type="number" value={stockPorTalla[talla] ?? 0} readOnly />
             </div>
           ))}
