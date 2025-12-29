@@ -91,6 +91,18 @@ const handleLogout = () => {
             <Link href="/sale" className={style.navbarLink}>Venta</Link>
             <Link href="/merchandise" className={style.navbarLink}>Ingreso a Stock</Link>
             <Link href="/caja" className={style.navbarLink}>Caja</Link>
+            <div className={style.reportDropdown}>
+              <button onClick={toggleReportMenu} className={style.navbarLink}>
+                Reportes
+              </button>
+              {isReportOpen && (
+                <div className={style.dropdownMenu}>
+                  <Link href="/reportsale" className={style.navbarLink} onClick={handleLinkClick}>
+                    Reporte de Venta
+                  </Link>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

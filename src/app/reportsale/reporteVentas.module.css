@@ -1,0 +1,94 @@
+.container {
+  width: 100%;
+  margin: auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.card {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d7d7d7;
+  border-radius: 10px;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field label {
+  display: block;
+}
+
+.control {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-top: 6px;
+}
+
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.btnPrimary {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #111;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btnPrimaryDisabled {
+  background: #eee;
+  color: #111;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #111;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tableWrap {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #ddd;
+  white-space: nowrap;
+}
+
+.td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
