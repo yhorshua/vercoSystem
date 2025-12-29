@@ -223,6 +223,10 @@ export default function ReporteVentasPage() {
                     <button onClick={loadSellers} disabled={!canUse || loadingSellers} className={styles.btnSecondary}>
                         {loadingSellers ? 'Cargando...' : 'Refrescar vendedores'}
                     </button>
+
+                    <button onClick={handleDownloadPdf} disabled={!report} className={primaryBtnClass}>
+                        Generar PDF
+                    </button>
                 </div>
             </div>
 
@@ -272,9 +276,7 @@ export default function ReporteVentasPage() {
                 </div>
             )}
 
-            <button onClick={handleDownloadPdf} disabled={!report}>
-                Generar PDF y enviar WhatsApp
-            </button>
+
         </div>
     );
 }
