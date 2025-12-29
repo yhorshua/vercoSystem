@@ -284,7 +284,7 @@ export default function CajaPage() {
 
         <div className={styles.grid2}>
           <div>
-            <div className={styles.kv}><span>Tienda (warehouse)</span><b>{warehouseId || '-'}</b></div>
+            <div className={styles.kv}><span>Tienda</span><b>{warehouseId || '-'}</b></div>
             <div className={styles.kv}><span>Usuario</span><b>{userId || '-'}</b></div>
           </div>
 
@@ -347,7 +347,7 @@ export default function CajaPage() {
       {hasOpen && (
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Arqueo / Resumen (en vivo)</h2>
+            <h2 className={styles.cardTitle}>Arqueo / Resumen del día</h2>
             <button className={styles.button} onClick={() => session?.id && loadMovements(session.id)} disabled={loading}>
               Refrescar movimientos
             </button>
