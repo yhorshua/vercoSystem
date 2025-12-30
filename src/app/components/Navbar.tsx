@@ -122,6 +122,15 @@ const Navbar = () => {
           <Link href="/caja" className={style.navbarLink} onClick={handleLinkClick}>
             Caja
           </Link>
+          <Link href="/role" className={style.navbarLink} onClick={handleLinkClick}>
+            Roles
+          </Link>
+          <Link href="/warehouses" className={style.navbarLink} onClick={handleLinkClick}>
+            Almacenes
+          </Link>
+          <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
+            Usuarios
+          </Link>
 
           <div className={style.reportDropdown}>
             <button onClick={toggleReportMenu} className={style.navbarLink} type="button">
@@ -147,7 +156,6 @@ const Navbar = () => {
           <Image src="/img/verco_logo.png" alt="Logo Empresa" width={100} height={40} />
         </div>
 
-        {/* ✅ NO se cambia la posición: se respeta tu hamburguesa fixed en CSS */}
         <div className={style.hamburger} onClick={toggleMenu}>
           <span className={style.bar}></span>
           <span className={style.bar}></span>

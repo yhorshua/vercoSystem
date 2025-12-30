@@ -1,25 +1,20 @@
-// /services/userServices.ts
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { getApiUrl, parseError } from './http';
 
-export type SellerOption = {
-  id: number;
+export type SellerOption = { id: number; full_name: string };
+
+export type CreateUserPayload = {
   full_name: string;
+  email: string;
+  password: string;
+  rol_id: number;
+  warehouse_id: number;
+  cellphone?: string;
+  address_home?: string;
+  id_cedula?: string;
 };
 
-function safeErrorMessage(text: string) {
-  try {
-    const j = JSON.parse(text);
-    if (typeof j?.message === 'string') return j.message;
-    if (Array.isArray(j?.message)) return j.message.join('\n');
-  } catch {}
-  return text || 'Error consultando vendedores';
-}
-
-/**
- * GET /users/by-warehouse?warehouseId=1
- */
 export async function getSellersByWarehouse(warehouseId: number, token: string): Promise<SellerOption[]> {
-  if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
+  const API_URL = getApiUrl();
   if (!warehouseId || warehouseId <= 0) return [];
 
   const url = new URL(`${API_URL}/users/by-warehouse`);
@@ -27,26 +22,37 @@ export async function getSellersByWarehouse(warehouseId: number, token: string):
 
   const res = await fetch(url.toString(), {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(safeErrorMessage(text));
-  }
+  if (!res.ok) throw new Error(await parseError(res));
 
   const data = await res.json();
-
-  // Esperado: [{ id, full_name }]
   if (!Array.isArray(data)) return [];
   return data
-    .map((u: any) => ({
-      id: Number(u?.id),
-      full_name: String(u?.full_name ?? ''),
-    }))
+    .map((u: any) => ({ id: Number(u?.id), full_name: String(u?.full_name ?? '') }))
     .filter((u) => Number.isFinite(u.id) && u.id > 0 && u.full_name.length > 0);
+}
+
+export async function createUser(payload: CreateUserPayload, token: string) {
+  const API_URL = getApiUrl();
+  const res = await fetch(`${API_URL}/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
+}
+
+export async function getUsers(token: string) {
+  const API_URL = getApiUrl();
+  const res = await fetch(`${API_URL}/users`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
 }

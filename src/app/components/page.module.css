@@ -1,3 +1,7 @@
+/* =========================
+   DESKTOP / LAPTOP (default)
+   ========================= */
+
 /* Estilo general del navbar */
 .navbar {
   display: flex;
@@ -12,44 +16,22 @@
   height: 60px;
 }
 
-/* Logo en el lado izquierdo (tu diseño desktop) */
+/* Logo (desktop) */
 .navbarLogo {
   flex: 0 1 50px;
+  display: flex;
+  align-items: center;
 }
 
-
-.logoutButton {
-  margin-top: auto;
-  width: 100%;
-  padding: 12px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.92);
-
-  transition: background-color 120ms ease, transform 120ms ease, border-color 120ms ease;
-}
-
-
-.logoutButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-/* Botón de menú hamburguesa alineado a la izquierda (NO SE TOCA) */
+/* Hamburguesa: oculta en desktop */
 .hamburger {
   display: none;
   flex-direction: column;
   cursor: pointer;
-  position: fixed;
-  /* ✅ mantiene tu diseño */
+  position: fixed; /* ✅ NO se toca */
   top: 15px;
   left: 20px;
-  /* ✅ izquierda */
   z-index: 1001;
-  /* encima del overlay */
 }
 
 .bar {
@@ -59,265 +41,319 @@
   background-color: #fff;
 }
 
-/* Contenedor de los enlaces centrados (DESKTOP) */
+/* Menú centrado en desktop */
 .navbarCenter {
-  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
 }
 
-/* Enlaces */
+/* Links */
 .navbarLink {
   color: white;
   text-decoration: none;
   font-size: 14px;
   padding: 8px 16px;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
   background: transparent;
   border: 0;
   cursor: pointer;
 }
 
 .navbarLink:hover {
-  background-color: #595959;
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
-/* Panel lateral (navbarRight) */
+/* Panel usuario (desktop) */
 .navbarRight {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 10px;
   width: auto;
   position: relative;
 }
 
-/* ✅ Overlay para mobile (cierra al tocar afuera) */
-.overlay {
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-
-/* Cuando el menú está abierto en MOBILE: tu panel lateral */
+/* Evitar que el drawer afecte desktop */
 .navbarRight.open {
-  display: flex;
-  position: absolute;
-  top: 60px;
-  left: 0;
-  background-color: #838383;
-  width: 60%;
-  height: 100vh;
-  padding: 20px;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  z-index: 999;
-  transition: 0.3s ease-in-out;
+  /* en desktop NO debe volverse drawer */
+  position: relative;
+  top: auto;
+  left: auto;
+  width: auto;
+  height: auto;
+  padding: 0;
+  background: transparent;
+  flex-direction: row;
+  align-items: center;
+  box-shadow: none;
+  border: 0;
 }
 
-/* User info */
+/* User info (desktop) */
 .userInfo {
-  justify-content: flex-start;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .userAvatar {
-  margin-right: 12px;
-  width: 44px !important;
-  height: 44px !important;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  border-radius: 50%;
 }
 
+/* En desktop el texto a la derecha */
 .userDetails {
-  width: 100%;
-  align-items: flex-start;
-  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
-
-.userDetails::after {
-  content: '';
-  display: block;
-  width: 100%;
-  height: 1px;
-  margin-top: 14px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
 
 .username {
   font-size: 14px;
-  letter-spacing: 0.2px;
+  font-weight: 700;
+  margin-bottom: 2px;
 }
 
 .userArea {
-  padding: 20px;
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.7);
+  padding: 0; /* ✅ importante: en desktop no debe tener padding 20px */
 }
 
-/* Botón cerrar sesión */
+/* Botón cerrar sesión (desktop) */
 .logoutButton {
-  background: none;
-  border: 1px solid #fff;
-  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 6px;
-  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: background-color 120ms ease, transform 120ms ease, border-color 120ms ease;
 }
 
-/* Dropdown */
+.logoutButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Dropdown (desktop) */
 .reportDropdown {
-  width: 100%;
+  position: relative;
+  display: inline-block;
 }
 
-.reportDropdown>.navbarLink {
-  width: 100%;
+.reportDropdown > .navbarLink {
+  width: auto;
 }
 
 .dropdownMenu {
-  position: static;
-  /* ✅ importante en mobile: se comporta como acordeón */
-  margin-top: 8px;
-  min-width: unset;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
 
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #ddd;
   border-radius: 12px;
-  box-shadow: none;
-  padding: 8px;
+  box-shadow: 0px 10px 24px rgba(0, 0, 0, 0.18);
+  z-index: 1000;
+  padding: 6px;
   gap: 6px;
 }
 
-
 .dropdownMenu .navbarLink {
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(0, 0, 0, 0.12);
+  color: #222;
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
   padding: 10px 12px;
+  white-space: nowrap;
 }
-
 
 .dropdownMenu .navbarLink:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 
-/* ✅ Links dentro del menú hamburguesa (solo mobile) */
+/* Overlay (desktop no se usa, pero lo dejamos correcto) */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 998;
+}
+
+/* Links mobile: nunca en desktop */
 .navbarMobileLinks {
-  margin-top: 10px;
-  gap: 10px;
+  display: none;
 }
 
+
+/* =========================
+   MOBILE / TABLET
+   ========================= */
 @media (max-width: 768px) {
+
+  /* Logo a la derecha como tu diseño */
+  .navbarLogo {
+    margin-left: auto;
+  }
+
+  /* Ocultamos links centro */
+  .navbarCenter {
+    display: none;
+  }
+
+  /* Ocultamos panel usuario por defecto */
+  .navbarRight {
+    display: none;
+  }
+
+  /* Mostramos hamburguesa */
+  .hamburger {
+    display: flex;
+  }
+
+  /* Drawer abierto */
   .navbarRight.open {
-    /* mantiene tu posición y tamaño base, pero con look pro */
+    display: flex;
+    position: absolute;
+    top: 60px;
+    left: 0;
+
+    width: min(82vw, 360px);
+    height: 100vh;
+
+    padding: 18px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 14px;
+
     background: rgba(23, 23, 23, 0.92);
-    /* oscuro elegante */
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 18px 0 40px rgba(0, 0, 0, 0.45);
 
-    width: min(82vw, 360px);
-    /* mejor que 60% en tablets */
-    padding: 18px 16px;
-    gap: 14px;
-
-    /* animación suave tipo drawer */
+    z-index: 999;
     animation: drawerIn 220ms ease-out;
   }
 
   @keyframes drawerIn {
-    from {
-      transform: translateX(-12px);
-      opacity: 0.7;
-    }
-
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    from { transform: translateX(-12px); opacity: 0.7; }
+    to   { transform: translateX(0); opacity: 1; }
   }
 
-  /* Media Query para móviles/tablet */
-  @media (max-width: 768px) {
-    .navbar {
-      justify-content: space-between;
-    }
-
-    /* tu comportamiento: logo se va a la derecha */
-    .navbarLogo {
-      flex: 0 1 50px;
-      margin-left: auto;
-    }
-
-    /* ocultamos los enlaces del centro en mobile */
-    .navbarCenter {
-      display: none;
-    }
-
-    /* ocultamos panel de usuario en mobile (se mostrará solo cuando esté .open) */
-    .navbarRight {
-      display: none;
-    }
-
-    .navbarRight.open {
-      display: flex;
-    }
-
-    .hamburger {
-      display: flex;
-      /* ✅ se muestra */
-    }
-
-    /* ✅ ahora sí mostramos tus pestañas dentro del panel */
-    .navbarMobileLinks {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      margin-top: 20px;
-      gap: 10px;
-    }
-
-    .navbarMobileLinks .navbarLink {
-      width: 100%;
-      text-align: left;
-
-      /* look moderno */
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-
-      padding: 12px 12px;
-      font-size: 14px;
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
-    }
-
-    .navbarMobileLinks .navbarLink:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.12);
-      transform: translateY(-1px);
-    }
-
-    .navbarMobileLinks .navbarLink:active {
-      transform: translateY(0);
-    }
-
-
+  /* user section en drawer */
+  .userInfo {
+    justify-content: flex-start;
+    width: 100%;
   }
 
+  .userAvatar {
+    width: 44px !important;
+    height: 44px !important;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  }
 
+  .userDetails {
+    width: 100%;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .userDetails::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 1px;
+    margin-top: 14px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .userArea {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* ✅ Links dentro del drawer */
+  .navbarMobileLinks {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+    gap: 10px;
+  }
+
+  .navbarMobileLinks .navbarLink {
+    width: 100%;
+    text-align: left;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+
+    padding: 12px 12px;
+    font-size: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+  }
+
+  .navbarMobileLinks .navbarLink:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+
+  /* Dropdown en mobile como acordeón */
+  .reportDropdown {
+    width: 100%;
+  }
+
+  .reportDropdown > .navbarLink {
+    width: 100%;
+  }
+
+  .dropdownMenu {
+    position: static;
+    width: 100%;
+    min-width: unset;
+    margin-top: 8px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+
+    box-shadow: none;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .dropdownMenu .navbarLink {
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Logout al final del drawer */
+  .logoutButton {
+    margin-top: auto;
+    width: 100%;
+    padding: 12px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+  }
 }

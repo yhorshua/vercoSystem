@@ -1,0 +1,82 @@
+.page {
+  padding: 20px;
+  max-width: 980px;
+}
+
+.title {
+  margin: 0 0 12px 0;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr auto;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+}
+
+.button {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  margin: 10px 0;
+  white-space: pre-wrap;
+}
+
+.card {
+  border: 1px solid #eee;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.cardTitle {
+  margin: 0 0 10px 0;
+}
+
+.empty {
+  color: #666;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-top: 1px solid #eee;
+}
+
+.table th {
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

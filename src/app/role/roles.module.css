@@ -1,0 +1,83 @@
+.page {
+  padding: 20px;
+  max-width: 760px;
+}
+
+.title {
+  margin: 0 0 12px 0;
+}
+
+.formRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+}
+
+.button {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  margin: 10px 0;
+  white-space: pre-wrap;
+}
+
+.card {
+  border: 1px solid #eee;
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.cardTitle {
+  margin: 0 0 10px 0;
+}
+
+.empty {
+  color: #666;
+}
+
+.list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listItem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+}
