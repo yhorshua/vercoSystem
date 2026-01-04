@@ -155,6 +155,7 @@ export default function RegistroAbonoPage() {
 
       {/* Modal de selección de cliente */}
       {/* Modal de selección de cliente */}
+      {/*
       {showClienteModal && (
         <ClienteModal
           clientes={clientes}
@@ -162,9 +163,8 @@ export default function RegistroAbonoPage() {
           onSelect={(cliente) => {
             setClienteSeleccionado(cliente);
             setShowClienteModal(false);
-          }}
-        />
-      )}
+      }} 
+        />*/}
     </div>
   );
 }
