@@ -1,17 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './registerPedido.module.css';
 import ClienteModal from './ClienteModal';
 import PedidoTabla from './PedidoTabla';
 import { getProductoByCodigo } from './mockData';
-import { clientesMock, Cliente } from './mockClientes';
 import type { ItemUI } from '../components/types';
 
+import { useUser } from '../context/UserContext';
+
+type ClienteUI = {
+  id: number;
+  codigo: string;
+  ruc: string;
+  razonSocial: string;
+  direccion: string;
+  telefono: string;
+  correo: string;
+  departamento: string;
+  provincia: string;
+  distrito: string;
+};
 
 export default function RegisterPedidoPage() {
-  const [cliente, setCliente] = useState<Cliente | null>(null);  // Guardar el cliente completo
+  const { user } = useUser();              // ✅ aquí está token/rol/etc
+  const token = user?.token ?? '';
+
+  const [cliente, setCliente] = useState<ClienteUI | null>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
+
   const [codigoArticulo, setCodigoArticulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [serie, setSerie] = useState('');
@@ -26,14 +43,14 @@ export default function RegisterPedidoPage() {
     const producto = getProductoByCodigo(codigoArticulo);
 
     if (producto) {
-      setProductoActual(producto); // ✅
+      setProductoActual(producto);
       setDescripcion(producto.descripcion);
       setSerie(producto.serie);
       setPrecio(producto.precio);
       setTallasDisponibles(Object.keys(producto.stock).map(Number));
       setStockPorTalla(producto.stock);
     } else {
-      setProductoActual(null); // ✅
+      setProductoActual(null);
       setDescripcion('');
       setSerie('');
       setPrecio(0);
@@ -42,136 +59,94 @@ export default function RegisterPedidoPage() {
     }
   }, [codigoArticulo]);
 
-
   const handleCantidadChange = (talla: number, value: string) => {
     const cantidad = parseInt(value) || 0;
     const disponible = stockPorTalla[talla] || 0;
 
     if (cantidad < 0 || cantidad > disponible) {
-      // Si la cantidad es mayor que el stock, restablecer al máximo disponible
       setCantidades((prev) => ({ ...prev, [talla]: disponible }));
       return;
     }
     setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
   };
 
+  return (
+    <div className={styles.container}>
+      <h1 className={styles.heading}>Registrar Pedido</h1>
 
-  const handleDeleteItem = (index: number) => {
-    const nuevosItems = items.filter((_, i) => i !== index);
-    setItems(nuevosItems);
-  };
-
-  const agregarItem = () => {
-    const total = Object.values(cantidades).reduce((sum, val) => sum + val, 0);
-
-    // Verificar que no se superen los stocks
-    for (const talla in cantidades) {
-      const cantidad = cantidades[parseInt(talla)];
-      if (cantidad > (stockPorTalla[parseInt(talla)] || 0)) {
-        alert(`La cantidad de talla ${talla} excede el stock disponible`);
-        return;
-      }
-    }
-
-    if (!codigoArticulo || total === 0) return;
-    /*const nuevoItem: ItemUI = {
-      codigo: codigoArticulo.toUpperCase(),
-      descripcion,
-      serie,
-      precio,
-      cantidades: { ...cantidades },
-      total,
-
-      // ✅ valores mínimos para que compile (mock)
-      //product_id: producto?.product_id ?? 0,
-      //unit_of_measure: producto?.unit_of_measure ?? 'PAR',
-      //sizeIdBySizeNumber: producto?.sizeIdBySizeNumber ?? {},
-    };
-*/
-
-    const botonAgregarDeshabilitado =
-      !codigoArticulo ||
-      Object.values(cantidades).reduce((sum, val) => sum + val, 0) === 0 ||
-      Object.keys(cantidades).some((talla) => cantidades[parseInt(talla)] > stockPorTalla[parseInt(talla)]);
-  }
-
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.heading}>Registrar Pedido</h1>
-
-        <div className={styles.inputGroup}>
-          <label className={styles.label}>Cliente:</label>
-          <input
-            className={`${styles.input} ${styles.inputClient}`}
-            type="text"
-            value={cliente?.razonSocial || ''}
-            onClick={() => setShowClienteModal(true)}
-            readOnly
-            placeholder="Selecciona un cliente"
-          />
-        </div>
-
-        <div className={styles.inputGroup}>
-          <label className={styles.label}>Código del artículo:</label>
-          <input
-            className={styles.input}
-            type="text"
-            value={codigoArticulo}
-            onChange={(e) => setCodigoArticulo(e.target.value.toUpperCase())}
-          />
-          <label className={styles.label}>Descripción:</label>
-          <input className={`${styles.input} ${styles.inputDescripcion}`} value={descripcion} readOnly />
-          <label className={styles.label}>Serie:</label>
-          <input className={`${styles.input} ${styles.inputSerie}`} value={serie} readOnly />
-          <label className={styles.label}>Precio Unitario:</label>
-          <input className={`${styles.input} ${styles.inputPrecio}`} type="number" value={precio} onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)} />
-        </div>
-
-        <div className={styles.tallasContainer}>
-          <label className={styles.tallasLabel}>Cantidades por talla:</label>
-          <div className={styles.tallasGrid}>
-            {tallasDisponibles.map((talla) => (
-              <div key={talla} className={styles.tallaInput}>
-                <label className={styles.tallaLabel}>{talla}</label>
-                <input
-                  className={styles.tallaField}
-                  type="number"
-                  value={cantidades[talla] || ''}
-                  onChange={(e) => handleCantidadChange(talla, e.target.value)}
-                />
-              </div>
-            ))}
-          </div>
-          <div className={styles.tallasGrid}>
-            {tallasDisponibles.map((talla) => (
-              <div key={talla} className={styles.tallaInput}>
-                <label className={styles.tallaLabel}>Stock {talla}</label>
-                <input className={styles.tallaField} type="number" value={stockPorTalla[talla]} readOnly />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/*  <button
-          className={styles.addButton}
-          onClick={agregarItem}
-        disabled={botonAgregarDeshabilitado} 
-        >
-          Agregar al Pedido
-        </button>*/}
-
-   {/* <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} /> {/* Aquí pasamos el cliente completo */}
-
-        {showClienteModal && (
-          <ClienteModal
-            clientes={clientesMock}
-            onClose={() => setShowClienteModal(false)}
-            onSelect={(clienteSeleccionado) => {
-              setCliente(clienteSeleccionado);  // Asignamos el cliente completo
-              setShowClienteModal(false);
-            }}
-          />
-        )}
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>Cliente:</label>
+        <input
+          className={`${styles.input} ${styles.inputClient}`}
+          type="text"
+          value={cliente?.razonSocial || ''}
+          onClick={() => setShowClienteModal(true)}   // ✅ abre modal
+          readOnly
+          placeholder="Selecciona un cliente"
+        />
       </div>
-    );
-  }
+
+      {/* ... tu bloque de productos/tallas ... */}
+      <div className={styles.inputGroup}>
+        <label className={styles.label}>Código del artículo:</label>
+        <input
+          className={styles.input}
+          type="text"
+          value={codigoArticulo}
+          onChange={(e) => setCodigoArticulo(e.target.value.toUpperCase())}
+        />
+        <label className={styles.label}>Descripción:</label>
+        <input className={`${styles.input} ${styles.inputDescripcion}`} value={descripcion} readOnly />
+        <label className={styles.label}>Serie:</label>
+        <input className={`${styles.input} ${styles.inputSerie}`} value={serie} readOnly />
+        <label className={styles.label}>Precio Unitario:</label>
+        <input
+          className={`${styles.input} ${styles.inputPrecio}`}
+          type="number"
+          value={precio}
+          onChange={(e) => setPrecio(parseFloat(e.target.value) || 0)}
+        />
+      </div>
+
+      <div className={styles.tallasContainer}>
+        <label className={styles.tallasLabel}>Cantidades por talla:</label>
+        <div className={styles.tallasGrid}>
+          {tallasDisponibles.map((talla) => (
+            <div key={talla} className={styles.tallaInput}>
+              <label className={styles.tallaLabel}>{talla}</label>
+              <input
+                className={styles.tallaField}
+                type="number"
+                value={cantidades[talla] || ''}
+                onChange={(e) => handleCantidadChange(talla, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.tallasGrid}>
+          {tallasDisponibles.map((talla) => (
+            <div key={talla} className={styles.tallaInput}>
+              <label className={styles.tallaLabel}>Stock {talla}</label>
+              <input className={styles.tallaField} type="number" value={stockPorTalla[talla]} readOnly />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ✅ Modal consume /clients/mine al abrir */}
+      <ClienteModal
+        open={showClienteModal}
+        token={token}
+        onClose={() => setShowClienteModal(false)}
+        onSelect={(clienteSeleccionado) => {
+          setCliente(clienteSeleccionado);
+          setShowClienteModal(false);
+        }}
+      />
+
+      {/* ✅ luego aquí sí puedes pasar cliente a PedidoTabla */}
+      {/* <PedidoTabla items={items} onDelete={handleDeleteItem} cliente={cliente} user={user} /> */}
+    </div>
+  );
+}
