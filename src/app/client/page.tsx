@@ -9,7 +9,7 @@ import styles from './clientes.module.css';
 import { useUser } from '../context/UserContext';
 import { getUbigeoPeru } from './ubigeoData';
 import { createClient, getMyClients, ClientRow, CreateClientPayload } from '../services/clientServices';
-import { getDocumentTypes, DocumentTypeRow } from '../services/documentTypeServices';
+// import { getDocumentTypes, DocumentTypeRow } from '../services/documentTypeServices';
 
 type Ubigeo = Record<string, Record<string, string[]>>;
 
@@ -49,7 +49,7 @@ export default function RegisterClientePage() {
 
   const [rows, setRows] = useState<ClientRow[]>([]);
   const [ubigeo, setUbigeo] = useState<Ubigeo>({});
-  const [docTypes, setDocTypes] = useState<DocumentTypeRow[]>([]);
+  // const [docTypes, setDocTypes] = useState<DocumentTypeRow[]>([]);
 
   // ====== Form state ======
   // ✅ IMPORTANT: guardamos el CODE ('01'|'06'), no el texto
@@ -105,26 +105,26 @@ export default function RegisterClientePage() {
       }
     })();
   }, []);
-
-  // Carga catálogo document types (SUNAT codes)
-  useEffect(() => {
-    (async () => {
-      try {
-        // si tu endpoint requiere token, pásalo; si no, quítalo
-        const dts = await getDocumentTypes(token);
-        setDocTypes(dts);
-
-        // set default: si existe RUC(06), lo dejamos, si no el primero
-        if (dts.some((x) => x.code === '06')) setDocTypeCode('06');
-        else if (dts.length) setDocTypeCode(dts[0].code);
-      } catch (e: any) {
-        // no bloqueamos el form si no hay catálogo
-        console.error(e);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
-
+  /*
+    // Carga catálogo document types (SUNAT codes)
+    useEffect(() => {
+      (async () => {
+        try {
+          // si tu endpoint requiere token, pásalo; si no, quítalo
+          const dts = await getDocumentTypes(token);
+          setDocTypes(dts);
+  
+          // set default: si existe RUC(06), lo dejamos, si no el primero
+          if (dts.some((x) => x.code === '06')) setDocTypeCode('06');
+          else if (dts.length) setDocTypeCode(dts[0].code);
+        } catch (e: any) {
+          // no bloqueamos el form si no hay catálogo
+          console.error(e);
+        }
+      })();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token]);
+  */
   // Carga tabla clientes
   useEffect(() => {
     refresh().catch((e) => {
@@ -186,12 +186,11 @@ export default function RegisterClientePage() {
       {
         header: 'Tipo',
         cell: ({ row }) => {
-          // muestra nombre si existe en catálogo, si no el code
           const code = row.original.document_type;
-          const found = docTypes.find((d) => d.code === code);
-          return found?.name ?? code;
+          return code === '06' ? 'RUC' : code === '01' ? 'DNI' : code;
         },
       },
+
       { header: 'Documento', accessorKey: 'document_number' },
       { header: 'Razón Social', accessorKey: 'business_name' },
       { header: 'Dirección', cell: ({ row }) => row.original.address ?? '-' },
@@ -201,7 +200,7 @@ export default function RegisterClientePage() {
       { header: 'Teléfono', cell: ({ row }) => row.original.phone ?? '-' },
       { header: 'Correo', cell: ({ row }) => row.original.email ?? '-' },
     ],
-    [docTypes]
+    []
   );
 
   const table = useReactTable({
@@ -229,19 +228,10 @@ export default function RegisterClientePage() {
               disabled={loading}
             >
               {/* Si el catálogo carga, lo usamos */}
-              {docTypes.length > 0 ? (
-                docTypes.map((d) => (
-                  <option key={d.code} value={d.code}>
-                    {d.name}
-                  </option>
-                ))
-              ) : (
-                // fallback (por si el catálogo no carga)
-                <>
+             
                   <option value="06">RUC</option>
                   <option value="01">DNI</option>
-                </>
-              )}
+                
             </select>
           </div>
 
