@@ -6,7 +6,6 @@ import ClienteModal from './ClienteModal';
 import PedidoTabla from './PedidoTabla';
 import { getProductStockByWarehouseAndCode } from '../services/stockServices';
 import type { ItemUI } from '../components/types';
-import { createOrder } from '../services/ordersService';
 import { useUser } from '../context/UserContext';
 
 type ClienteUI = {
@@ -22,13 +21,36 @@ type ClienteUI = {
   distrito: string;
 };
 
-export default function RegisterPedidoPage() {
-  const { user } = useUser();              // ✅ aquí está token/rol/etc
-  const token = user?.token ?? '';
+type ApiStockRow = {
+  stock_id?: number;
+  id?: number;
+  warehouse_id: number;
+  product_id: number;
+  product_size_id: number | null;
+  size: string | null; // "38","39"...
+  quantity: number;
+  unit_of_measure: string;
+};
 
+type ApiProductResponse = {
+  product_id: number;
+  article_code: string;
+  article_description: string;
+  article_series: string;
+  unit_price: number;
+  manufacturing_cost?: number;
+  status: boolean;
+  stock: ApiStockRow[];
+};
+
+export default function RegisterPedidoPage() {
+  const { user } = useUser(); // Usamos useUser directamente
+  
+  const [isClientSide, setIsClientSide] = useState(false); // Este estado asegura que se renderice en el cliente
   const [cliente, setCliente] = useState<ClienteUI | null>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
 
+  // Otros estados
   const [codigoArticulo, setCodigoArticulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [serie, setSerie] = useState('');
@@ -38,37 +60,25 @@ export default function RegisterPedidoPage() {
   const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});
   const [items, setItems] = useState<ItemUI[]>([]);
   const [productoActual, setProductoActual] = useState<any>(null);
-  // para payload
+
   const [currentProductId, setCurrentProductId] = useState<number | null>(null);
   const [currentUnitOfMeasure, setCurrentUnitOfMeasure] = useState<string>('PAR');
   const [currentSizeIdBySizeNumber, setCurrentSizeIdBySizeNumber] = useState<Record<number, number>>({});
 
-  type ApiStockRow = {
-    stock_id?: number;
-    id?: number;
-    warehouse_id: number;
-    product_id: number;
-    product_size_id: number | null;
-    size: string | null; // "38","39"...
-    quantity: number;
-    unit_of_measure: string;
-  };
+  // Estado para manejar el token correctamente
+  const [token, setToken] = useState<string | null>(null);
 
-  type ApiProductResponse = {
-    product_id: number;
-    article_code: string;
-    article_description: string;
-    article_series: string;
-    unit_price: number;
-    manufacturing_cost?: number;
-    status: boolean;
-    stock: ApiStockRow[];
-  };
+  // Verificar que el token y warehouseId estén disponibles antes de ejecutar la lógica de productos
+  useEffect(() => {
+    if (user?.token) {
+      setToken(user.token); // Establecer token solo si está disponible
+    }
+  }, [user]);
+
   const toSizeNumber = (sizeStr: string): number | null => {
     const n = Number(sizeStr);
     return Number.isFinite(n) ? n : null;
   };
-
 
   const buildFromApi = (data: ApiProductResponse) => {
     const stockMap: Record<number, number> = {};
@@ -83,7 +93,6 @@ export default function RegisterPedidoPage() {
       sizes.push(sizeNum);
       stockMap[sizeNum] = (stockMap[sizeNum] || 0) + Number(row.quantity || 0);
 
-      // ✅ si viene product_size_id
       if (row.product_size_id) {
         sizeIdMap[sizeNum] = row.product_size_id;
       }
@@ -103,45 +112,12 @@ export default function RegisterPedidoPage() {
     };
   };
 
-
   useEffect(() => {
-    if (!user?.token) return;
-    if (!user?.warehouseId) return;
+    // Ahora que el token y warehouseId están listos, se hace la lógica de producto
+    if (token && user?.warehouseId) {
+      const code = codigoArticulo.trim().toUpperCase();
 
-    const code = codigoArticulo.trim().toUpperCase();
-
-    if (code.length < 7) {
-      setDescripcion('');
-      setSerie('');
-      setPrecio(0);
-      setTallasDisponibles([]);
-      setStockPorTalla({});
-      setCurrentProductId(null);
-      setCurrentUnitOfMeasure('PAR');
-      setCurrentSizeIdBySizeNumber({});
-      return;
-    }
-
-    const t = setTimeout(async () => {
-      try {
-        const data: ApiProductResponse = await getProductStockByWarehouseAndCode(
-          user.warehouseId,
-          code.substring(0, 7),
-          user.token
-        );
-
-        const mapped = buildFromApi(data);
-
-        setDescripcion(mapped.descripcion);
-        setSerie(mapped.serie);
-        setPrecio(mapped.precio);
-        setCurrentProductId(mapped.productId);
-        setCurrentUnitOfMeasure(mapped.unitOfMeasure);
-        setTallasDisponibles(mapped.tallasDisponibles);
-        setStockPorTalla(mapped.stockPorTalla);
-        setCurrentSizeIdBySizeNumber(mapped.sizeIdBySizeNumber);
-      } catch (err: any) {
-        // Limpia si no existe
+      if (code.length < 7) {
         setDescripcion('');
         setSerie('');
         setPrecio(0);
@@ -150,12 +126,43 @@ export default function RegisterPedidoPage() {
         setCurrentProductId(null);
         setCurrentUnitOfMeasure('PAR');
         setCurrentSizeIdBySizeNumber({});
-        console.error(err?.message || err);
+        return;
       }
-    }, 300);
 
-    return () => clearTimeout(t);
-  }, [codigoArticulo, user?.token, user?.warehouseId]);
+      const t = setTimeout(async () => {
+        try {
+          const data: ApiProductResponse = await getProductStockByWarehouseAndCode(
+            user.warehouseId,
+            code.substring(0, 7),
+            token
+          );
+
+          const mapped = buildFromApi(data);
+
+          setDescripcion(mapped.descripcion);
+          setSerie(mapped.serie);
+          setPrecio(mapped.precio);
+          setCurrentProductId(mapped.productId);
+          setCurrentUnitOfMeasure(mapped.unitOfMeasure);
+          setTallasDisponibles(mapped.tallasDisponibles);
+          setStockPorTalla(mapped.stockPorTalla);
+          setCurrentSizeIdBySizeNumber(mapped.sizeIdBySizeNumber);
+        } catch (err: any) {
+          setDescripcion('');
+          setSerie('');
+          setPrecio(0);
+          setTallasDisponibles([]);
+          setStockPorTalla({});
+          setCurrentProductId(null);
+          setCurrentUnitOfMeasure('PAR');
+          setCurrentSizeIdBySizeNumber({});
+          console.error(err?.message || err);
+        }
+      }, 300);
+
+      return () => clearTimeout(t);
+    }
+  }, [codigoArticulo, token, user?.warehouseId]); // Dependencias revisadas
 
 
   const handleCantidadChange = (talla: number, value: string) => {
@@ -179,7 +186,6 @@ export default function RegisterPedidoPage() {
 
     if (total === 0) return;
 
-    // validar stock y product_size_id
     for (const tallaStr of Object.keys(cantidades)) {
       const talla = Number(tallaStr);
       const qty = cantidades[talla] || 0;
@@ -210,7 +216,6 @@ export default function RegisterPedidoPage() {
 
     setItems((prev) => [...prev, nuevoItem]);
 
-    // limpiar producto actual
     setCodigoArticulo('');
     setDescripcion('');
     setSerie('');
@@ -228,7 +233,7 @@ export default function RegisterPedidoPage() {
     <div className={styles.container}>
       <h1 className={styles.heading}>Registrar Pedido</h1>
 
-      <div className={styles.inputGroup}>
+     <div className={styles.inputGroup}>
         <label className={styles.label}>Cliente:</label>
         <input
           className={`${styles.input} ${styles.inputClient}`}
@@ -306,7 +311,7 @@ export default function RegisterPedidoPage() {
       {/* ✅ Modal consume /clients/mine al abrir */}
       <ClienteModal
         open={showClienteModal}
-        token={token}
+        token={user!.token}
         onClose={() => setShowClienteModal(false)}
         onSelect={(clienteSeleccionado) => {
           setCliente(clienteSeleccionado);

@@ -1,14 +1,12 @@
-/*'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { getClientes, Cliente } from '../register-requested/mockData'; // Asegúrate de importar el servicio que creamos
 import styles from './registroAbono.module.css';
 import ClienteModal from '../register-requested/ClienteModal'; // Cambia la importación para que sea el segundo componente
 
 interface Abono {
   id: string;
-  cliente: Cliente;
   saldoPendiente: number;
   montoAbonado: number;
   tipoAbono: string;
@@ -16,18 +14,15 @@ interface Abono {
 }
 
 export default function RegistroAbonoPage() {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [abonos, setAbonos] = useState<Abono[]>([]);
-  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
   const [monto, setMonto] = useState<number>(0);
   const [tipoAbono, setTipoAbono] = useState<string>('Efectivo');
   const [fechaIngreso, setFechaIngreso] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showClienteModal, setShowClienteModal] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<string | null>(null);
 
-  // Simulamos la obtención de clientes de un servicio
   useEffect(() => {
-    const clientesSimulados = getClientes(); // Obtener clientes del servicio
-    setClientes(clientesSimulados);
+    // Simula la carga de clientes, puedes integrar tu servicio aquí.
   }, []);
 
   // Función para registrar el abono
@@ -44,7 +39,6 @@ export default function RegistroAbonoPage() {
     // Simulamos el registro de un abono
     const abono: Abono = {
       id: `ABONO-${Date.now()}`,
-      cliente: clienteSeleccionado,
       saldoPendiente: 500, // Simulamos un saldo pendiente
       montoAbonado: monto,
       tipoAbono,
@@ -60,8 +54,7 @@ export default function RegistroAbonoPage() {
       text: 'El abono se ha registrado correctamente.',
     });
   };
-*/
-{/*
+
   return (
     <div className={styles.container}>
       <h1 className={styles.heading}>Registro de Abonos</h1>
@@ -70,7 +63,7 @@ export default function RegistroAbonoPage() {
         <label>Cliente</label>
         <input
           type="text"
-          value={clienteSeleccionado?.razonSocial || ''}
+          value={clienteSeleccionado || ''}
           onClick={() => setShowClienteModal(true)}
           readOnly
           placeholder="Seleccione un cliente"
@@ -143,7 +136,7 @@ export default function RegistroAbonoPage() {
           <tbody>
             {abonos.map((abono) => (
               <tr key={abono.id}>
-                <td>{abono.cliente.razonSocial}</td>
+                <td>{clienteSeleccionado}</td>
                 <td>{abono.saldoPendiente}</td>
                 <td>{abono.montoAbonado}</td>
                 <td>{abono.tipoAbono}</td>
@@ -154,18 +147,16 @@ export default function RegistroAbonoPage() {
         </table>
       </div>
 
-      {/* Modal de selección de cliente */}
-      {/* Modal de selección de cliente */}
-      {/*
+      {/* 
       {showClienteModal && (
         <ClienteModal
-          clientes={clientes}
           onClose={() => setShowClienteModal(false)}
           onSelect={(cliente) => {
             setClienteSeleccionado(cliente);
             setShowClienteModal(false);
-      }} 
-        />*/}
-//    </div>
- // );
-//}
+          }} 
+        />
+      )}Modal de selección de cliente */}
+    </div>
+  );
+}
