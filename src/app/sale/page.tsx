@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { BrowserMultiFormatReader } from '@zxing/library';
 
 import styles from '../register-requested/registerPedido.module.css';
-import PedidoTabla from '../register-requested/PedidoTabla';
+import PedidoTabla from './PedidoTabla';
 import { Cliente } from '../register-requested/mockClientes';
 
 import { useUser } from '../context/UserContext';

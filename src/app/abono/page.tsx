@@ -1,4 +1,4 @@
-'use client';
+/*'use client';
 
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
@@ -60,7 +60,8 @@ export default function RegistroAbonoPage() {
       text: 'El abono se ha registrado correctamente.',
     });
   };
-
+*/
+{/*
   return (
     <div className={styles.container}>
       <h1 className={styles.heading}>Registro de Abonos</h1>
@@ -165,6 +166,6 @@ export default function RegistroAbonoPage() {
             setShowClienteModal(false);
       }} 
         />*/}
-    </div>
-  );
-}
+//    </div>
+ // );
+//}

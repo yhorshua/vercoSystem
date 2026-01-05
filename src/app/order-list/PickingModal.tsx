@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
+import { scanItem, closePacking } from '../services/packingService'; // Asegúrate de importar correctamente
 import styles from './pickingModal.module.css';
+import { useUser } from '../context/UserContext';
 
 interface Pedido {
     id: string;
@@ -13,26 +15,24 @@ interface Pedido {
     }[];
 }
 
-interface Faltante {
-    codigo: string;
-    talla: number;
-    solicitado: number;
-    leido: number;
-}
-
 interface Props {
     pedido: Pedido;
     onClose: () => void;
-    onFinalizar: (pedido: Pedido & { status?: string; faltantes?: Faltante[] }) => void;
-    onGuardarBorrador?: (pedido: Pedido, estado: Record<string, Record<number, number>>) => void;
+    onFinalizar: (pedido: Pedido & { status?: string }) => void;
 }
 
-export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBorrador }: Props) {
+export default function PickingModal({ pedido, onClose, onFinalizar }: Props) {
     const [pickingStatus, setPickingStatus] = useState<Record<string, Record<number, number>>>({});
     const inputRef = useRef<HTMLInputElement>(null);
     const scanTimeout = useRef<NodeJS.Timeout | null>(null);
+    const { user } = useUser();  // Aquí estamos obteniendo el user desde el contexto
 
-    // Inicializa contadores
+    // Verificamos si `user` es null o no
+    if (!user) {
+        return <div>Loading...</div>;  // O alguna UI que indique que el usuario no está disponible
+    }
+
+    // Inicializa contadores de escaneo
     useEffect(() => {
         const initStatus: Record<string, Record<number, number>> = {};
         pedido.items.forEach((item) => {
@@ -66,18 +66,27 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
         }, 80); // Delay corto para detectar fin del escaneo
     };
 
-    const marcarPorCodigo = (codigoBarras: string) => {
+    // Función para marcar el producto escaneado
+    const marcarPorCodigo = async (codigoBarras: string) => {
         if (codigoBarras.length < 9) return;
 
-        const codigo = codigoBarras.substring(0, 7); // primeros 7 chars
-        const talla = Number(codigoBarras.substring(7, 9)); // chars 8-9
+        const codigo = codigoBarras.substring(0, 7); // Primeros 7 caracteres
+        const talla = Number(codigoBarras.substring(7, 9)); // Últimos 2 caracteres
 
-        if (pickingStatus[codigo] && pickingStatus[codigo][talla] !== undefined) {
-            const cantidadSolicitada =
-                pedido.items.find(i => i.codigo === codigo)?.cantidades[talla] || 0;
-            const cantidadActual = pickingStatus[codigo][talla];
+        const cantidadSolicitada = pedido.items.find(i => i.codigo === codigo)?.cantidades[talla] || 0;
+        const cantidadActual = pickingStatus[codigo]?.[talla] || 0;
 
-            if (cantidadActual < cantidadSolicitada) {
+        if (cantidadActual < cantidadSolicitada) {
+            // Llamar al servicio para registrar el escaneo
+            try {
+                await scanItem({
+                    order_id: Number(pedido.id),
+                    codigo_producto: codigo,
+                    talla: talla.toString(),
+                    cantidad: 1,
+                }, user.token); // Pasa el token del usuario para la autenticación
+
+                // Actualiza el estado del picking
                 setPickingStatus((prev) => ({
                     ...prev,
                     [codigo]: {
@@ -85,24 +94,20 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
                         [talla]: cantidadActual + 1
                     }
                 }));
-            } else {
+            } catch (error : any) {
                 Swal.fire({
-                    icon: 'warning',
-                    title: 'Artículo completo',
-                    text: `El artículo ${codigo}, talla ${talla}, ya está completado con las ${cantidadSolicitada} unidades solicitadas.`,
-                    timer: 4000,
-                    showConfirmButton: false,
-                    target: document.body,
-                    customClass: { popup: 'swal-highest-z' }
+                    icon: 'error',
+                    title: 'Error al registrar el escaneo',
+                    text: error?.message || 'Hubo un problema al registrar el escaneo',
                 });
             }
         } else {
             Swal.fire({
-                icon: 'error',
-                title: 'Código no encontrado',
-                text: `El código ${codigoBarras} no pertenece a este pedido.`,
-                timer: 2000,
-                showConfirmButton: false
+                icon: 'warning',
+                title: 'Artículo completo',
+                text: `El artículo ${codigo}, talla ${talla}, ya está completado con las ${cantidadSolicitada} unidades solicitadas.`,
+                timer: 4000,
+                showConfirmButton: false,
             });
         }
     };
@@ -124,7 +129,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
     );
 
     // Calcular faltantes
-    const calcularFaltantes = (): Faltante[] => {
+    const calcularFaltantes = () => {
         return pedido.items.flatMap(item =>
             Object.entries(item.cantidades)
                 .filter(([talla, solicitada]) =>
@@ -139,36 +144,36 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
         );
     };
 
-    const confirmarParcial = () => {
-        const faltantes = calcularFaltantes();
+    // Función para finalizar el picking
+    const finalizarPicking = async () => {
+        if (pickingCompleto) {
+            try {
+                const result = await closePacking({
+                    order_id: Number(pedido.id),
+                    user_id: user.userId,
+                }, user.token); // Pasa el token del usuario para la autenticación
 
-        Swal.fire({
-            icon: 'warning',
-            title: 'Finalizar Picking Parcial',
-            html: `Se detectaron productos faltantes:<ul>${faltantes.map(f => `<li>${f.codigo} T${f.talla}: ${f.leido}/${f.solicitado}</li>`).join('')}</ul><p>¿Desea finalizar con lo disponible?</p>`,
-            showCancelButton: true,
-            confirmButtonText: 'Sí, finalizar parcial',
-            cancelButtonText: 'Cancelar'
-        }).then(result => {
-            if (result.isConfirmed) {
-                onFinalizar({
-                    ...pedido,
-                    status: 'PARCIAL',
-                    faltantes
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Picking finalizado',
+                    text: result.message,
+                    showConfirmButton: false,
+                    timer: 2000,
+                });
+
+                onFinalizar({ ...pedido, status: 'COMPLETO' }); // Notifica al componente padre que el picking está completo
+            } catch (error : any) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al finalizar el picking',
+                    text: error?.message || 'Hubo un problema al finalizar el picking',
                 });
             }
-        });
-    };
-
-    const guardarBorrador = () => {
-        if (onGuardarBorrador) {
-            onGuardarBorrador(pedido, pickingStatus);
+        } else {
             Swal.fire({
-                icon: 'success',
-                title: 'Borrador guardado',
-                text: 'El picking se ha guardado para continuar más tarde.',
-                timer: 2000,
-                showConfirmButton: false
+                icon: 'warning',
+                title: 'Picking incompleto',
+                text: 'Aún quedan productos por escanear.',
             });
         }
     };
@@ -237,20 +242,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar, onGuardarBo
                     <button
                         className={styles.partialButton}
                         disabled={totalPicked === 0}
-                        onClick={confirmarParcial}
-                    >
-                        Finalizar Parcial
-                    </button>
-                    <button
-                        className={styles.draftButton}
-                        onClick={guardarBorrador}
-                    >
-                        Guardar
-                    </button>
-                    <button
-                        className={styles.finalButton}
-                        disabled={!pickingCompleto}
-                        onClick={() => onFinalizar({ ...pedido, status: 'COMPLETO' })}
+                        onClick={finalizarPicking}
                     >
                         Finalizar Picking
                     </button>
