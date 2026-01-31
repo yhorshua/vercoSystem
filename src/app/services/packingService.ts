@@ -45,3 +45,23 @@ export async function closePacking(dto: { order_id: number; user_id: number }, t
 
   return res.json();
 }
+
+// En packingService.ts
+export async function getScanStatus(orderId: number, token: string) {
+  const res = await fetch(`${API_URL}/packing/scan-status/${orderId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null);
+    throw new Error(error?.message || 'Error al obtener el estado de los escaneos');
+  }
+
+  return res.json(); // Debería devolver una lista de artículos con su estado (escaneado vs solicitado)
+}
+
+

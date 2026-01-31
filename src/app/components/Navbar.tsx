@@ -80,6 +80,12 @@ const Navbar = () => {
           <Link href="/production" className={style.navbarLink} onClick={handleLinkClick}>
             Ingreso de Producción
           </Link>
+          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+            Registro de stock
+          </Link>
+          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
+            Registro de productos
+          </Link>
 
           <div className={style.reportDropdown}>
             <button onClick={toggleReportMenu} className={style.navbarLink} type="button">
@@ -130,6 +136,12 @@ const Navbar = () => {
           </Link>
           <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
             Usuarios
+          </Link>
+          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+            Registro de stock
+          </Link>
+          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
+            Registro de productos
           </Link>
 
           <div className={style.reportDropdown}>

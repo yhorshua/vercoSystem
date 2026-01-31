@@ -1,0 +1,55 @@
+/* page-register.module.css (únicamente para la tabla) */
+
+.tableContainer {
+  width: 100%;
+  max-height: 800px; /* Ajusta según lo que necesites */
+  overflow-y: auto; /* Habilita el scroll vertical */
+}
+
+/* Tabla */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Estilos de las celdas de la tabla */
+.table th, .table td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+/* Estilo para la cabecera sticky */
+.stickyHeader th {
+  position: sticky;
+  top: 0;
+  background-color: #f4f4f4;
+  z-index: 1000; /* Asegura que la cabecera esté por encima del contenido */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra sutil para separar la cabecera del contenido */
+}
+
+/* Estilos de la cabecera */
+.table th {
+  background-color: #f8f8f8;
+  color: #000000;
+  font-weight: bold;
+}
+
+/* Estilos de las celdas */
+.table td {
+  background-color: #ffffff;
+  color: #333;
+}
+
+/* Ajuste para móviles */
+@media screen and (max-width: 768px) {
+  .tableContainer {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+  }
+
+  .table {
+    min-width: 600px; /* Asegura que la tabla no se rompa en pantallas pequeñas */
+  }
+}
