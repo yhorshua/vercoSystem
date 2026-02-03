@@ -13,7 +13,6 @@ export interface User {
   warehouseId: number;
 }
 
-
 interface UserContextType {
   user: User | null;
   setUser: (user: User | null) => void;
@@ -36,8 +35,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token && savedUser) {
       const parsed = JSON.parse(savedUser);
       setUser(parsed);
+    } else {
+      // Si no hay token, redirigir al login
+      router.push('/login');
     }
-  }, []);
+  }, [router]);
 
   const logout = () => {
     localStorage.removeItem('access_token');

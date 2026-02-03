@@ -19,3 +19,22 @@ export async function getProductStockByWarehouseAndCode(
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
+
+export async function registerStockForMultipleItems(
+  warehouseId: number,
+  products: { productId: number; productSizeId: number; quantity: number }[]
+) {
+  const res = await fetch(`${API_URL}/stock/register-multiple`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      warehouseId,
+      products,
+    }),
+  });
+
+  if (!res.ok) throw new Error(await res.text()); // Si hay error, lanzamos la excepción
+  return res.json(); // Devuelve la respuesta (el stock registrado o algún mensaje de éxito)
+}

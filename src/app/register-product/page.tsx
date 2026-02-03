@@ -167,7 +167,7 @@ export default function CreateProductPage() {
         <div className={styles.container}>
             <h1 className={styles.title}>Crear Producto</h1>
 
-            {error && <div className={styles.error}>{error}</div>}
+         
 
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.row}>

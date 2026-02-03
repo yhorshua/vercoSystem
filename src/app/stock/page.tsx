@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { getProductsByWarehouse } from '../services/productsService';
+import { getCategories } from '../services/categoryService';  // Importa el servicio de categorías
 import StockTable from './StockTable';
 import { exportToExcel } from './exportUtils';
 import styles from './page.module.css';
@@ -19,6 +20,10 @@ interface StockItem {
   saldo: number;
 }
 
+type Category = {
+  id: number;
+  name: string;
+};
 // Tipos mínimos del backend (ajústalos si tu backend cambia)
 type BackendProduct = {
   article_code: string;
@@ -33,6 +38,8 @@ type BackendProduct = {
 export default function StockPage() {
   const { user } = useUser();
   const [stock, setStock] = useState<StockItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]); // Estado para las categorías
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null); // Estado para la categoría seleccionada
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -40,7 +47,7 @@ export default function StockPage() {
       try {
         if (!user?.token) return;
 
-        const products = await getProductsByWarehouse(user.warehouseId, user.token);
+        const products = await getProductsByWarehouse(user.warehouseId, selectedCategory, user.token);
 
         const mapped = products.map((p: any) => {
           const tallas: Record<string, number> = {};
@@ -69,8 +76,21 @@ export default function StockPage() {
       }
     };
 
+    const fetchCategories = async () => {
+      try {
+        if (!user?.token) return;
+
+        const categoriesData = await getCategories(user.token);
+        setCategories(categoriesData); // Guardar las categorías obtenidas
+      } catch (err: any) {
+        console.error('Error al obtener las categorías:', err);
+        alert('Error al obtener las categorías.');
+      }
+    };
+
     fetchStock();
-  }, [user]);
+    fetchCategories();  // Llamamos para obtener las categorías
+  }, [user, selectedCategory]);
 
 
   const filtered = useMemo(() => {
@@ -96,6 +116,21 @@ export default function StockPage() {
             className={styles.inputField}
             placeholder="Buscar por código o nombre"
           />
+
+          {/* Selector de Categoría */}
+          <select
+            value={selectedCategory || ''}
+            onChange={(e) => setSelectedCategory(Number(e.target.value))}
+            className={styles.inputField}
+          >
+            <option value="">Todas las Categorías</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+
           <button onClick={() => exportToExcel(filtered)} className={styles.exportButton}>
             Exportar a Excel
           </button>

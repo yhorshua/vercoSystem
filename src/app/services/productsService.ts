@@ -21,7 +21,7 @@ export interface CreateProductDto {
   lot_pair?: number;
 }
 
-
+{/*}
 export async function getProductsByWarehouse(warehouseId: number, token: string) {
   const res = await fetch(`${API_URL}/products/warehouse/${warehouseId}`, {
     method: 'GET',
@@ -38,6 +38,8 @@ export async function getProductsByWarehouse(warehouseId: number, token: string)
 
   return res.json();
 }
+  */}
+
 export async function getProductsWithSizes(token: string) {
   const res = await fetch(`${API_URL}/products/sizes`, {
     method: 'GET',
@@ -70,4 +72,43 @@ export async function createProduct(formData: CreateProductDto) {
   }
 
   return res.json(); // Devuelve la respuesta como JSON
+}
+
+export async function getProductsByWarehouse(warehouseId: number, categoryId: number | null, token: string) {
+  const url = new URL(`${API_URL}/products/filter`);
+  const params = new URLSearchParams();
+
+  params.append('warehouseId', warehouseId.toString());
+  if (categoryId !== null) {
+    params.append('categoryId', categoryId.toString());
+  }
+
+  const res = await fetch(`${url}?${params.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Error ${res.status}: ${text || res.statusText}`);
+  }
+
+  return res.json();
+}
+
+
+export async function getProductsByCodeOrDescription(query: string) {
+  const res = await fetch(`${API_URL}/products/search?query=${encodeURIComponent(query)}`, {
+    method: 'GET',
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Error ${res.status}: ${text || res.statusText}`);
+  }
+
+  return res.json(); // Devuelve los datos del producto encontrado
 }

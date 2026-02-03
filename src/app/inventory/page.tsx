@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getStockData } from '../stock/stockService'; // Aquí traemos los datos de stock
+import { getProductStockByWarehouseAndCode } from '../services/stockServices'; // Aquí traemos los datos de stock
 import StockTable from '../stock/StockTable'; // El componente de la tabla
 import Swal from 'sweetalert2'; // Importar SweetAlert2
 import styles from './InventoryPage.module.css'; // Estilos de la página
@@ -19,7 +19,7 @@ interface StockItem {
   saldo: number;  // Aseguramos que saldo sea un número
 }
 
-export default function StockPage() {
+export default function InventoryPage() {
   const [stock, setStock] = useState<StockItem[]>([]); // Almacenamos los artículos del inventario
   const [search, setSearch] = useState(''); // Búsqueda por código o nombre
   const [codigoBarras, setCodigoBarras] = useState(''); // Código de barras escaneado
@@ -28,7 +28,7 @@ export default function StockPage() {
   // Fetch de los artículos del stock al cargar la página
   useEffect(() => {
     const fetchStock = async () => {
-      const data = await getStockData();
+      const data = await getProductStockByWarehouseAndCode(null);
       setStock(data); // Asumimos que getStockData devuelve un array de StockItem
     };
     fetchStock();
