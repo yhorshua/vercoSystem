@@ -138,16 +138,16 @@
 }
 
 /* Estilos de tabla */
+/* Tabla y contenedor */
 .tableContainer {
-  width: 100%;
+  width: 100%; /* Asegura que la tabla ocupe todo el ancho disponible */
   overflow-x: auto;
   margin-top: 20px;
-  -webkit-overflow-scrolling: touch;
-  display: flex; /* Cambié de flex a block para evitar problemas de centrado */
 }
 
 .table {
-  width: max-content;
+  width: 100%; /* Asegura que la tabla ocupe todo el espacio disponible */
+  table-layout: fixed; /* Asegura que las celdas se distribuyan de manera uniforme */
   border-collapse: collapse;
 }
 
@@ -165,6 +165,7 @@
   color: #000000;
   font-weight: bold;
 }
+
 
 .table tbody tr:hover {
   background-color: #f1f1f1;
@@ -186,6 +187,60 @@
 .saveButton:hover,
 .registerButton:hover {
   background-color: #1c4b63;
+}
+
+/* Estilos para los campos de producto (código, descripción, etc.) */
+.productField {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  /* Dos columnas */
+  gap: 20px;  /* Espacio entre las columnas */
+  margin-bottom: 20px;
+}
+
+.productField label {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.inputDisabled {
+  background-color: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
+  padding: 10px;
+  border: 1px solid #ddd;
+  width: 100%;
+  font-size: 14px;
+  border-radius: 4px;
+}
+.sizes {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);  /* Dos columnas para las tallas */
+  gap: 2px; /* Espaciado entre las columnas */
+  align-items: center;
+}
+
+/* Estilos para cada talla y su campo de cantidad */
+.sizeInput {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+
+.sizeInput label {
+  font-size: 18px;
+  width: 50px;  /* Ajustar el tamaño de la etiqueta */
+  text-align: center;
+}
+
+.sizeInputField {
+  width: 100px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
 }
 
 /* Estilos responsive para móviles */
@@ -230,5 +285,17 @@
   .table td {
     font-size: 12px;
     padding: 10px;
+  }
+   .productField {
+    grid-template-columns: 1fr;  /* En pantallas pequeñas, los campos estarán en una sola columna */
+  }
+
+   .sizes {
+    /*grid-template-columns: 1fr;  /* Una columna en pantallas pequeñas */
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sizeInputField {
+    width: 80%;  /* Ajustar el ancho de los inputs */
   }
 }

@@ -147,36 +147,36 @@ export default function StockPage() {
 
   // Renderizar las tallas disponibles dependiendo de la categoría
   const renderSizes = () => {
-    if (productData?.category?.name === 'Zapatillas') {
-      return productData.sizes.map((size) => (
-        <div key={size.size} className={styles.sizeInput}>
-          <label>{size.size}:</label>
-          <input
-            type="number"
-            value={cantidadTallas[size.size] || 0}
-            onChange={(e) => handleCantidadChange(size.size, parseInt(e.target.value, 10))}
-            min="0"
-            className={styles.sizeInputField}
-          />
-        </div>
-      ));
-    } else if (productData?.category?.name === 'Ropa Deportiva') {
-      const ropaDeportivaTallas = ['S', 'M', 'L', 'XL', 'XXL'];
-      return ropaDeportivaTallas.map((size) => (
-        <div key={size} className={styles.sizeInput}>
-          <label>{size}:</label>
-          <input
-            type="number"
-            value={cantidadTallas[size] || 0}
-            onChange={(e) => handleCantidadChange(size, parseInt(e.target.value, 10))}
-            min="0"
-            className={styles.sizeInputField}
-          />
-        </div>
-      ));
-    }
-    return null;
-  };
+  if (productData?.category?.name === 'Zapatillas') {
+    return productData.sizes.map((size) => (
+      <div key={size.size} className={styles.sizeInput}>
+        <label>{size.size}:</label>
+        <input
+          type="number"
+          value={cantidadTallas[size.size] || 0}
+          onChange={(e) => handleCantidadChange(size.size, parseInt(e.target.value, 10))}
+          min="0"
+          className={styles.sizeInputField}
+        />
+      </div>
+    ));
+  } else if (productData?.category?.name === 'Ropa Deportiva') {
+    const ropaDeportivaTallas = ['S', 'M', 'L', 'XL', 'XXL'];
+    return ropaDeportivaTallas.map((size) => (
+      <div key={size} className={styles.sizeInput}>
+        <label>{size}:</label>
+        <input
+          type="number"
+          value={cantidadTallas[size] || 0}
+          onChange={(e) => handleCantidadChange(size, parseInt(e.target.value, 10))}
+          min="0"
+          className={styles.sizeInputField}
+        />
+      </div>
+    ));
+  }
+  return null;
+};
 
   // Columnas para la tabla usando useReactTable
   const columnHelper = createColumnHelper<StockItem>();
@@ -233,22 +233,33 @@ export default function StockPage() {
       {productData && (
         <div className={styles.productInfo}>
           <div className={styles.productField}>
-            <label>Código:</label>
-            <input type="text" value={productData.article_code} disabled className={styles.inputDisabled} />
-            <label>Descripción:</label>
-            <input type="text" value={productData.article_description} disabled className={styles.inputDisabled} />
-            <label>Serie:</label>
-            <input type="text" value={productData.article_series} disabled className={styles.inputDisabled} />
-            <label>Categoría:</label>
-            <input type="text" value={productData.category?.name || ''} disabled className={styles.inputDisabled} />
-            <label>Precio de Compra:</label>
-            <input type="text" value={productData.price} disabled className={styles.inputDisabled} />
+            <div>
+              <label>Código:</label>
+              <input type="text" value={productData.article_code} disabled className={styles.inputDisabled} />
+            </div>
+            <div>
+              <label>Descripción:</label>
+              <input type="text" value={productData.article_description} disabled className={styles.inputDisabled} />
+            </div>
+            <div>
+              <label>Serie:</label>
+              <input type="text" value={productData.article_series} disabled className={styles.inputDisabled} />
+            </div>
+            <div>
+              <label>Categoría:</label>
+              <input type="text" value={productData.category?.name || ''} disabled className={styles.inputDisabled} />
+            </div>
+            <div>
+              <label>Precio de venta:</label>
+              <input type="text" value={productData.price} disabled className={styles.inputDisabled} />
+            </div>
           </div>
 
           <div className={styles.sizes}>
-            <h4>Tallas Disponibles:</h4>
+            <h4>Ingresar cantidades:</h4>
             {renderSizes()}
           </div>
+
           <button onClick={addProductToTable} className={styles.saveButton}>
             Guardar Producto
           </button>
@@ -281,10 +292,11 @@ export default function StockPage() {
       <button
         onClick={handleRegisterStock}
         className={styles.registerButton}
-        disabled={isSaveButtonDisabled}
+        disabled={stockData.length === 0}  // El botón solo se habilita si hay productos en la tabla
       >
         Registrar Stock
       </button>
+
     </div>
   );
 }
