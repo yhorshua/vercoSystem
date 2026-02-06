@@ -92,3 +92,64 @@
   border-bottom: 1px solid #f0f0f0;
   white-space: nowrap;
 }
+
+/* Media Queries para pantallas pequeñas (mobile) */
+@media (max-width: 768px) {
+  .grid4 {
+    grid-template-columns: 1fr; /* 1 columna para pantallas pequeñas */
+  }
+
+  /* Botones se alinean en una columna */
+  .actions {
+    flex-direction: column;
+  }
+
+  .field {
+    grid-template-columns: 1fr; /* Ajuste en los campos para una sola columna */
+  }
+
+  /* Ajuste de tamaño del texto */
+  .title {
+    font-size: 18px; /* Reducir tamaño del título en móviles */
+  }
+
+  /* Ajuste de las tablas */
+  .tableWrap {
+    overflow-x: auto; /* Asegurarse de que la tabla sea desplazable en pantallas pequeñas */
+  }
+
+  .th, .td {
+    font-size: 12px; /* Reducir el tamaño de la fuente para pantallas más pequeñas */
+  }
+}
+
+
+/* Media Queries para pantallas pequeñas (mobile) */
+@media (max-width: 768px) {
+  .grid4 {
+    grid-template-columns: 1fr; /* 1 columna para pantallas pequeñas */
+  }
+
+  /* Botones se alinean en una columna */
+  .actions {
+    flex-direction: column;
+  }
+
+  .field {
+    grid-template-columns: 1fr; /* Ajuste en los campos para una sola columna */
+  }
+
+  /* Ajuste de tamaño del texto */
+  .title {
+    font-size: 18px; /* Reducir tamaño del título en móviles */
+  }
+
+  /* Ajuste de las tablas */
+  .tableWrap {
+    overflow-x: auto; /* Asegurarse de que la tabla sea desplazable en pantallas pequeñas */
+  }
+
+  .th, .td {
+    font-size: 12px; /* Reducir el tamaño de la fuente para pantallas más pequeñas */
+  }
+}

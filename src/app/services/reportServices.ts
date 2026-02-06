@@ -89,3 +89,172 @@ export async function getSalesReport(
 
   return res.json();
 }
+
+export async function getSellerCommissionReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
+  if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('warehouseId', String(params.warehouseId));
+  queryParams.set('type', params.type);
+
+  if (params.type === 'DAY') {
+    if (!params.date) throw new Error('date es requerido cuando type=DAY');
+    queryParams.set('date', params.date);
+  } else {
+    if (!params.from || !params.to) throw new Error('from y to son requeridos cuando type=RANGE');
+    queryParams.set('from', params.from);
+    queryParams.set('to', params.to);
+  }
+
+  if (params.userId) {
+    queryParams.set('userId', String(params.userId));
+  }
+
+  const res = await fetch(`${API_URL}/reports/seller-commission?${queryParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Error consultando el reporte de comisiones de vendedores');
+  }
+
+  return res.json();
+}
+
+export async function getWeeklyProfitReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
+  if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('warehouseId', String(params.warehouseId));
+  queryParams.set('type', params.type);
+
+  if (params.type === 'DAY') {
+    if (!params.date) throw new Error('date es requerido cuando type=DAY');
+    queryParams.set('date', params.date);
+  } else {
+    if (!params.from || !params.to) throw new Error('from y to son requeridos cuando type=RANGE');
+    queryParams.set('from', params.from);
+    queryParams.set('to', params.to);
+  }
+
+  if (params.userId) {
+    queryParams.set('userId', String(params.userId));
+  }
+
+  const res = await fetch(`${API_URL}/reports/weekly-profit?${queryParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Error consultando el reporte de utilidad semanal');
+  }
+
+  return res.json();
+}
+
+export async function getInventoryIngressReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
+  if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('warehouseId', String(params.warehouseId));
+  queryParams.set('type', params.type);
+
+  if (params.type === 'DAY') {
+    if (!params.date) throw new Error('date es requerido cuando type=DAY');
+    queryParams.set('date', params.date);
+  } else {
+    if (!params.from || !params.to) throw new Error('from y to son requeridos cuando type=RANGE');
+    queryParams.set('from', params.from);
+    queryParams.set('to', params.to);
+  }
+
+  if (params.userId) {
+    queryParams.set('userId', String(params.userId));
+  }
+
+  const res = await fetch(`${API_URL}/reports/inventory-ingress?${queryParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Error consultando el reporte de ingreso de mercancía');
+  }
+
+  return res.json();
+}
+export async function getCashClosureReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
+  if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('warehouseId', String(params.warehouseId));
+  queryParams.set('type', params.type);
+
+  if (params.type === 'DAY') {
+    if (!params.date) throw new Error('date es requerido cuando type=DAY');
+    queryParams.set('date', params.date);
+  } else {
+    if (!params.from || !params.to) throw new Error('from y to son requeridos cuando type=RANGE');
+    queryParams.set('from', params.from);
+    queryParams.set('to', params.to);
+  }
+
+  if (params.userId) {
+    queryParams.set('userId', String(params.userId));
+  }
+
+  const res = await fetch(`${API_URL}/reports/cash-closure?${queryParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Error consultando el reporte de cierre de caja');
+  }
+
+  return res.json();
+}
+
+// services/reportServices.ts
+
+export async function getOperatingExpenses(start: string, end: string, token: string): Promise<number> {
+  if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
+
+  const queryParams = new URLSearchParams();
+  queryParams.set('start', start);
+  queryParams.set('end', end);
+
+  const res = await fetch(`${API_URL}/cash-movements/operating-expenses?${queryParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Error consultando el reporte de gastos operativos');
+  }
+
+  return res.json(); // El resultado esperado es un número
+}
+

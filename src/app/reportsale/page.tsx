@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 
 import { useUser } from '../context/UserContext';
-import { getSalesReport, SalesReportResponse, SalesReportType } from '../services/reportServices';
+import {
+    getSalesReport,
+    getWeeklyProfitReport,
+    getSellerCommissionReport,
+    getInventoryIngressReport,
+    getCashClosureReport,
+    getOperatingExpenses,
+    SalesReportRowDTO,
+    SalesPaymentDTO
+} from '../services/reportServices';
 import { getSellersByWarehouse, SellerOption } from '../services/userServices';
 
 import styles from './reporteVentas.module.css';
@@ -20,26 +29,22 @@ function todayISO() {
 
 export default function ReporteVentasPage() {
     const { user } = useUser();
-
     const token = user?.token || '';
     const warehouseId = user?.warehouseId || 0;
 
     const canUse = useMemo(() => Boolean(token && warehouseId), [token, warehouseId]);
 
-    // form
     const [reportType, setReportType] = useState<string>('DAY'); // Selector del tipo de reporte
     const [date, setDate] = useState(todayISO());
     const [from, setFrom] = useState(todayISO());
     const [to, setTo] = useState(todayISO());
 
-    // vendedores
     const [sellers, setSellers] = useState<SellerOption[]>([]);
     const [sellerId, setSellerId] = useState<string>(''); // '' = todos
     const [loadingSellers, setLoadingSellers] = useState(false);
 
-    // data
     const [loading, setLoading] = useState(false);
-    const [report, setReport] = useState<SalesReportResponse | null>(null);
+    const [report, setReport] = useState<any | null>(null);
 
     const loadSellers = async () => {
         if (!canUse) return;
@@ -68,7 +73,6 @@ export default function ReporteVentasPage() {
                         : `Del ${from} al ${to}`,
             });
 
-            // ✅ descargar
             const fileName =
                 reportType === 'DAY'
                     ? `reporte_ventas_${date}.pdf`
@@ -121,12 +125,20 @@ export default function ReporteVentasPage() {
         try {
             const userId = sellerId ? Number(sellerId) : undefined;
 
-            const r = await getSalesReport(
-                reportType === 'DAY'
-                    ? { warehouseId, type: 'DAY', date, userId }
-                    : { warehouseId, type: 'RANGE', from, to, userId },
-                token,
-            );
+            let r;
+            if (reportType === 'DAY') {
+                r = await getSalesReport({ warehouseId, type: 'DAY', date, userId }, token);
+            } else if (reportType === 'RANGE') {
+                r = await getSalesReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
+            } else if (reportType === 'CASH_CLOSURE') {
+                r = await getCashClosureReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
+            } else if (reportType === 'INVENTORY') {
+                r = await getInventoryIngressReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
+            } else if (reportType === 'WEEKLY_PROFIT') {
+                r = await getWeeklyProfitReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
+            } else if (reportType === 'SELLER_COMMISSION') {
+                r = await getSellerCommissionReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
+            }
 
             setReport(r);
         } catch (e: any) {
@@ -166,11 +178,13 @@ export default function ReporteVentasPage() {
                             <option value="PRODUCT">Ventas por Producto</option>
                             <option value="CLIENT">Ventas por Cliente</option>
                             <option value="INVENTORY">Ingreso de Mercadería</option>
+                            <option value="SELLER_COMMISSION">Comisiones de Vendedores</option>
+                            <option value="WEEKLY_PROFIT">Utilidad Semanal</option>
                         </select>
                     </div>
 
                     {/* Selector de Vendedor */}
-                    {reportType !== 'SELLER' && (
+                    {reportType !== 'SELLER_COMMISSION' && (
                         <div className={styles.field}>
                             <label>Vendedor</label>
                             <select
@@ -261,14 +275,16 @@ export default function ReporteVentasPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {report.sales.map((s) => (
+                                {report.sales.map((s: SalesReportRowDTO) => (
                                     <tr key={s.sale_id}>
                                         <td className={styles.td}>{s.sale_code}</td>
                                         <td className={styles.td}>{new Date(s.sale_date).toLocaleString()}</td>
                                         <td className={styles.td}>{s.user_name}</td>
                                         <td className={styles.td}>{s.total_amount}</td>
                                         <td className={styles.td}>
-                                            {s.payments?.length ? s.payments.map((p) => p.method).join(', ') : s.payment_method ?? '-'}
+                                            {s.payments?.length
+                                                ? s.payments.map((p: SalesPaymentDTO) => p.method).join(', ')
+                                                : s.payment_method ?? '-'}
                                         </td>
                                     </tr>
                                 ))}
