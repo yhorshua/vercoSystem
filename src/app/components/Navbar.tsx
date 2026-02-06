@@ -86,7 +86,15 @@ const Navbar = () => {
           <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
             Registro de productos
           </Link>
-
+          <Link href="/role" className={style.navbarLink} onClick={handleLinkClick}>
+            Roles
+          </Link>
+          <Link href="/warehouses" className={style.navbarLink} onClick={handleLinkClick}>
+            Almacenes
+          </Link>
+          <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
+            Usuarios
+          </Link>
           <div className={style.reportDropdown}>
             <button onClick={toggleReportMenu} className={style.navbarLink} type="button">
               Reportes
@@ -116,26 +124,20 @@ const Navbar = () => {
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             Stock
           </Link>
+          {/*
           <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>
             Inventario
           </Link>
+          */}
           <Link href="/sale" className={style.navbarLink} onClick={handleLinkClick}>
             Venta
           </Link>
+          {/*
           <Link href="/merchandise" className={style.navbarLink} onClick={handleLinkClick}>
             Ingreso a Stock
-          </Link>
+          </Link> */}
           <Link href="/caja" className={style.navbarLink} onClick={handleLinkClick}>
             Caja
-          </Link>
-          <Link href="/role" className={style.navbarLink} onClick={handleLinkClick}>
-            Roles
-          </Link>
-          <Link href="/warehouses" className={style.navbarLink} onClick={handleLinkClick}>
-            Almacenes
-          </Link>
-          <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
-            Usuarios
           </Link>
           <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
             Registro de stock

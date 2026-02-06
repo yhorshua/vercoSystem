@@ -27,7 +27,7 @@ export default function ReporteVentasPage() {
     const canUse = useMemo(() => Boolean(token && warehouseId), [token, warehouseId]);
 
     // form
-    const [type, setType] = useState<SalesReportType>('DAY');
+    const [reportType, setReportType] = useState<string>('DAY'); // Selector del tipo de reporte
     const [date, setDate] = useState(todayISO());
     const [from, setFrom] = useState(todayISO());
     const [to, setTo] = useState(todayISO());
@@ -63,14 +63,14 @@ export default function ReporteVentasPage() {
         try {
             const pdfBlob = await buildSalesReportPdfBlob(report, {
                 periodLabel:
-                    type === 'DAY'
+                    reportType === 'DAY'
                         ? `Día ${date}`
                         : `Del ${from} al ${to}`,
             });
 
             // ✅ descargar
             const fileName =
-                type === 'DAY'
+                reportType === 'DAY'
                     ? `reporte_ventas_${date}.pdf`
                     : `reporte_ventas_${from}_al_${to}.pdf`;
 
@@ -90,7 +90,6 @@ export default function ReporteVentasPage() {
 
     useEffect(() => {
         void loadSellers();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canUse, warehouseId]);
 
     const handleSearch = async () => {
@@ -100,11 +99,13 @@ export default function ReporteVentasPage() {
         }
 
         // Validaciones
-        if (type === 'DAY') {
+        if (reportType === 'DAY') {
             if (!date) {
                 Swal.fire({ icon: 'warning', title: 'Fecha', text: 'Selecciona una fecha' });
                 return;
             }
+        } else if (reportType === 'SELLER') {
+            // No es necesario seleccionar fechas para el reporte de vendedor
         } else {
             if (!from || !to) {
                 Swal.fire({ icon: 'warning', title: 'Fechas', text: 'Selecciona fecha inicio y fin' });
@@ -121,9 +122,9 @@ export default function ReporteVentasPage() {
             const userId = sellerId ? Number(sellerId) : undefined;
 
             const r = await getSalesReport(
-                type === 'DAY'
-                    ? { warehouseId, type, date, userId }
-                    : { warehouseId, type, from, to, userId },
+                reportType === 'DAY'
+                    ? { warehouseId, type: 'DAY', date, userId }
+                    : { warehouseId, type: 'RANGE', from, to, userId },
                 token,
             );
 
@@ -151,36 +152,45 @@ export default function ReporteVentasPage() {
 
             <div className={styles.card}>
                 <div className={styles.grid4}>
+                    {/* Selector de Tipo de Reporte */}
                     <div className={styles.field}>
-                        <label>Tipo</label>
+                        <label>Tipo de Reporte</label>
                         <select
-                            value={type}
-                            onChange={(e) => setType(e.target.value as SalesReportType)}
+                            value={reportType}
+                            onChange={(e) => setReportType(e.target.value)}
                             className={styles.control}
                         >
-                            <option value="DAY">Día</option>
-                            <option value="RANGE">Rango (Semana/Mes)</option>
+                            <option value="DAY">Ventas por Día</option>
+                            <option value="RANGE">Ventas por Rango (Semana/Mes)</option>
+                            <option value="CASH_CLOSURE">Cierre de Caja</option>
+                            <option value="PRODUCT">Ventas por Producto</option>
+                            <option value="CLIENT">Ventas por Cliente</option>
+                            <option value="INVENTORY">Ingreso de Mercadería</option>
                         </select>
                     </div>
 
-                    <div className={styles.field}>
-                        <label>Vendedor</label>
-                        <select
-                            value={sellerId}
-                            onChange={(e) => setSellerId(e.target.value)}
-                            disabled={loadingSellers}
-                            className={styles.control}
-                        >
-                            <option value="">Todos</option>
-                            {sellers.map((s) => (
-                                <option key={s.id} value={String(s.id)}>
-                                    {s.full_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    {/* Selector de Vendedor */}
+                    {reportType !== 'SELLER' && (
+                        <div className={styles.field}>
+                            <label>Vendedor</label>
+                            <select
+                                value={sellerId}
+                                onChange={(e) => setSellerId(e.target.value)}
+                                disabled={loadingSellers}
+                                className={styles.control}
+                            >
+                                <option value="">Todos</option>
+                                {sellers.map((s) => (
+                                    <option key={s.id} value={String(s.id)}>
+                                        {s.full_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
-                    {type === 'DAY' ? (
+                    {/* Selector de Fechas */}
+                    {reportType === 'DAY' ? (
                         <div className={styles.field} style={{ gridColumn: 'span 2' }}>
                             <label>Fecha</label>
                             <input
@@ -275,8 +285,6 @@ export default function ReporteVentasPage() {
                     </div>
                 </div>
             )}
-
-
         </div>
     );
 }

@@ -120,6 +120,21 @@ body {
   opacity: 0.7;
   cursor: not-allowed;
 }
+/* Estilos globales para la estructura de la página */
+.layoutWrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Esto asegura que el contenedor ocupe toda la altura de la ventana */
+}
+
+.contentWrapper {
+  flex-grow: 1; /* Esto hace que el contenido principal ocupe todo el espacio disponible */
+}
+
+footer {
+  margin-top: auto; /* Esto asegura que el footer se desplace hacia el final */
+}
+
 
 
 

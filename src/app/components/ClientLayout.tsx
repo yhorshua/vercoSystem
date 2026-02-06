@@ -3,6 +3,7 @@
 import { useUser } from '../context/UserContext';
 import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user } = useUser(); // ✅ ahora tomamos 'user'
@@ -12,9 +13,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const showNavbar = pathname !== '/login' && !!user;
 
   return (
-    <>
+    <div className="layoutWrapper">
       {showNavbar && <Navbar />}
-      <main>{children}</main>
-    </>
+      <main className="contentWrapper">{children}</main>
+      <Footer /> {/* El Footer siempre estará aquí */}
+    </div>
   );
 }
