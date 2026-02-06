@@ -28,8 +28,8 @@ export default function InventoryPage() {
   // Fetch de los artículos del stock al cargar la página
   useEffect(() => {
     const fetchStock = async () => {
-      const data = await getProductStockByWarehouseAndCode(null);
-      setStock(data); // Asumimos que getStockData devuelve un array de StockItem
+      //const data = await getProductStockByWarehouseAndCode(null);
+      //setStock(data); // Asumimos que getStockData devuelve un array de StockItem
     };
     fetchStock();
   }, []);
