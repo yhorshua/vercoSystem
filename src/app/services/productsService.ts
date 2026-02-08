@@ -57,22 +57,22 @@ export async function getProductsWithSizes(token: string) {
   return res.json(); // Devuelve la respuesta como un JSON
 }
 
-export async function createProduct(formData: CreateProductDto) {
-  const res = await fetch(`${API_URL}/products`, {
+export async function createProduct(products: CreateProductDto[]) {
+  const res = await fetch(`${API_URL}/products/many`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(formData),
+    body: JSON.stringify(products),  // Asegúrate de enviar la lista de productos
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`Error ${res.status}: ${text || res.statusText}`);
   }
-
-  return res.json(); // Devuelve la respuesta como JSON
+  return await res.json();
 }
+
 
 export async function getProductsByWarehouse(warehouseId: number, categoryId: number | null, token: string) {
   const url = new URL(`${API_URL}/products/filter`);

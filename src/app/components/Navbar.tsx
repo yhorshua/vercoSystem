@@ -12,7 +12,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const router = useRouter();
-
+console.log(user, 'validacion de usuario con los datos');
   const handleLogout = () => {
     logout(); // limpia el contexto y localStorage
     router.push('/login'); // ✅ redirige al login sin recargar
@@ -20,8 +20,8 @@ const Navbar = () => {
 
   if (!user) return null;
   // Los roles vienen desde user.role (por ejemplo "Administrador")
-  const role = user.role.toLowerCase(); // -> "administrador", "vendedor", etc.
-
+  const role = user?.role?.name_role; // -> "administrador", "vendedor", etc.
+  const warehouse_name = user?.warehouse?.warehouse_name;
   const toggleMenu = () => {
     setIsMenuOpen((v) => !v);
     setIsReportOpen(false); // ✅ opcional: resetea reportes al abrir/cerrar
@@ -37,7 +37,7 @@ const Navbar = () => {
   // ✅ Links reutilizables (misma lógica que tu navbarCenter)
   const RoleLinks = () => (
     <>
-      {role === 'vendedor' && (
+      {role === 'Vendedor' && (
         <>
           <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
             Registrar Pedido
@@ -54,7 +54,7 @@ const Navbar = () => {
         </>
       )}
 
-      {role === 'administrador' && (
+      {role === 'Administrador' && (
         <>
           <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
             Registrar Pedido
@@ -119,7 +119,7 @@ const Navbar = () => {
         </>
       )}
 
-      {role === 'tienda' && (
+      {role === 'Tienda' && (
         <>
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             Stock
@@ -188,8 +188,8 @@ const Navbar = () => {
           </div>
 
           <div className={style.userDetails}>
-            <span className={style.username}>{user.fullName}</span>
-            <span className={style.userArea}>{user.role}</span>
+            <span className={style.username}>{user.full_name}</span>
+            <span className={style.userArea}>{warehouse_name}</span>
           </div>
 
           {/* ✅ AQUÍ se muestran tus pestañas cuando es MOBILE y se abre la hamburguesa */}

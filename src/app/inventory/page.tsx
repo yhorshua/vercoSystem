@@ -126,7 +126,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Mostrar tabla con artículos */}
-      <StockTable data={filtered} />
+      {/*<StockTable data={filtered} /> */}
     </div>
   );
 }

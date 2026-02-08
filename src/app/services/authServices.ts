@@ -1,5 +1,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export interface Warehouse {
+  id: number;
+  warehouse_name: string;
+  type: string;
+  location: string;
+  status: { type: string; data: number[] };
+}
 // src/services/authService.ts
 export interface LoginResponse {
   access_token: string;
@@ -13,8 +20,9 @@ export interface LoginResponse {
     rol_id: number;
     role: { id: number; name_role: string };
     warehouse_id: number; // ✅ AGREGA ESTO
+    warehouse: Warehouse;
     date_register: string;
-    state_user: boolean;
+    state_user: string;
   };
 }
 

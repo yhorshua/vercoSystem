@@ -44,6 +44,7 @@ export type CreateSalePayload = {
     product_size_id?: number | null;
     quantity: number;
     unit_of_measure: string;
+    unit_price: number;
   }>;
 };
 

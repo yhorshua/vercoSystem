@@ -31,6 +31,7 @@ export default function CreateProductPage() {
     const [isShoeCategory, setIsShoeCategory] = useState<boolean>(false); // Estado para verificar si la categoría es zapatillas
     const [sizeRange, setSizeRange] = useState<{ min: number, max: number } | null>(null); // Estado para guardar el rango de tallas basado en la serie seleccionada
     const { user } = useUser(); // Acceder al contexto del usuario para obtener el token
+    const [products, setProducts] = useState<CreateProductDto[]>([]); // Estado para almacenar los productos agregados
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -49,6 +50,7 @@ export default function CreateProductPage() {
 
         fetchCategories();
     }, [user]);
+
     const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCategoryId = Number(e.target.value);
         setCategoryId(selectedCategoryId);  // Ahora categoryId será siempre un número
@@ -74,7 +76,6 @@ export default function CreateProductPage() {
     };
 
     const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'unitPrice' | 'sellingPrice') => {
-        // Limpiar el valor de la entrada para que solo contenga números y el punto como separador decimal
         let value = e.target.value.replace('S/. ', '').replace(/[^0-9.]/g, '').trim();  // Elimina el símbolo "S/." y cualquier otro carácter no numérico
 
         // Permitir un solo punto decimal
@@ -110,7 +111,6 @@ export default function CreateProductPage() {
 
     const handleAddSize = () => {
         if (newSize && !sizes.includes(newSize)) {
-            // Si la categoría es zapatillas, validamos la talla dentro del rango permitido
             if (isShoeCategory && sizeRange) {
                 const sizeNumber = parseInt(newSize);
                 if (sizeNumber < sizeRange.min || sizeNumber > sizeRange.max) {
@@ -127,12 +127,8 @@ export default function CreateProductPage() {
         setSizes((prevSizes) => prevSizes.filter((item) => item !== size)); // Eliminar la talla
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-
-        const formData: CreateProductDto = {
+    const addProductToTable = () => {
+        const newProduct: CreateProductDto = {
             article_code: articleCode,
             article_description: articleDescription,
             article_series: articleSeries,
@@ -151,23 +147,57 @@ export default function CreateProductPage() {
             lot_pair: lotPair,
         };
 
-        try {
-            const response = await createProduct(formData); // Crear producto usando el servicio
-            console.log('Producto creado:', response);
-            alert('Producto creado con éxito');
-        } catch (error: any) {
-            console.error('Error al crear el producto:', error);
-            setError('Hubo un error al crear el producto. Intenta nuevamente.');
-        } finally {
-            setLoading(false);
-        }
+        setProducts((prevProducts) => [...prevProducts, newProduct]); // Agregar el producto a la tabla
+        clearFields(); // Limpiar los campos del formulario después de agregar el producto
+    };
+
+    const clearFields = () => {
+        setArticleCode('');
+        setArticleDescription('');
+        setArticleSeries('');
+        setTypeOrigin('');
+        setManufacturingCost(0);
+        setUnitPrice(0);
+        setSellingPrice(0);
+        setBrandName('');
+        setModelCode('');
+        setCategoryId(0);
+        setMaterialType('');
+        setColor('');
+        setStockMinimum(0);
+        setProductImage('');
+        setSizes([]);
+        setLotPair(0);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+        // Enviar la lista completa de productos
+        const response = await createProduct(products); // Enviar todos los productos en la lista
+        console.log('Productos creados:', response);
+        alert('Productos creados con éxito');
+        setProducts([]); // Limpiar la lista de productos después de la creación
+    } catch (error: any) {
+        console.error('Error al crear los productos:', error);
+        setError('Hubo un error al crear los productos. Intenta nuevamente.');
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+    // Función para eliminar un producto de la tabla
+    const handleDeleteProduct = (index: number) => {
+        setProducts((prevProducts) => prevProducts.filter((_, i) => i !== index)); // Eliminar producto
     };
 
     return (
         <div className={styles.container}>
             <h1 className={styles.title}>Crear Producto</h1>
-
-         
 
             <form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.row}>
@@ -247,7 +277,7 @@ export default function CreateProductPage() {
                                 <input
                                     className={styles.inputField}
                                     type="text"
-                                    value={`S/. ${unitPrice.toFixed(2)}`}  // Asegura que se muestren siempre dos decimales
+                                    value={`S/. ${unitPrice.toFixed(2)}`}
                                     onChange={(e) => handleCurrencyChange(e, 'unitPrice')}
                                     required
                                 />
@@ -260,7 +290,7 @@ export default function CreateProductPage() {
                                 <input
                                     className={styles.inputField}
                                     type="text"
-                                    value={`S/. ${sellingPrice.toFixed(2)}`}  // Asegura que se muestren siempre dos decimales
+                                    value={`S/. ${sellingPrice.toFixed(2)}`}
                                     onChange={(e) => handleCurrencyChange(e, 'sellingPrice')}
                                     required
                                 />
@@ -330,11 +360,54 @@ export default function CreateProductPage() {
                 </div>
 
                 <div className={styles.submitGroup}>
-                    <button type="submit" disabled={loading} className={styles.submitButton}>
-                        {loading ? 'Cargando...' : 'Crear Producto'}
+                    <button type="button" onClick={addProductToTable} className={styles.submitButton}>
+                        Agregar Producto
                     </button>
                 </div>
             </form>
+
+            <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Descripción</th>
+                            <th>Serie</th>
+                            <th>Tallas</th>
+                            <th>Precio</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {products.map((product, index) => (
+                            <tr key={index}>
+                                <td>{product.article_code}</td>
+                                <td>{product.article_description}</td>
+                                <td>{product.article_series}</td>
+                                <td>{product.sizes.join(', ')}</td>
+                                <td>{product.unit_price}</td>
+                                <td>
+                                    <button
+                                        onClick={() => handleDeleteProduct(index)}
+                                        className={styles.deleteButton}
+                                    >
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
+                <button
+                    onClick={handleSubmit}  // Llamamos a handleSubmit cuando el botón es presionado
+                    className={styles.submitButton}
+                    disabled={loading || products.length === 0}  // Habilitar solo si hay productos en la lista
+                >
+                    {loading ? 'Cargando...' : 'Registrar Productos'}
+                </button>
+
+            </div>
         </div>
     );
 }

@@ -4,7 +4,6 @@ import { useReactTable, createColumnHelper, getCoreRowModel, getSortedRowModel, 
 import styles from './page.module.css';
 
 // Definir el tipo para las tallas y los artículos
-const tallasOrdenadas = Array.from({ length: 18 }, (_, i) => (27 + i).toString());
 
 interface Tallas {
   [talla: string]: number; // Representa las cantidades por cada talla
@@ -18,7 +17,7 @@ interface StockItem {
   saldo: number;
 }
 
-export default function StockTable({ data }: { data: StockItem[] }) {
+export default function StockTable({ data, tallasDisponibles }: { data: StockItem[]; tallasDisponibles: string[] }) {
   const columnHelper = createColumnHelper<StockItem>();
 
   const columns = [
@@ -31,7 +30,7 @@ export default function StockTable({ data }: { data: StockItem[] }) {
     columnHelper.accessor('descripcion', {
       header: 'Descripción',
     }),
-    ...tallasOrdenadas.map((talla) =>
+    ...tallasDisponibles.map((talla) =>
       columnHelper.accessor((row) => row.tallas[talla] ?? 0, {
         id: talla,
         header: talla,

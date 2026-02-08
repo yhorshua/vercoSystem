@@ -24,16 +24,6 @@ type Category = {
   id: number;
   name: string;
 };
-// Tipos mínimos del backend (ajústalos si tu backend cambia)
-type BackendProduct = {
-  article_code: string;
-  article_series: string;
-  article_description: string;
-  stock: Array<{
-    quantity: number;
-    productSize?: { size: string } | null; // viene si agregas join stock.productSize
-  }>;
-};
 
 export default function StockPage() {
   const { user } = useUser();
@@ -41,23 +31,40 @@ export default function StockPage() {
   const [categories, setCategories] = useState<Category[]>([]); // Estado para las categorías
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null); // Estado para la categoría seleccionada
   const [search, setSearch] = useState('');
+  const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]); // Estado para las tallas disponibles
 
   useEffect(() => {
     const fetchStock = async () => {
       try {
-        if (!user?.token) return;
+        if (!user?.token || !user?.warehouse_id) {
+          console.error('Usuario no autenticado o datos de usuario incompletos.');
+          return;
+        }
 
-        const products = await getProductsByWarehouse(user.warehouseId, selectedCategory, user.token);
+        const products = await getProductsByWarehouse(user.warehouse_id, selectedCategory, user.token);
 
         const mapped = products.map((p: any) => {
           const tallas: Record<string, number> = {};
           let saldo = 0;
 
+          // Extraer tallas dinámicas del stock
+          const productTallas: string[] = [];
+
           for (const s of p.stock || []) {
             const size = s.productSize?.size;
             const qty = Number(s.quantity || 0);
             saldo += qty;
-            if (size) tallas[size] = (tallas[size] || 0) + qty;
+            if (size) {
+              tallas[size] = (tallas[size] || 0) + qty;
+              if (!productTallas.includes(size)) {
+                productTallas.push(size); // Agregar talla si no está en el array
+              }
+            }
+          }
+
+          // Actualiza el estado de las tallas disponibles
+          if (productTallas.length > 0) {
+            setTallasDisponibles(productTallas);
           }
 
           return {
@@ -91,7 +98,6 @@ export default function StockPage() {
     fetchStock();
     fetchCategories();  // Llamamos para obtener las categorías
   }, [user, selectedCategory]);
-
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
@@ -137,7 +143,7 @@ export default function StockPage() {
         </div>
       </div>
 
-      <StockTable data={filtered} />
+      <StockTable data={filtered} tallasDisponibles={tallasDisponibles} />
     </div>
   );
 }

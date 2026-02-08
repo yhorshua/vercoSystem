@@ -283,6 +283,7 @@ export default function PedidoTabla({
           product_size_id,
           quantity: qty,
           unit_of_measure: it.unit_of_measure || 'PAR',
+          unit_price: it.precio,
         });
       }
     }

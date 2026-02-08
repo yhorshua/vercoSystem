@@ -143,7 +143,7 @@ export default function RegisterSalePage() {
   // =======================
   useEffect(() => {
     if (!user?.token) return;
-    if (!user?.warehouseId) return;
+    if (!user?.warehouse_id) return;
 
     const code = codigoArticulo.trim().toUpperCase();
 
@@ -162,7 +162,7 @@ export default function RegisterSalePage() {
     const t = setTimeout(async () => {
       try {
         const data: ApiProductResponse = await getProductStockByWarehouseAndCode(
-          user.warehouseId,
+          user.warehouse_id,
           code.substring(0, 7),
           user.token
         );
@@ -192,7 +192,7 @@ export default function RegisterSalePage() {
     }, 300);
 
     return () => clearTimeout(t);
-  }, [codigoArticulo, user?.token, user?.warehouseId]);
+  }, [codigoArticulo, user?.token, user?.warehouse_id]);
 
   // ✅ NUEVO: consulta DNI/RUC según selección (debounce)
   useEffect(() => {
@@ -333,59 +333,43 @@ export default function RegisterSalePage() {
     setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
   };
 
-  const agregarItem = () => {
-    const total = Object.values(cantidades).reduce((sum, v) => sum + (Number(v) || 0), 0);
-    if (!codigoArticulo || total === 0) return;
+ const agregarItem = () => {
+  const total = Object.values(cantidades).reduce((sum, v) => sum + (Number(v) || 0), 0);
+  if (!codigoArticulo || total === 0) return;
 
-    if (!currentProductId) {
-      Swal.fire({ icon: 'warning', title: 'Producto no encontrado', text: 'Ese código no existe en tu stock.' });
-      return;
-    }
+  if (!currentProductId) {
+    Swal.fire({ icon: 'warning', title: 'Producto no encontrado', text: 'Ese código no existe en tu stock.' });
+    return;
+  }
 
-    // validar stock y mapeo
-    for (const tallaStr of Object.keys(cantidades)) {
-      const talla = Number(tallaStr);
-      const cant = cantidades[talla] || 0;
-      const disp = stockPorTalla[talla] || 0;
-
-      if (cant > disp) {
-        Swal.fire({ icon: 'warning', title: 'Stock insuficiente', text: `Talla ${talla} excede stock (${disp})` });
-        return;
-      }
-
-      const sizeId = currentSizeIdBySizeNumber[talla];
-      if (!sizeId && cant > 0) {
-        Swal.fire({ icon: 'warning', title: 'Talla inválida', text: `No existe product_size_id para talla ${talla}` });
-        return;
-      }
-    }
-
-    const nuevo: ItemUI = {
-      codigo: codigoArticulo.toUpperCase(),
-      descripcion,
-      serie,
-      precio,
-      cantidades: { ...cantidades },
-      total,
-      product_id: currentProductId,
-      unit_of_measure: currentUnitOfMeasure,
-      sizeIdBySizeNumber: { ...currentSizeIdBySizeNumber },
-    };
-
-    setItems((prev) => [...prev, nuevo]);
-
-    // limpiar producto actual
-    setCodigoArticulo('');
-    setDescripcion('');
-    setSerie('');
-    setPrecio(0);
-    setCantidades({});
-    setTallasDisponibles([]);
-    setStockPorTalla({});
-    setCurrentProductId(null);
-    setCurrentUnitOfMeasure('PAR');
-    setCurrentSizeIdBySizeNumber({});
+  // Aquí deberías asegurarte de que el precio actualizado esté en el payload
+  const nuevo: ItemUI = {
+    codigo: codigoArticulo.toUpperCase(),
+    descripcion,
+    serie,
+    precio: precio, // Asegúrate de que este precio es el actualizado
+    cantidades: { ...cantidades },
+    total,
+    product_id: currentProductId,
+    unit_of_measure: currentUnitOfMeasure,
+    sizeIdBySizeNumber: { ...currentSizeIdBySizeNumber },
   };
+
+  setItems((prev) => [...prev, nuevo]);
+
+  // Limpiar producto actual
+  setCodigoArticulo('');
+  setDescripcion('');
+  setSerie('');
+  setPrecio(0);
+  setCantidades({});
+  setTallasDisponibles([]);
+  setStockPorTalla({});
+  setCurrentProductId(null);
+  setCurrentUnitOfMeasure('PAR');
+  setCurrentSizeIdBySizeNumber({});
+};
+
 
   const handleDeleteItem = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
@@ -404,7 +388,7 @@ export default function RegisterSalePage() {
       Swal.fire({ icon: 'warning', title: 'Sesión', text: 'No hay token. Inicia sesión.' });
       return;
     }
-    if (!user?.warehouseId || !user?.userId) {
+    if (!user?.warehouse_id || !user?.id) {
       Swal.fire({ icon: 'warning', title: 'Usuario', text: 'Falta warehouseId o userId.' });
       return;
     }
@@ -438,6 +422,7 @@ export default function RegisterSalePage() {
           product_size_id: product_size_id ?? null,
           quantity: qty,
           unit_of_measure: it.unit_of_measure || 'PAR',
+          unit_price :it.precio,
         });
       }
     }
@@ -448,8 +433,8 @@ export default function RegisterSalePage() {
     }
 
     const payload: CreateSalePayload = {
-      warehouse_id: user.warehouseId,
-      user_id: user.userId,
+      warehouse_id: user.warehouse_id,
+      user_id: user.id,
       payment_method: metodoPago,
       items: payloadItems,
     };
@@ -660,8 +645,8 @@ export default function RegisterSalePage() {
         onDelete={handleDeleteItem}
         cliente={cliente}
         user={
-          user?.token && user?.warehouseId && user?.userId
-            ? { token: user.token, warehouseId: user.warehouseId, userId: user.userId }
+          user?.token && user?.warehouse_id && user?.id
+            ? { token: user.token, warehouseId: user.warehouse_id, userId: user.id }
             : null
         }
         onSaleRegistered={() => {

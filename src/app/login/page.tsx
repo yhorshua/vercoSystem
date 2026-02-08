@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Swal from 'sweetalert2';
-import { useUser } from '../context/UserContext';
+import { User, useUser } from '../context/UserContext';
 import { loginService } from '../services/authServices';
 
 export default function LoginPage() {
@@ -32,21 +32,30 @@ export default function LoginPage() {
     try {
       const data = await loginService(email.trim(), password);
 
-      const userData = {
-        email: data.user.email,
-        fullName: data.user.full_name,
-        role: data.user.role.name_role,
-        token: data.access_token,
-        userId: data.user.id,
-        warehouseId: data.user.warehouse_id,
-      };
+      // Asegúrate de que los datos completos del usuario se guardan
+       const userData: User = {
+      id: data.user.id, // Asegúrate de que el id está incluido
+      full_name: data.user.full_name,
+      email: data.user.email,
+      cellphone: data.user.cellphone || '', // Asegúrate de que no sea undefined
+      address_home: data.user.address_home || '', // Lo mismo para address_home
+      id_cedula: data.user.id_cedula || '', // Lo mismo para id_cedula
+      rol_id: data.user.rol_id,
+      role: data.user.role,  // Incluye el objeto completo de role
+      date_register: data.user.date_register,  // Asegúrate de que la fecha está incluida
+      state_user: data.user.state_user,  // Asegúrate de que state_user está incluido
+      warehouse_id: data.user.warehouse_id,  // Warehouse ID
+      warehouse: data.user.warehouse || null, // Asegúrate de que warehouse esté en el objeto
+      token: data.access_token,  // El token de acceso
+    };
 
       // ✅ guarda rápido (no es lo que más demora normalmente)
       localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('user_data', JSON.stringify(userData));
+      localStorage.setItem('user_data', JSON.stringify(userData)); // Guarda todos los datos del usuario completos
+
       document.cookie = `access_token=${data.access_token}; path=/; max-age=86400;`;
 
-      setUser(userData);
+      setUser(userData); // Actualiza el estado de usuario en el contexto
 
       // ✅ navegación “prioritaria” (se siente más rápida)
       startTransition(() => {

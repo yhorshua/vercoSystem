@@ -45,7 +45,7 @@ type ApiProductResponse = {
 
 export default function RegisterPedidoPage() {
   const { user } = useUser(); // Usamos useUser directamente
-  
+
   const [isClientSide, setIsClientSide] = useState(false); // Este estado asegura que se renderice en el cliente
   const [cliente, setCliente] = useState<ClienteUI | null>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
@@ -68,12 +68,17 @@ export default function RegisterPedidoPage() {
   // Estado para manejar el token correctamente
   const [token, setToken] = useState<string | null>(null);
 
-  // Verificar que el token y warehouseId estén disponibles antes de ejecutar la lógica de productos
+  // Establecer isClientSide a true después de que el componente se haya montado
   useEffect(() => {
-    if (user?.token) {
+    setIsClientSide(true); // Solo después del renderizado inicial, se habilita la ejecución de lógica del cliente
+  }, []);
+
+  // Verificar y establecer el token solo en el cliente
+  useEffect(() => {
+    if (isClientSide && user?.token) {
       setToken(user.token); // Establecer token solo si está disponible
     }
-  }, [user]);
+  }, [isClientSide, user]);
 
   const toSizeNumber = (sizeStr: string): number | null => {
     const n = Number(sizeStr);
@@ -113,8 +118,7 @@ export default function RegisterPedidoPage() {
   };
 
   useEffect(() => {
-    // Ahora que el token y warehouseId están listos, se hace la lógica de producto
-    if (token && user?.warehouseId) {
+    if (token && user?.warehouse_id) {
       const code = codigoArticulo.trim().toUpperCase();
 
       if (code.length < 7) {
@@ -132,7 +136,7 @@ export default function RegisterPedidoPage() {
       const t = setTimeout(async () => {
         try {
           const data: ApiProductResponse = await getProductStockByWarehouseAndCode(
-            user.warehouseId,
+            user.warehouse_id,
             code.substring(0, 7),
             token
           );
@@ -162,7 +166,7 @@ export default function RegisterPedidoPage() {
 
       return () => clearTimeout(t);
     }
-  }, [codigoArticulo, token, user?.warehouseId]); // Dependencias revisadas
+  }, [codigoArticulo, token, user?.warehouse_id, isClientSide]); // Dependencias revisadas y asegurado que se ejecute en el cliente
 
 
   const handleCantidadChange = (talla: number, value: string) => {
@@ -233,7 +237,7 @@ export default function RegisterPedidoPage() {
     <div className={styles.container}>
       <h1 className={styles.heading}>Registrar Pedido</h1>
 
-     <div className={styles.inputGroup}>
+      <div className={styles.inputGroup}>
         <label className={styles.label}>Cliente:</label>
         <input
           className={`${styles.input} ${styles.inputClient}`}
@@ -325,8 +329,8 @@ export default function RegisterPedidoPage() {
         cliente={cliente}
         user={{
           token: user!.token,
-          id: user!.userId,
-          warehouseId: user!.warehouseId,
+          id: user!.id,
+          warehouseId: user!.warehouse_id,
         }}
         onDeleteItem={(index) =>
           setItems((prev) => prev.filter((_, i) => i !== index))
@@ -336,7 +340,6 @@ export default function RegisterPedidoPage() {
           setCliente(null);
         }}
       />
-
     </div>
   );
 }

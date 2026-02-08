@@ -30,7 +30,7 @@ function todayISO() {
 export default function ReporteVentasPage() {
     const { user } = useUser();
     const token = user?.token || '';
-    const warehouseId = user?.warehouseId || 0;
+    const warehouseId = user?.warehouse_id || 0;
 
     const canUse = useMemo(() => Boolean(token && warehouseId), [token, warehouseId]);
 

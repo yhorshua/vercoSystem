@@ -112,7 +112,7 @@ export default function StockPage() {
 
   // Función para registrar el stock en el backend
   const handleRegisterStock = async (): Promise<void> => {
-    const warehouseId = user?.warehouseId;
+    const warehouseId = user?.warehouse_id;
 
     if (!warehouseId) {
       alert('No se ha encontrado el ID del almacén.');
@@ -146,10 +146,12 @@ export default function StockPage() {
 
 
   // Renderizar las tallas disponibles dependiendo de la categoría
-  const renderSizes = () => {
-  if (productData?.category?.name === 'Zapatillas') {
+ // Renderizar las tallas disponibles dependiendo de la categoría
+const renderSizes = () => {
+  // Verificar si el producto tiene tallas
+  if (productData?.sizes && productData.sizes.length > 0) {
     return productData.sizes.map((size) => (
-      <div key={size.size} className={styles.sizeInput}>
+      <div key={size.id} className={styles.sizeInput}>
         <label>{size.size}:</label>
         <input
           type="number"
@@ -160,23 +162,12 @@ export default function StockPage() {
         />
       </div>
     ));
-  } else if (productData?.category?.name === 'Ropa Deportiva') {
-    const ropaDeportivaTallas = ['S', 'M', 'L', 'XL', 'XXL'];
-    return ropaDeportivaTallas.map((size) => (
-      <div key={size} className={styles.sizeInput}>
-        <label>{size}:</label>
-        <input
-          type="number"
-          value={cantidadTallas[size] || 0}
-          onChange={(e) => handleCantidadChange(size, parseInt(e.target.value, 10))}
-          min="0"
-          className={styles.sizeInputField}
-        />
-      </div>
-    ));
   }
-  return null;
+
+  // Si no tiene tallas, mostramos un mensaje o no renderizamos nada
+  return <p>No hay tallas disponibles para este producto.</p>;
 };
+
 
   // Columnas para la tabla usando useReactTable
   const columnHelper = createColumnHelper<StockItem>();
