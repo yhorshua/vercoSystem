@@ -12,7 +12,6 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const router = useRouter();
-console.log(user, 'validacion de usuario con los datos');
   const handleLogout = () => {
     logout(); // limpia el contexto y localStorage
     router.push('/login'); // ✅ redirige al login sin recargar

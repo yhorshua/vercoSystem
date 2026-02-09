@@ -24,8 +24,11 @@ export default function CajaPage() {
   const { user } = useUser();
 
   const token = user?.token || '';
-  const warehouseId = user?.warehouseId || 0;
-  const userId = user?.userId || 0;
+  const warehouseId = user?.warehouse_id || 0;
+  const userId = user?.id || 0;
+
+  const warehouseName = user?.warehouse?.warehouse_name;
+  const userName = user?.full_name;
 
   // sesión actual
   const [session, setSession] = useState<CashSession | null>(null);
@@ -284,8 +287,8 @@ export default function CajaPage() {
 
         <div className={styles.grid2}>
           <div>
-            <div className={styles.kv}><span>Tienda</span><b>{warehouseId || '-'}</b></div>
-            <div className={styles.kv}><span>Usuario</span><b>{userId || '-'}</b></div>
+            <div className={styles.kv}><span>Tienda</span><b>{warehouseName || '-'}</b></div>
+            <div className={styles.kv}><span>Usuario</span><b>{userName || '-'}</b></div>
           </div>
 
           <div>

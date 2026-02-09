@@ -67,9 +67,9 @@ export default function RegisterSalePage() {
   const [serie, setSerie] = useState('');
   const [precio, setPrecio] = useState(0);
 
-  const [cantidades, setCantidades] = useState<Record<number, number>>({});
-  const [tallasDisponibles, setTallasDisponibles] = useState<number[]>([]);
-  const [stockPorTalla, setStockPorTalla] = useState<Record<number, number>>({});
+  const [cantidades, setCantidades] = useState<Record<string, number>>({});
+  const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]); // Cambiar a string[]
+  const [stockPorTalla, setStockPorTalla] = useState<Record<string, number>>({});  // Cambiar a Record<string, number>
 
   // para payload
   const [currentProductId, setCurrentProductId] = useState<number | null>(null);
@@ -106,25 +106,30 @@ export default function RegisterSalePage() {
   };
 
   const buildFromApi = (data: ApiProductResponse) => {
-    const stockMap: Record<number, number> = {};
-    const sizes: number[] = [];
-    const sizeIdMap: Record<number, number> = {};
+    const stockMap: Record<string, number> = {};  // Cambié de number a string para aceptar tanto números como letras
+    const sizes: string[] = [];  // Ahora las tallas son de tipo string (pueden ser números o letras)
+    const sizeIdMap: Record<string, number> = {};  // Cambié de number a string para mapear las tallas
 
     for (const row of data.stock ?? []) {
-      if (!row.size) continue;
-      const sizeNum = toSizeNumber(row.size);
-      if (sizeNum === null) continue;
+      if (!row.size) continue;  // Si no tiene tamaño, lo ignoramos
+      const sizeStr = row.size;  // Ahora 'size' puede ser tanto un número como una letra
+      sizes.push(sizeStr);  // Agregamos la talla (que puede ser un string) al array de tallas
+      stockMap[sizeStr] = (stockMap[sizeStr] || 0) + Number(row.quantity || 0);  // Usamos el string de talla como clave
 
-      sizes.push(sizeNum);
-      stockMap[sizeNum] = (stockMap[sizeNum] || 0) + Number(row.quantity || 0);
-
-      // ✅ si viene product_size_id
+      // Si existe product_size_id, lo asociamos con la talla
       if (row.product_size_id) {
-        sizeIdMap[sizeNum] = row.product_size_id;
+        sizeIdMap[sizeStr] = row.product_size_id;
       }
     }
 
-    sizes.sort((a, b) => a - b);
+    sizes.sort((a, b) => {
+      // Ordenamos las tallas alfabéticamente si son letras
+      if (isNaN(Number(a)) && isNaN(Number(b))) {
+        return a.localeCompare(b);
+      }
+      // Ordenamos las tallas numéricas de menor a mayor
+      return Number(a) - Number(b);
+    });
 
     return {
       descripcion: data.article_description ?? '',
@@ -132,22 +137,25 @@ export default function RegisterSalePage() {
       precio: Number(data.unit_price ?? 0),
       productId: Number(data.product_id ?? 0),
       unitOfMeasure: data.stock?.[0]?.unit_of_measure ?? 'PAR',
-      tallasDisponibles: [...new Set(sizes)],
+      tallasDisponibles: [...new Set(sizes)],  // Las tallas ahora pueden ser letras o números
       stockPorTalla: stockMap,
       sizeIdBySizeNumber: sizeIdMap,
     };
   };
 
+
   // =======================
   // ✅ Consulta stock por warehouse + articleCode (debounce)
   // =======================
+  // Actualización en la función para eliminar la validación estricta de 7 caracteres
   useEffect(() => {
     if (!user?.token) return;
     if (!user?.warehouse_id) return;
 
-    const code = codigoArticulo.trim().toUpperCase();
+    const code = codigoArticulo.trim().toUpperCase(); // El código que el usuario ingresa
 
-    if (code.length < 7) {
+    // No limitamos la longitud del código, se permite cualquier longitud
+    if (code.length < 4) {
       setDescripcion('');
       setSerie('');
       setPrecio(0);
@@ -163,7 +171,7 @@ export default function RegisterSalePage() {
       try {
         const data: ApiProductResponse = await getProductStockByWarehouseAndCode(
           user.warehouse_id,
-          code.substring(0, 7),
+          code,  // Ahora puede ser un código con longitud variable
           user.token
         );
 
@@ -193,6 +201,7 @@ export default function RegisterSalePage() {
 
     return () => clearTimeout(t);
   }, [codigoArticulo, user?.token, user?.warehouse_id]);
+
 
   // ✅ NUEVO: consulta DNI/RUC según selección (debounce)
   useEffect(() => {
@@ -245,9 +254,22 @@ export default function RegisterSalePage() {
   // total descuento
   useEffect(() => {
     const cantidadTotal = Object.values(cantidades).reduce((sum, v) => sum + (Number(v) || 0), 0);
-    const precioConDesc = precio - precio * (descuento / 100);
-    setTotalConDescuento(precioConDesc * cantidadTotal);
+
+    if (cantidadTotal === 0) return; // Si no hay productos, no calculamos el total con descuento
+
+    // Calculamos el precio total antes de descuento
+    const precioTotalSinDescuento = precio * cantidadTotal;
+
+    // Aplicamos el descuento (restando el monto total del descuento, no porcentaje)
+    const precioConDesc = precioTotalSinDescuento - descuento;
+
+    // Si el descuento es mayor que el total, aseguramos que no sea un valor negativo
+    const totalConDesc = precioConDesc < 0 ? 0 : precioConDesc;
+
+    // Actualizamos el estado con el total con descuento
+    setTotalConDescuento(totalConDesc);
   }, [cantidades, descuento, precio]);
+
 
   // Escaneo por cámara
   const handleScanButtonClick = async () => {
@@ -301,6 +323,7 @@ export default function RegisterSalePage() {
     }
   };
 
+
   // lector por teclado
   const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.trim().toUpperCase();
@@ -321,17 +344,36 @@ export default function RegisterSalePage() {
     }
   };
 
-  const handleCantidadChange = (talla: number, value: string) => {
-    const cantidad = Number.parseInt(value, 10) || 0;
-    const disponible = stockPorTalla[talla] || 0;
+const handleCantidadChange = (talla: string, value: string) => {
+  if (!talla || !value) return;  // Verifica si talla o value están vacíos
 
-    if (cantidad < 0) return;
-    if (cantidad > disponible) {
-      setCantidades((prev) => ({ ...prev, [talla]: disponible }));
-      return;
-    }
-    setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
-  };
+  const cantidad = Number(value);  // Convertimos el valor a número
+  if (isNaN(cantidad)) {
+    console.error(`Talla ${talla} tiene una cantidad inválida: ${value}`);
+    return;  // No procesar si el valor no es un número válido
+  }
+
+  if (cantidad < 0) return;  // Evitar cantidades negativas
+
+  // Verificamos que la cantidad no exceda el stock disponible
+  const disponible = stockPorTalla[talla] || 0;
+  if (cantidad > disponible) {
+    setCantidades((prev) => ({
+      ...prev,
+      [talla]: disponible,  // Limitar la cantidad al stock disponible
+    }));
+    return;
+  }
+
+  // Actualizamos las cantidades en el estado
+  setCantidades((prev) => ({
+    ...prev,
+    [talla]: cantidad,  // Actualiza la cantidad para esa talla específica
+  }));
+};
+
+
+
 
  const agregarItem = () => {
   const total = Object.values(cantidades).reduce((sum, v) => sum + (Number(v) || 0), 0);
@@ -342,14 +384,17 @@ export default function RegisterSalePage() {
     return;
   }
 
-  // Aquí deberías asegurarte de que el precio actualizado esté en el payload
+  // Validamos si el descuento existe
+  const precioConDescuento = descuento > 0 ? totalConDescuento / total : precio;
+
+  // Crear el nuevo item con el precio actualizado (con o sin descuento)
   const nuevo: ItemUI = {
     codigo: codigoArticulo.toUpperCase(),
     descripcion,
     serie,
-    precio: precio, // Asegúrate de que este precio es el actualizado
-    cantidades: { ...cantidades },
-    total,
+    precio: precioConDescuento, // Usamos el precio con descuento o el precio normal
+    cantidades: { ...cantidades },  // Debe contener las tallas con sus cantidades
+    total, // Este 'total' debe ser el número total de ítems agregados
     product_id: currentProductId,
     unit_of_measure: currentUnitOfMeasure,
     sizeIdBySizeNumber: { ...currentSizeIdBySizeNumber },
@@ -362,14 +407,13 @@ export default function RegisterSalePage() {
   setDescripcion('');
   setSerie('');
   setPrecio(0);
-  setCantidades({});
+  setCantidades({});  // Limpiar las cantidades después de agregar
   setTallasDisponibles([]);
   setStockPorTalla({});
   setCurrentProductId(null);
   setCurrentUnitOfMeasure('PAR');
   setCurrentSizeIdBySizeNumber({});
 };
-
 
   const handleDeleteItem = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
@@ -422,7 +466,7 @@ export default function RegisterSalePage() {
           product_size_id: product_size_id ?? null,
           quantity: qty,
           unit_of_measure: it.unit_of_measure || 'PAR',
-          unit_price :it.precio,
+          unit_price: it.precio,
         });
       }
     }
@@ -585,38 +629,40 @@ export default function RegisterSalePage() {
       </div>
 
       <div className={styles.inputGroup}>
-        <label className={styles.label}>Descuento por par (%):</label>
-        <select className={styles.input} value={descuento} onChange={(e) => setDescuento(Number(e.target.value))}>
-          {[0, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((d) => (
-            <option key={d} value={d}>
-              {d}%
-            </option>
-          ))}
-        </select>
-
+        <label className={styles.label}>Monto de Descuento (S/):</label>
+        <input
+          className={styles.input}
+          type="number"
+          value={descuento}
+          onChange={(e) => setDescuento(Number(e.target.value))}
+          placeholder="Ingrese monto de descuento"
+        />
         <div>
           <label className={styles.label}>Total con descuento: </label>
           <input className={styles.input} value={totalConDescuento.toFixed(2)} readOnly />
         </div>
       </div>
 
+
       <div className={styles.tallasContainer}>
         <label className={styles.tallasLabel}>Cantidades por talla:</label>
 
         <div className={styles.tallasGrid}>
-          {tallasDisponibles.map((talla) => (
-            <div key={talla} className={styles.tallaInput}>
-              <label className={styles.tallaLabel}>{talla}</label>
-              <input
-                className={styles.tallaField}
-                type="number"
-                value={cantidades[talla] ?? ''}
-                onChange={(e) => handleCantidadChange(talla, e.target.value)}
-              />
-            </div>
-          ))}
+          {tallasDisponibles.map((talla) => {
+            const tallaNumerica = Number(talla);  // Convertir talla a número
+            return (
+              <div key={talla} className={styles.tallaInput}>
+                <label className={styles.tallaLabel}>{talla}</label>
+                <input
+                  className={styles.tallaField}
+                  type="number"
+                  value={cantidades[talla] ?? ''}  // Usar tallaNumerica como clave
+                  onChange={(e) => handleCantidadChange(talla, e.target.value)}  // Pasar tallaNumerica
+                />
+              </div>
+            );
+          })}
         </div>
-
         <div className={styles.tallasGrid}>
           {tallasDisponibles.map((talla) => (
             <div key={talla} className={styles.tallaInput}>

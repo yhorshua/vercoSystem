@@ -5,11 +5,11 @@ export interface ItemUI {
   serie: string;
   precio: number;
 
-  cantidades: Record<number, number>;
+  cantidades: Record<string, number>;
   total: number;
 
   product_id: number;
   unit_of_measure: string;
 
-  sizeIdBySizeNumber: Record<number, number>;
+  sizeIdBySizeNumber: Record<string, number>;
 }

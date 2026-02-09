@@ -75,7 +75,6 @@ export default function PedidoTabla({
 
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
   const [tipoDocumentoVenta, setTipoDocumentoVenta] = useState<'boleta' | 'factura'>('boleta');
-
   // ====== EFECTIVO ======
   const [efectivoEntregado, setEfectivoEntregado] = useState<string>('');
 
@@ -199,16 +198,23 @@ export default function PedidoTabla({
     { accessorKey: 'descripcion', header: 'Descripción', cell: (info) => info.getValue() as any },
     { accessorKey: 'serie', header: 'Serie', cell: (info) => info.getValue() as any },
     {
-      id: 'cantidades',
       header: 'Cantidades por talla',
       cell: (info) => {
         const item = info.row.original;
-        const tallas = Object.keys(item.cantidades).map(Number).sort((a, b) => a - b);
-        return tallas.map((t) => `${t}/${item.cantidades[t]}`).join(' ');
+        const tallas = Object.keys(item.cantidades);  // Acceder a las tallas como claves de 'cantidades'
+        return tallas.map((talla) => `${talla}: ${item.cantidades[talla]}`).join(', ');
       },
     },
     { accessorKey: 'total', header: 'Pares', cell: (info) => info.getValue() as any },
-    { accessorKey: 'precio', header: 'Precio', cell: (info) => Number(info.getValue()).toFixed(2) },
+    {
+      id: 'precio',
+      header: 'Precio',
+      cell: (info) => {
+        // Aquí mostramos el precio con descuento si existe
+        const precio = info.row.original.precio;
+        return Number(precio).toFixed(2); // Mostrar el precio con 2 decimales
+      },
+    },
     {
       id: 'valor',
       header: 'Valor',
@@ -228,6 +234,7 @@ export default function PedidoTabla({
       ),
     },
   ];
+
 
   const table = useReactTable({
     data: items,
@@ -262,13 +269,21 @@ export default function PedidoTabla({
     const payloadItems: CreateSalePayload['items'] = [];
 
     for (const it of items) {
-      const tallas = Object.keys(it.cantidades).map(Number);
+      const tallas = Object.keys(it.cantidades); // Esto da las claves de las tallas (S, M, L, etc.)
 
       for (const talla of tallas) {
         const qty = Number(it.cantidades[talla] || 0);
-        if (qty <= 0) continue;
 
-        const product_size_id = it.sizeIdBySizeNumber[talla];
+        if (qty <= 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sin cantidades válidas',
+            text: `No hay cantidades válidas para la talla ${talla} del artículo ${it.codigo}`,
+          });
+          return;  // Detiene el proceso si no hay cantidades válidas
+        }
+
+        const product_size_id = it.sizeIdBySizeNumber[talla as keyof typeof it.sizeIdBySizeNumber];
         if (!product_size_id) {
           await Swal.fire({
             icon: 'warning',
@@ -287,6 +302,8 @@ export default function PedidoTabla({
         });
       }
     }
+
+    console.log('Payload Items:', payloadItems);
 
     if (!payloadItems.length) {
       Swal.fire({ icon: 'warning', title: 'Sin cantidades', text: 'No hay cantidades válidas para registrar.' });
@@ -321,11 +338,9 @@ export default function PedidoTabla({
       payment_method,
       payment,
       items: payloadItems,
-
-      // ⚠️ si tu back ya tiene document_type en DTO, descomenta:
-      // document_type: tipoDocumentoVenta,
     };
 
+    console.log('Payload:', payload);
     const confirm = await Swal.fire({
       icon: 'question',
       title: 'Confirmar venta',
@@ -402,7 +417,7 @@ export default function PedidoTabla({
       {/* Footer pago */}
       <div className={styles.formFooter}>
         {/* Documento */}
-     
+
         {/* Método pago */}
         <div className={styles.inputGroup}>
           <label className={styles.label}>Método de Pago:</label>

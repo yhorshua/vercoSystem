@@ -29,7 +29,7 @@ export default function StockPage() {
   const { user } = useUser();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); // Estado para las categorías
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null); // Estado para la categoría seleccionada
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(1); // Estado para la categoría seleccionada
   const [search, setSearch] = useState('');
   const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]); // Estado para las tallas disponibles
 
@@ -129,7 +129,6 @@ export default function StockPage() {
             onChange={(e) => setSelectedCategory(Number(e.target.value))}
             className={styles.inputField}
           >
-            <option value="">Todas las Categorías</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
