@@ -65,7 +65,7 @@ export default function CreateProductPage() {
         if (e.target.value === '3') {
             setSizeRange({ min: 27, max: 32 });
         } else if (e.target.value === '4') {
-            setSizeRange({ min: 33, max: 37 });
+            setSizeRange({ min: 33, max: 39 });
         } else if (e.target.value === '5') {
             setSizeRange({ min: 38, max: 44 });
         } else if (e.target.value === '8') {
@@ -75,7 +75,7 @@ export default function CreateProductPage() {
         }
     };
 
-    const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'unitPrice' | 'sellingPrice') => {
+    const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'unitPrice' | 'manufacturingCost') => {
         let value = e.target.value.replace('S/. ', '').replace(/[^0-9.]/g, '').trim();  // Elimina el símbolo "S/." y cualquier otro carácter no numérico
 
         // Permitir un solo punto decimal
@@ -89,8 +89,8 @@ export default function CreateProductPage() {
             const parsedValue = parseFloat(value);
             if (field === 'unitPrice') {
                 setUnitPrice(parsedValue);  // Actualiza el estado para Precio Unitario
-            } else if (field === 'sellingPrice') {
-                setSellingPrice(parsedValue);  // Actualiza el estado para Precio de Venta
+            } else if (field === 'manufacturingCost') {
+                setManufacturingCost(parsedValue);  // Actualiza el estado para Precio de Venta
             }
         }
     };
@@ -171,23 +171,23 @@ export default function CreateProductPage() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-    try {
-        // Enviar la lista completa de productos
-        const response = await createProduct(products); // Enviar todos los productos en la lista
-        console.log('Productos creados:', response);
-        alert('Productos creados con éxito');
-        setProducts([]); // Limpiar la lista de productos después de la creación
-    } catch (error: any) {
-        console.error('Error al crear los productos:', error);
-        setError('Hubo un error al crear los productos. Intenta nuevamente.');
-    } finally {
-        setLoading(false);
-    }
-};
+        try {
+            // Enviar la lista completa de productos
+            const response = await createProduct(products); // Enviar todos los productos en la lista
+            console.log('Productos creados:', response);
+            alert('Productos creados con éxito');
+            setProducts([]); // Limpiar la lista de productos después de la creación
+        } catch (error: any) {
+            console.error('Error al crear los productos:', error);
+            setError('Hubo un error al crear los productos. Intenta nuevamente.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
     // Función para eliminar un producto de la tabla
@@ -272,12 +272,13 @@ export default function CreateProductPage() {
                         </div>
 
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Precio Unitario</label>
+                            <label className={styles.label}>Precio Unitario S/.</label>
                             <div className={styles.inputWithCurrency}>
                                 <input
                                     className={styles.inputField}
-                                    type="text"
-                                    value={`S/. ${unitPrice.toFixed(2)}`}
+                                    type="number"
+                                    step="0.01" // Permite decimales
+                                    value={unitPrice}
                                     onChange={(e) => handleCurrencyChange(e, 'unitPrice')}
                                     required
                                 />
@@ -285,17 +286,19 @@ export default function CreateProductPage() {
                         </div>
 
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Precio de Venta</label>
+                            <label className={styles.label}>Precio de Venta S/.</label>
                             <div className={styles.inputWithCurrency}>
                                 <input
                                     className={styles.inputField}
-                                    type="text"
-                                    value={`S/. ${sellingPrice.toFixed(2)}`}
-                                    onChange={(e) => handleCurrencyChange(e, 'sellingPrice')}
+                                    type="number"
+                                    step="0.01" // Permite decimales
+                                    value={manufacturingCost}
+                                    onChange={(e) => handleCurrencyChange(e, 'manufacturingCost')}
                                     required
                                 />
                             </div>
                         </div>
+
 
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>Marca</label>

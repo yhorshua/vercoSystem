@@ -227,3 +227,97 @@
     font-size: 12px;
   }
 }
+
+
+/* Estilos para la tabla */
+.tableContainer {
+  overflow-x: auto;  /* Esto permite el desplazamiento horizontal en pantallas pequeñas */
+  margin-top: 20px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-sizing: border-box;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  text-align: left;
+  border: 1px solid #ccc;
+}
+
+.table th {
+  background-color: #f4f4f4;
+  color: #2a5d84;
+  font-weight: bold;
+}
+
+.table td {
+  font-size: 14px;
+  color: #333;
+}
+
+.table td button {
+  background-color: #e0e0e0;
+  color: #333;
+  padding: 6px 12px;
+  font-size: 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.table td button:hover {
+  background-color: #ccc;
+}
+
+/* Estilos para la tabla en dispositivos móviles */
+@media screen and (max-width: 768px) {
+  .table th,
+  .table td {
+    padding: 8px;
+    font-size: 12px;  /* Reducir el tamaño de la fuente en pantallas pequeñas */
+  }
+
+  .table td {
+    word-wrap: break-word; /* Para evitar que el contenido de las celdas se desborde */
+    text-align: center;  /* Centrar los datos en dispositivos móviles */
+  }
+
+  .table th {
+    font-size: 14px;  /* Aumentar ligeramente el tamaño de las cabeceras */
+  }
+
+  .tableContainer {
+    margin-top: 15px;
+  }
+
+  /* Hacer la tabla desplazable horizontalmente */
+  .table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;  /* Habilitar scroll horizontal */
+  }
+}
+
+/* Estilos para pantallas más pequeñas */
+@media screen and (max-width: 480px) {
+  .table th,
+  .table td {
+    padding: 6px;
+    font-size: 10px; /* Reducir aún más el tamaño de la fuente */
+  }
+
+  .table td button {
+    font-size: 10px;
+    padding: 4px 8px;  /* Reducir el tamaño de los botones */
+  }
+
+  .table th {
+    font-size: 12px;
+  }
+}

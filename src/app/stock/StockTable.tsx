@@ -2,6 +2,7 @@
 
 import { useReactTable, createColumnHelper, getCoreRowModel, getSortedRowModel, flexRender } from '@tanstack/react-table';
 import styles from './page.module.css';
+import { useMemo } from 'react';
 
 // Definir el tipo para las tallas y los artículos
 
@@ -15,6 +16,8 @@ interface StockItem {
   descripcion: string;
   tallas: Tallas;  // Usamos el tipo Tallas que define las cantidades por talla
   saldo: number;
+  origin: string;
+  precioventa: string;
 }
 
 export default function StockTable({ data, tallasDisponibles }: { data: StockItem[]; tallasDisponibles: string[] }) {
@@ -40,8 +43,21 @@ export default function StockTable({ data, tallasDisponibles }: { data: StockIte
     columnHelper.accessor('saldo', {
       header: 'Saldo',
     }),
+    columnHelper.accessor('origin', {
+      header: 'Origen',
+    }),
+    columnHelper.accessor('precioventa', {
+      header: 'Precio de Venta',
+      cell: (info) => `S/ ${info.getValue()}`,
+    }),
   ];
 
+// Calcular el total de saldos
+  const totalSaldo = useMemo(
+    () => data.reduce((sum, item) => sum + item.saldo, 0),
+    [data]
+  );
+  
   const table = useReactTable({
     data,
     columns,
@@ -83,6 +99,11 @@ export default function StockTable({ data, tallasDisponibles }: { data: StockIte
           ))}
         </tbody>
       </table>
+      {/* Fila de Total */}
+      <div className={styles.totalRow}>
+        <span className={styles.totalLabel}>Saldo Total: </span>
+        <span className={styles.totalValue}>{ totalSaldo}</span>
+      </div>
     </div>
   );
 }

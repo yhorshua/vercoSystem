@@ -74,13 +74,16 @@ export async function createProduct(products: CreateProductDto[]) {
 }
 
 
-export async function getProductsByWarehouse(warehouseId: number, categoryId: number | null, token: string) {
+export async function getProductsByWarehouse(warehouseId: number, categoryId: number | null, token: string, serie: string) {
   const url = new URL(`${API_URL}/products/filter`);
   const params = new URLSearchParams();
 
   params.append('warehouseId', warehouseId.toString());
   if (categoryId !== null) {
     params.append('categoryId', categoryId.toString());
+  }
+  if (serie) {
+    params.append('serie', serie);  // Agregar el parámetro de serie
   }
 
   const res = await fetch(`${url}?${params.toString()}`, {

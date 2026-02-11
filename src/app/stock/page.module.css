@@ -275,6 +275,12 @@
         </>
       )}
     </>
+import { useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+import * as echarts from 'echarts';
+import type { FeatureCollection, Feature, Point, Polygon } from 'geojson';
+
+const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false });
 
 
 

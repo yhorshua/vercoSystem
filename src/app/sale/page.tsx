@@ -134,7 +134,7 @@ export default function RegisterSalePage() {
     return {
       descripcion: data.article_description ?? '',
       serie: data.article_series ?? '',
-      precio: Number(data.unit_price ?? 0),
+      precio: Number(data.manufacturing_cost ?? 0),
       productId: Number(data.product_id ?? 0),
       unitOfMeasure: data.stock?.[0]?.unit_of_measure ?? 'PAR',
       tallasDisponibles: [...new Set(sizes)],  // Las tallas ahora pueden ser letras o números

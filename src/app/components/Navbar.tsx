@@ -182,10 +182,11 @@ const Navbar = () => {
 
         {/* ✅ Panel lateral / user panel (DESKTOP) y también contenedor del menú en MOBILE */}
         <div className={`${style.navbarRight} ${isMenuOpen ? style.open : ''}`}>
+          {/*
           <div className={style.userInfo}>
             <Image src="/img/unnamed.jpg" alt="User Avatar" width={40} height={40} className={style.userAvatar} />
           </div>
-
+          */}
           <div className={style.userDetails}>
             <span className={style.username}>{user.full_name}</span>
             <span className={style.userArea}>{warehouse_name}</span>

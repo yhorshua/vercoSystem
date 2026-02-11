@@ -18,6 +18,8 @@ interface StockItem {
   descripcion: string;
   tallas: Tallas;
   saldo: number;
+  origin: string;
+  precioventa: string;
 }
 
 type Category = {
@@ -29,9 +31,20 @@ export default function StockPage() {
   const { user } = useUser();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]); // Estado para las categorías
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(1); // Estado para la categoría seleccionada
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(3); // Estado para la categoría seleccionada
   const [search, setSearch] = useState('');
   const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]); // Estado para las tallas disponibles
+  const [selectedSerie, setSelectedSerie] = useState<string>(''); // Estado para la serie
+  const [isShoeCategory, setIsShoeCategory] = useState<boolean>(false); // Cambiar a booleano, inicialmente no es Zapatillas
+
+  // Dentro de tu componente StockPage
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedCategoryId = Number(e.target.value);
+    setSelectedCategory(selectedCategoryId);  // Ahora categoryId será siempre un número
+    setSelectedSerie('');  // Resetear serie seleccionada al cambiar categoría
+    setIsShoeCategory(selectedCategoryId === 1);  // Verificar si la categoría seleccionada es "Zapatillas"
+  };
+
 
   useEffect(() => {
     const fetchStock = async () => {
@@ -41,7 +54,7 @@ export default function StockPage() {
           return;
         }
 
-        const products = await getProductsByWarehouse(user.warehouse_id, selectedCategory, user.token);
+        const products = await getProductsByWarehouse(user.warehouse_id, selectedCategory, user.token, selectedSerie);
 
         const mapped = products.map((p: any) => {
           const tallas: Record<string, number> = {};
@@ -73,6 +86,8 @@ export default function StockPage() {
             descripcion: p.article_description,
             tallas,
             saldo,
+            origin: p.type_origin,
+            precioventa: p.manufacturing_cost,
           };
         });
 
@@ -97,7 +112,17 @@ export default function StockPage() {
 
     fetchStock();
     fetchCategories();  // Llamamos para obtener las categorías
-  }, [user, selectedCategory]);
+  }, [user, selectedCategory, selectedSerie]);
+
+ // Definir el rango de tallas para la categoría de zapatillas
+  const rangeTallas = ['27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44'];
+
+  // Actualizar las tallas disponibles en base al rango de tallas
+  useEffect(() => {
+    if (isShoeCategory) {
+      setTallasDisponibles(rangeTallas);
+    }
+  }, [isShoeCategory]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
@@ -108,6 +133,8 @@ export default function StockPage() {
         item.descripcion.toUpperCase().includes(q)
     );
   }, [stock, search]);
+
+
 
   return (
     <div className={styles.container}>
@@ -126,7 +153,7 @@ export default function StockPage() {
           {/* Selector de Categoría */}
           <select
             value={selectedCategory || ''}
-            onChange={(e) => setSelectedCategory(Number(e.target.value))}
+            onChange={handleCategoryChange}
             className={styles.inputField}
           >
             {categories.map((category) => (
@@ -135,6 +162,20 @@ export default function StockPage() {
               </option>
             ))}
           </select>
+
+          {isShoeCategory && (
+              <select
+                value={selectedSerie}
+                onChange={(e) => setSelectedSerie(e.target.value)}
+                className={styles.inputField}
+              >
+                <option value="">Seleccionar Serie</option>
+                <option value="3">Junior (27-32)</option>
+                <option value="4">Mediano (33-39)</option>
+                <option value="5">Adulto (38-44)</option>
+                <option value="8">Adulto (37-44)</option>
+              </select>
+          )}
 
           <button onClick={() => exportToExcel(filtered)} className={styles.exportButton}>
             Exportar a Excel
