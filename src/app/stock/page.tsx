@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { getProductsByWarehouse } from '../services/productsService';
-import { getCategories } from '../services/categoryService';  // Importa el servicio de categorías
+import { getCategories } from '../services/categoryService';
 import StockTable from './StockTable';
 import { exportToExcel } from './exportUtils';
 import styles from './page.module.css';
+import { Search, Download, Filter, Package } from 'lucide-react';
 
 interface Tallas {
   [talla: string]: number;
@@ -30,54 +31,48 @@ type Category = {
 export default function StockPage() {
   const { user } = useUser();
   const [stock, setStock] = useState<StockItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]); // Estado para las categorías
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(3); // Estado para la categoría seleccionada
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number>(3); 
   const [search, setSearch] = useState('');
-  const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]); // Estado para las tallas disponibles
-  const [selectedSerie, setSelectedSerie] = useState<string>(''); // Estado para la serie
-  const [isShoeCategory, setIsShoeCategory] = useState<boolean>(false); // Cambiar a booleano, inicialmente no es Zapatillas
+  const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]);
+  const [selectedSerie, setSelectedSerie] = useState<string>('');
+  const [isShoeCategory, setIsShoeCategory] = useState<boolean>(false);
 
-  // Dentro de tu componente StockPage
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCategoryId = Number(e.target.value);
-    setSelectedCategory(selectedCategoryId);  // Ahora categoryId será siempre un número
-    setSelectedSerie('');  // Resetear serie seleccionada al cambiar categoría
-    setIsShoeCategory(selectedCategoryId === 1);  // Verificar si la categoría seleccionada es "Zapatillas"
+    setSelectedCategory(selectedCategoryId);
+    setSelectedSerie('');
+    // Asumimos que ID 1 es Zapatillas
+    setIsShoeCategory(selectedCategoryId === 1);
   };
-
 
   useEffect(() => {
     const fetchStock = async () => {
       try {
         if (!user?.token || !user?.warehouse_id) {
-          console.error('Usuario no autenticado o datos de usuario incompletos.');
           return;
         }
 
         const products = await getProductsByWarehouse(user.warehouse_id, selectedCategory, user.token, selectedSerie);
 
+        // Usamos un Set para recolectar TODAS las tallas únicas de TODOS los productos devueltos
+        const allSizesSet = new Set<string>();
+
         const mapped = products.map((p: any) => {
           const tallas: Record<string, number> = {};
           let saldo = 0;
-
-          // Extraer tallas dinámicas del stock
-          const productTallas: string[] = [];
 
           for (const s of p.stock || []) {
             const size = s.productSize?.size;
             const qty = Number(s.quantity || 0);
             saldo += qty;
+            
             if (size) {
-              tallas[size] = (tallas[size] || 0) + qty;
-              if (!productTallas.includes(size)) {
-                productTallas.push(size); // Agregar talla si no está en el array
-              }
+              // Limpiamos la talla (quitamos espacios)
+              const cleanSize = size.trim();
+              tallas[cleanSize] = (tallas[cleanSize] || 0) + qty;
+              allSizesSet.add(cleanSize); // Agregamos al conjunto global de tallas
             }
-          }
-
-          // Actualiza el estado de las tallas disponibles
-          if (productTallas.length > 0) {
-            setTallasDisponibles(productTallas);
           }
 
           return {
@@ -91,27 +86,37 @@ export default function StockPage() {
           };
         });
 
+        // Convertimos el Set a Array y ordenamos numéricamente
+        const sortedSizes = Array.from(allSizesSet).sort((a, b) => {
+          const numA = parseFloat(a);
+          const numB = parseFloat(b);
+          // Si son números, ordenar numéricamente
+          if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+          // Si son texto (S, M, L), ordenar alfabéticamente o mantener orden
+          return a.localeCompare(b);
+        });
+
+        setTallasDisponibles(sortedSizes);
         setStock(mapped);
+
       } catch (err: any) {
         console.error(err);
-        alert(err.message);
+        // alert(err.message); // Mejor manejar errores en UI silenciosamente o con un toast
       }
     };
 
     const fetchCategories = async () => {
       try {
         if (!user?.token) return;
-
         const categoriesData = await getCategories(user.token);
-        setCategories(categoriesData); // Guardar las categorías obtenidas
+        setCategories(categoriesData);
       } catch (err: any) {
         console.error('Error al obtener las categorías:', err);
-        alert('Error al obtener las categorías.');
       }
     };
 
     fetchStock();
-    fetchCategories();  // Llamamos para obtener las categorías
+    fetchCategories();
   }, [user, selectedCategory, selectedSerie]);
 
   const filtered = useMemo(() => {
@@ -124,56 +129,77 @@ export default function StockPage() {
     );
   }, [stock, search]);
 
-
-
   return (
-    <div className={styles.container}>
-      <h1>Consulta de Stock</h1>
+    <div className={styles.pageContainer}>
+      <div className={styles.headerCard}>
+        <div className={styles.titleRow}>
+          <div className={styles.iconBox}>
+            <Package size={28} color="white" />
+          </div>
+          <h1>Control de Inventario</h1>
+        </div>
+        <p className={styles.subtitle}>Consulta y gestiona el stock de tu almacén en tiempo real.</p>
+      </div>
 
-      <div className={styles.contentCenter}>
-        <div className={styles.inputGroup}>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={styles.inputField}
-            placeholder="Buscar por código o nombre"
-          />
+      <div className={styles.filtersCard}>
+        <div className={styles.filterGrid}>
+          {/* Buscador */}
+          <div className={styles.inputWrapper}>
+            <Search className={styles.inputIcon} size={18} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={styles.inputField}
+              placeholder="Buscar por código..."
+            />
+          </div>
 
-          {/* Selector de Categoría */}
-          <select
-            value={selectedCategory || ''}
-            onChange={handleCategoryChange}
-            className={styles.inputField}
-          >
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          {/* Categoría */}
+          <div className={styles.selectWrapper}>
+             <Filter className={styles.inputIcon} size={18} />
+            <select
+              value={selectedCategory || ''}
+              onChange={handleCategoryChange}
+              className={styles.selectField}
+            >
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          {/* Serie (Condicional) */}
           {isShoeCategory && (
+            <div className={styles.selectWrapper}>
+               <Filter className={styles.inputIcon} size={18} />
               <select
                 value={selectedSerie}
                 onChange={(e) => setSelectedSerie(e.target.value)}
-                className={styles.inputField}
+                className={styles.selectField}
               >
-                <option value="">Seleccionar Serie</option>
+                <option value="">Todas las series</option>
                 <option value="3">Junior (27-32)</option>
                 <option value="4">Mediano (33-39)</option>
                 <option value="5">Adulto (38-44)</option>
                 <option value="8">Adulto (37-44)</option>
               </select>
+            </div>
           )}
 
+          {/* Botón Exportar */}
           <button onClick={() => exportToExcel(filtered)} className={styles.exportButton}>
-            Exportar a Excel
+            <Download size={18} />
+            <span>Exportar Excel</span>
           </button>
         </div>
       </div>
 
-      <StockTable data={filtered} tallasDisponibles={tallasDisponibles} />
+      <div className={styles.tableCard}>
+        <StockTable data={filtered} tallasDisponibles={tallasDisponibles} />
+      </div>
     </div>
   );
 }
