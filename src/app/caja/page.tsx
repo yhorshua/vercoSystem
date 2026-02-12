@@ -2,6 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
+import { 
+  Wallet, 
+  RefreshCw, 
+  DollarSign, 
+  ArrowRight, 
+  Lock, 
+  History, 
+  TrendingDown, 
+  TrendingUp,
+  AlertCircle 
+} from 'lucide-react';
 import styles from './caja.module.css';
 
 import { useUser } from '../context/UserContext';
@@ -58,6 +69,11 @@ export default function CajaPage() {
   const canUse = useMemo(() => {
     return Boolean(token && warehouseId && userId);
   }, [token, warehouseId, userId]);
+
+  // Validación para habilitar botón de apertura
+  const isOpeningValid = useMemo(() => {
+    return openingAmount.trim() !== '' && !isNaN(Number(openingAmount));
+  }, [openingAmount]);
 
   const loadStatus = async () => {
     if (!canUse) return;
@@ -124,7 +140,7 @@ export default function CajaPage() {
 
     const n = Number(openingAmount);
     if (!Number.isFinite(n) || n < 0) {
-      Swal.fire({ icon: 'warning', title: 'Monto inválido', text: 'opening_amount debe ser >= 0' });
+      Swal.fire({ icon: 'warning', title: 'Monto inválido', text: 'Ingresa un monto válido mayor o igual a 0' });
       return;
     }
 
@@ -140,7 +156,13 @@ export default function CajaPage() {
         token,
       );
 
-      Swal.fire({ icon: 'success', title: 'Caja abierta', text: 'Se abrió la caja correctamente.' });
+      Swal.fire({ 
+        icon: 'success', 
+        title: '¡Caja Abierta!', 
+        text: 'Se ha iniciado la sesión de caja correctamente.',
+        timer: 2000,
+        showConfirmButton: false
+      });
       setOpeningAmount('');
       setOpeningNotes('');
       await loadStatus();
@@ -206,6 +228,7 @@ export default function CajaPage() {
       showCancelButton: true,
       confirmButtonText: 'Sí, cerrar',
       cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0f172a'
     });
 
     if (!ok.isConfirmed) return;
@@ -227,7 +250,7 @@ export default function CajaPage() {
       setClosingCashCounted('');
       setClosingNotes('');
 
-      await loadStatus(); // session debería pasar a null o CLOSED según tu API
+      await loadStatus(); 
     } catch (e: any) {
       Swal.fire({ icon: 'error', title: 'Error', text: e?.message || 'No se pudo cerrar caja' });
     } finally {
@@ -237,7 +260,7 @@ export default function CajaPage() {
 
   const hasOpen = session?.status === 'OPEN';
 
-  // Totales rápidos para UI (si tu summary ya lo da, esto es extra)
+  // Totales rápidos para UI
   const totals = useMemo(() => {
     const income = movements
       .filter((m) => Number(m.amount) > 0)
@@ -252,94 +275,114 @@ export default function CajaPage() {
 
   return (
     <div className={styles.container}>
+      
+      {/* HEADER */}
       <div className={styles.headerRow}>
-        <h1 className={styles.title}>Caja</h1>
+        <div className={styles.headerLeft}>
+          <div className={styles.iconWrapper}>
+            <Wallet size={24} color="#0f172a"/>
+          </div>
+          <div>
+            <h1 className={styles.title}>Gestión de Caja</h1>
+            <p className={styles.subtitle}>{warehouseName || 'Almacén'} • {userName}</p>
+          </div>
+        </div>
 
         <div className={styles.headerRight}>
-          <button className={styles.button} onClick={loadStatus} disabled={!canUse || loading}>
-            Refrescar estado
-          </button>
-
           <label className={styles.checkboxRow}>
             <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
-            Auto (10s)
+            <span className={styles.checkboxText}>Auto (10s)</span>
           </label>
+          <button className={styles.refreshButton} onClick={loadStatus} disabled={!canUse || loading}>
+            <RefreshCw size={16} className={loading ? styles.spin : ''} />
+          </button>
         </div>
       </div>
 
       {!canUse && (
-        <div className={styles.card}>
-          <b>Falta sesión</b>
-          <p>Necesitas token, warehouseId y userId para usar Caja.</p>
+        <div className={`${styles.card} ${styles.warningCard}`}>
+          <AlertCircle size={20} />
+          <div>
+            <b>Falta sesión</b>
+            <p>Necesitas iniciar sesión correctamente para gestionar la caja.</p>
+          </div>
         </div>
       )}
 
       {/* =======================
-          ESTADO
+          ESTADO (Solo se muestra información básica si está abierta)
       ======================= */}
-      <div className={styles.card}>
-        <div className={styles.cardHeader}>
-          <h2 className={styles.cardTitle}>Estado</h2>
-          <span className={`${styles.badge} ${hasOpen ? styles.badgeOpen : styles.badgeClosed}`}>
-            {hasOpen ? 'ABIERTA' : 'CERRADA'}
-          </span>
-        </div>
-
-        <div className={styles.grid2}>
-          <div>
-            <div className={styles.kv}><span>Tienda</span><b>{warehouseName || '-'}</b></div>
-            <div className={styles.kv}><span>Usuario</span><b>{userName || '-'}</b></div>
+      {hasOpen && (
+        <div className={styles.statusBanner}>
+          <div className={styles.statusItem}>
+             <span className={styles.statusLabel}>Estado</span>
+             <span className={styles.badgeOpen}>ABIERTA</span>
           </div>
-
-          <div>
-            <div className={styles.kv}><span>Sesión</span><b>{session?.id ?? '-'}</b></div>
-            <div className={styles.kv}><span>Apertura</span><b>{session?.opened_at ? new Date(session.opened_at).toLocaleString() : '-'}</b></div>
+          <div className={styles.statusItem}>
+             <span className={styles.statusLabel}>Apertura</span>
+             <span className={styles.statusValue}>S/ {money(Number(session?.opening_cash || 0))}</span>
+          </div>
+          <div className={styles.statusItem}>
+             <span className={styles.statusLabel}>Hora Inicio</span>
+             <span className={styles.statusValue}>{session?.opened_at ? new Date(session.opened_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</span>
           </div>
         </div>
-
-        {hasOpen && (
-          <div className={styles.kv} style={{ marginTop: 8 }}>
-            <span>Monto apertura (S/)</span>
-            <b>{money(Number(session?.opening_cash || 0))}</b>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* =======================
-          ABRIR CAJA
+          ABRIR CAJA (Diseño Mejorado)
       ======================= */}
       {!hasOpen && (
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Abrir caja</h2>
-
-          <div className={styles.formRow}>
-            <div className={styles.field}>
-              <label className={styles.label}>Monto de apertura (S/)</label>
-              <input
-                className={styles.input}
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.01"
-                value={openingAmount}
-                onChange={(e) => setOpeningAmount(e.target.value)}
-                placeholder="Ej: 100.00"
-              />
+        <div className={`${styles.card} ${styles.openCashCard}`}>
+          <div className={styles.openCashContent}>
+            <div className={styles.openCashLeft}>
+               <div className={styles.bigIcon}>
+                 <Wallet size={48} />
+               </div>
+               <div>
+                 <h2 className={styles.cardTitle}>Apertura de Caja</h2>
+                 <p className={styles.cardDesc}>Ingresa el monto inicial para comenzar las operaciones del día.</p>
+               </div>
             </div>
 
-            <div className={styles.field}>
-              <label className={styles.label}>Notas (opcional)</label>
-              <input
-                className={styles.input}
-                value={openingNotes}
-                onChange={(e) => setOpeningNotes(e.target.value)}
-                placeholder="Ej: Cambio inicial"
-              />
-            </div>
+            <div className={styles.formStack}>
+              <div className={styles.field}>
+                <label className={styles.label}>Monto de apertura (S/)</label>
+                <div className={styles.inputGroup}>
+                  <DollarSign size={18} className={styles.inputIcon}/>
+                  <input
+                    className={styles.input}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="0.01"
+                    value={openingAmount}
+                    onChange={(e) => setOpeningAmount(e.target.value)}
+                    placeholder="0.00"
+                    autoFocus
+                  />
+                </div>
+              </div>
 
-            <button className={styles.primary} onClick={handleOpenCash} disabled={!canUse || loading}>
-              Abrir caja
-            </button>
+              <div className={styles.field}>
+                <label className={styles.label}>Notas adicionales</label>
+                <input
+                  className={styles.input}
+                  value={openingNotes}
+                  onChange={(e) => setOpeningNotes(e.target.value)}
+                  placeholder="Ej: Billetes de 10, Monedas..."
+                />
+              </div>
+
+              <button 
+                className={styles.primaryButton} 
+                onClick={handleOpenCash} 
+                disabled={!canUse || loading || !isOpeningValid} // VALIDACIÓN AQUÍ
+              >
+                {loading ? 'Abriendo...' : 'Abrir Caja'}
+                {!loading && <ArrowRight size={18} />}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -348,81 +391,86 @@ export default function CajaPage() {
           RESUMEN / ARQUEO EN VIVO
       ======================= */}
       {hasOpen && (
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Arqueo / Resumen del día</h2>
-            <button className={styles.button} onClick={() => session?.id && loadMovements(session.id)} disabled={loading}>
-              Refrescar movimientos
-            </button>
-          </div>
+        <div className={styles.dashboardGrid}>
+          {/* Card Resumen */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Resumen del día</h2>
+              <button className={styles.textButton} onClick={() => session?.id && loadMovements(session.id)} disabled={loading}>
+                Actualizar
+              </button>
+            </div>
 
-          <div className={styles.grid3}>
-            <div className={styles.metric}>
-              <span>Ingresos (S/)</span>
-              <b>{money(summary?.totalIncome ?? totals.income)}</b>
-            </div>
-            <div className={styles.metric}>
-              <span>Egresos (S/)</span>
-              <b>{money(summary?.totalExpense ?? totals.expense)}</b>
-            </div>
-            <div className={styles.metric}>
-              <span>Neto (S/)</span>
-              <b>{money(summary?.net ?? totals.net)}</b>
-            </div>
-          </div>
-
-          {/* Totales por método */}
-          {summary?.totalsByMethod && (
-            <div className={styles.methodBox}>
-              <h3 className={styles.subTitle}>Totales por método</h3>
-              <div className={styles.methodGrid}>
-                {Object.entries(summary.totalsByMethod).map(([k, v]) => (
-                  <div key={k} className={styles.methodItem}>
-                    <span>{k}</span>
-                    <b>S/ {money(v)}</b>
-                  </div>
-                ))}
+            <div className={styles.metricsGrid}>
+              <div className={`${styles.metricCard} ${styles.incomeMetric}`}>
+                <div className={styles.metricIcon}><TrendingUp size={20}/></div>
+                <div>
+                   <span>Ingresos</span>
+                   <b>S/ {money(summary?.totalIncome ?? totals.income)}</b>
+                </div>
+              </div>
+              <div className={`${styles.metricCard} ${styles.expenseMetric}`}>
+                <div className={styles.metricIcon}><TrendingDown size={20}/></div>
+                <div>
+                   <span>Egresos</span>
+                   <b>S/ {money(summary?.totalExpense ?? totals.expense)}</b>
+                </div>
+              </div>
+              <div className={`${styles.metricCard} ${styles.netMetric}`}>
+                <div className={styles.metricIcon}><DollarSign size={20}/></div>
+                <div>
+                   <span>Total Neto</span>
+                   <b>S/ {money(summary?.net ?? totals.net)}</b>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* =======================
-          EGRESOS
-      ======================= */}
-      {hasOpen && (
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Registrar egreso</h2>
+            {/* Totales por método */}
+            {summary?.totalsByMethod && (
+              <div className={styles.methodsContainer}>
+                <h3 className={styles.subTitle}>Desglose por método</h3>
+                <div className={styles.methodTags}>
+                  {Object.entries(summary.totalsByMethod).map(([k, v]) => (
+                    <div key={k} className={styles.methodTag}>
+                      <span className={styles.methodName}>{k}</span>
+                      <span className={styles.methodValue}>S/ {money(Number(v))}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.field}>
-              <label className={styles.label}>Monto egreso (S/)</label>
-              <input
-                className={styles.input}
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.01"
-                value={expenseAmount}
-                onChange={(e) => setExpenseAmount(e.target.value)}
-                placeholder="Ej: 20.00"
-              />
+          {/* Card Egresos */}
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+               <h2 className={styles.cardTitle}>Registrar Salida</h2>
             </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Descripción</label>
-              <input
-                className={styles.input}
-                value={expenseDesc}
-                onChange={(e) => setExpenseDesc(e.target.value)}
-                placeholder="Ej: Movilidad / compra de bolsas"
-              />
+            <div className={styles.formStack}>
+              <div className={styles.field}>
+                <label className={styles.label}>Monto (S/)</label>
+                <input
+                  className={styles.input}
+                  type="number"
+                  inputMode="decimal"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Motivo</label>
+                <input
+                  className={styles.input}
+                  value={expenseDesc}
+                  onChange={(e) => setExpenseDesc(e.target.value)}
+                  placeholder="Descripción del gasto"
+                />
+              </div>
+              <button className={styles.dangerButton} onClick={handleExpense} disabled={loading}>
+                Registrar Egreso
+              </button>
             </div>
-
-            <button className={styles.buttonDanger} onClick={handleExpense} disabled={loading}>
-              Registrar egreso
-            </button>
           </div>
         </div>
       )}
@@ -432,17 +480,21 @@ export default function CajaPage() {
       ======================= */}
       {hasOpen && (
         <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Movimientos de caja (día)</h2>
+          <div className={styles.cardHeader}>
+             <div className={styles.headerWithIcon}>
+                <History size={20} className={styles.textGray} />
+                <h2 className={styles.cardTitle}>Historial de Movimientos</h2>
+             </div>
+          </div>
 
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Fecha</th>
+                  <th>Hora</th>
                   <th>Tipo</th>
                   <th>Método</th>
                   <th>Monto</th>
-                  <th>Operación</th>
                   <th>Descripción</th>
                 </tr>
               </thead>
@@ -450,21 +502,25 @@ export default function CajaPage() {
               <tbody>
                 {movements.map((m) => (
                   <tr key={m.id}>
-                    <td>{new Date(m.created_at).toLocaleString()}</td>
-                    <td>{m.type}</td>
+                    <td>{new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                    <td>
+                      {/* AQUI SE MUESTRA EL VALOR REAL DE LA BD (APERTURA, VENTA, GASTO, etc) */}
+                      <span className={Number(m.amount) >= 0 ? styles.badgeIngreso : styles.badgeEgreso}>
+                        {m.type}
+                      </span>
+                    </td>
                     <td>{m.payment_method ?? '-'}</td>
                     <td className={Number(m.amount) < 0 ? styles.neg : styles.pos}>
-                      {Number(m.amount) < 0 ? `- S/ ${money(Math.abs(Number(m.amount)))}` : `S/ ${money(Number(m.amount))}`}
+                      {Number(m.amount) < 0 ? `- S/ ${money(Math.abs(Number(m.amount)))}` : `+ S/ ${money(Number(m.amount))}`}
                     </td>
-                    <td>{m.operation_number ?? '-'}</td>
-                    <td>{m.description ?? '-'}</td>
+                    <td className={styles.descCell}>{m.description || m.operation_number || '-'}</td>
                   </tr>
                 ))}
 
                 {!movements.length && (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', opacity: 0.7 }}>
-                      Sin movimientos aún
+                    <td colSpan={5} className={styles.emptyState}>
+                      No hay movimientos registrados en esta sesión.
                     </td>
                   </tr>
                 )}
@@ -478,42 +534,49 @@ export default function CajaPage() {
           CIERRE DE CAJA
       ======================= */}
       {hasOpen && (
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Cerrar caja</h2>
+        <div className={`${styles.card} ${styles.closeCard}`}>
+          <div className={styles.cardHeader}>
+            <div className={styles.headerWithIcon}>
+               <Lock size={20} />
+               <h2 className={styles.cardTitle}>Cierre de Caja</h2>
+            </div>
+          </div>
 
-          <div className={styles.formRow}>
-            <div className={styles.field}>
-              <label className={styles.label}>Conteo final en efectivo (S/)</label>
+          <div className={styles.closeGrid}>
+             <div className={styles.field}>
+              <label className={styles.label}>Efectivo contado en caja (S/)</label>
               <input
-                className={styles.input}
+                className={`${styles.input} ${styles.inputLarge}`}
                 type="number"
                 inputMode="decimal"
                 min={0}
                 step="0.01"
                 value={closingCashCounted}
                 onChange={(e) => setClosingCashCounted(e.target.value)}
-                placeholder="Ej: 350.00"
+                placeholder="0.00"
               />
               {summary?.expectedCash != null && (
-                <small className={styles.helper}>
-                  Esperado efectivo: <b>S/ {money(summary.expectedCash)}</b>
-                </small>
+                <div className={styles.expectedInfo}>
+                  Esperado en sistema: <b>S/ {money(summary.expectedCash)}</b>
+                </div>
               )}
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>Notas (opcional)</label>
+              <label className={styles.label}>Observaciones de cierre</label>
               <input
                 className={styles.input}
                 value={closingNotes}
                 onChange={(e) => setClosingNotes(e.target.value)}
-                placeholder="Ej: Se retiró cambio, etc."
+                placeholder="Ej: Sobrante/Faltante..."
               />
             </div>
-
-            <button className={styles.primary} onClick={handleCloseCash} disabled={loading}>
-              Cerrar caja
-            </button>
+            
+            <div className={styles.closeActions}>
+               <button className={styles.blackButton} onClick={handleCloseCash} disabled={loading}>
+                Cerrar Turno
+              </button>
+            </div>
           </div>
         </div>
       )}
