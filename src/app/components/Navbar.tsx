@@ -5,50 +5,72 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '../context/UserContext';
+import { 
+  Menu, 
+  X, 
+  LogOut, 
+  User, 
+  ChevronDown, 
+  ChevronUp, 
+  LayoutDashboard, 
+  ClipboardList, 
+  Package, 
+  Users, 
+  BarChart3, 
+  Tags, 
+  Box 
+} from 'lucide-react';
 import style from './page.module.css';
 
 const Navbar = () => {
-  const { user, logout } = useUser(); // obtenemos el user completo
+  const { user, logout } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const router = useRouter();
-  const handleLogout = () => {
-    logout(); // limpia el contexto y localStorage
-    router.push('/login'); // ✅ redirige al login sin recargar
-  };
 
   if (!user) return null;
-  // Los roles vienen desde user.role (por ejemplo "Administrador")
-  const role = user?.role?.name_role; // -> "administrador", "vendedor", etc.
+
+  const role = user?.role?.name_role;
   const warehouse_name = user?.warehouse?.warehouse_name;
-  const toggleMenu = () => {
-    setIsMenuOpen((v) => !v);
-    setIsReportOpen(false); // ✅ opcional: resetea reportes al abrir/cerrar
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+    setIsMenuOpen(false);
   };
 
-  const toggleReportMenu = () => setIsReportOpen((v) => !v);
+  const toggleMenu = () => {
+    setIsMenuOpen((v) => !v);
+    // Si cerramos el menú, reseteamos reportes
+    if (isMenuOpen) setIsReportOpen(false);
+  };
+
+  const toggleReportMenu = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Evitar que cierre el menú padre si hubiera
+    setIsReportOpen((v) => !v);
+  };
 
   const handleLinkClick = () => {
     setIsMenuOpen(false);
     setIsReportOpen(false);
   };
 
-  // ✅ Links reutilizables (misma lógica que tu navbarCenter)
+  // Renderizado condicional de enlaces según rol
   const RoleLinks = () => (
     <>
       {role === 'Vendedor' && (
         <>
           <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-            Registrar Pedido
+            <ClipboardList size={18} /> Registrar Pedido
           </Link>
           <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            Lista de Pedidos
+            <LayoutDashboard size={18} /> Lista de Pedidos
           </Link>
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
-            Stock
+            <Package size={18} /> Stock
           </Link>
           <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de Cliente
+            <Users size={18} /> Clientes
           </Link>
         </>
       )}
@@ -58,96 +80,66 @@ const Navbar = () => {
           <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
             Registrar Pedido
           </Link>
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            Lista de Pedidos
-          </Link>
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             Stock
           </Link>
-          <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de Cliente
-          </Link>
-          <Link href="/abono" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de Abono
-          </Link>
           <Link href="/qr" className={style.navbarLink} onClick={handleLinkClick}>
-            Generador de etiquetas
+            <Tags size={18} /> Etiquetas
           </Link>
           <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>
-            Inventario
+            <Box size={18} /> Inventario
           </Link>
           <Link href="/production" className={style.navbarLink} onClick={handleLinkClick}>
-            Ingreso de Producción
+            Producción
           </Link>
-          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de stock
-          </Link>
-          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de productos
-          </Link>
-          <Link href="/role" className={style.navbarLink} onClick={handleLinkClick}>
-            Roles
-          </Link>
+          
+          {/* Dropdown de Reportes */}
+          <div className={style.reportDropdown}>
+            <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
+              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+            </button>
+            {isReportOpen && (
+              <div className={style.dropdownMenu}>
+                <Link href="/report-client" className={style.navbarLink} onClick={handleLinkClick}>
+                  Por Cliente
+                </Link>
+                <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
+                  Por Vendedor
+                </Link>
+                <Link href="/report-pedidos" className={style.navbarLink} onClick={handleLinkClick}>
+                  Por Pedidos
+                </Link>
+                <Link href="/report-fechas" className={style.navbarLink} onClick={handleLinkClick}>
+                  Por Fecha
+                </Link>
+              </div>
+            )}
+          </div>
+
           <Link href="/warehouses" className={style.navbarLink} onClick={handleLinkClick}>
             Almacenes
           </Link>
           <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
             Usuarios
           </Link>
-          <div className={style.reportDropdown}>
-            <button onClick={toggleReportMenu} className={style.navbarLink} type="button">
-              Reportes
-            </button>
-            {isReportOpen && (
-              <div className={style.dropdownMenu}>
-                <Link href="/report-client" className={style.navbarLink} onClick={handleLinkClick}>
-                  Reporte por Cliente
-                </Link>
-                <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
-                  Reporte por Vendedor
-                </Link>
-                <Link href="/report-pedidos" className={style.navbarLink} onClick={handleLinkClick}>
-                  Reporte por Pedidos
-                </Link>
-                <Link href="/report-fechas" className={style.navbarLink} onClick={handleLinkClick}>
-                  Reporte por Fecha
-                </Link>
-              </div>
-            )}
-          </div>
         </>
       )}
 
       {role === 'Tienda' && (
         <>
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
-            Stock
+            <Package size={18} /> Stock
           </Link>
-          {/*
-          <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>
-            Inventario
-          </Link>
-          */}
           <Link href="/sale" className={style.navbarLink} onClick={handleLinkClick}>
-            Venta
+            <LayoutDashboard size={18} /> Venta
           </Link>
-          {/*
-          <Link href="/merchandise" className={style.navbarLink} onClick={handleLinkClick}>
-            Ingreso a Stock
-          </Link> */}
           <Link href="/caja" className={style.navbarLink} onClick={handleLinkClick}>
             Caja
           </Link>
-          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de stock
-          </Link>
-          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de productos
-          </Link>
-
+          
           <div className={style.reportDropdown}>
-            <button onClick={toggleReportMenu} className={style.navbarLink} type="button">
-              Reportes
+             <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
+              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
             </button>
             {isReportOpen && (
               <div className={style.dropdownMenu}>
@@ -157,6 +149,10 @@ const Navbar = () => {
               </div>
             )}
           </div>
+
+          <Link href="/asistencia" className={style.navbarLink} onClick={handleLinkClick}>
+            Asistencia
+          </Link>
         </>
       )}
     </>
@@ -165,46 +161,75 @@ const Navbar = () => {
   return (
     <>
       <nav className={style.navbar}>
+        {/* LOGO */}
         <div className={style.navbarLogo}>
-          <Image src="/img/verco_logo.png" alt="Logo Empresa" width={100} height={40} />
+          <Link href="/">
+             <Image src="/img/verco_logo.png" alt="Logo Empresa" width={50} height={30} style={{ objectFit: 'contain' }} />
+          </Link>
         </div>
 
-        <div className={style.hamburger} onClick={toggleMenu}>
-          <span className={style.bar}></span>
-          <span className={style.bar}></span>
-          <span className={style.bar}></span>
-        </div>
-
-        {/* ✅ Menú centrado (DESKTOP) según rol */}
+        {/* MENU DESKTOP CENTRAL */}
         <div className={style.navbarCenter}>
           <RoleLinks />
         </div>
 
-        {/* ✅ Panel lateral / user panel (DESKTOP) y también contenedor del menú en MOBILE */}
-        <div className={`${style.navbarRight} ${isMenuOpen ? style.open : ''}`}>
-          {/*
+        {/* PANEL USUARIO DESKTOP */}
+        <div className={style.navbarRight}>
           <div className={style.userInfo}>
-            <Image src="/img/unnamed.jpg" alt="User Avatar" width={40} height={40} className={style.userAvatar} />
+            <div className={style.userDetails}>
+              <span className={style.username}>{user.full_name}</span>
+              <span className={style.userArea}>{warehouse_name}</span>
+            </div>
+            <div className={style.userAvatar}>
+              <User size={20} />
+            </div>
           </div>
-          */}
-          <div className={style.userDetails}>
-            <span className={style.username}>{user.full_name}</span>
-            <span className={style.userArea}>{warehouse_name}</span>
-          </div>
-
-          {/* ✅ AQUÍ se muestran tus pestañas cuando es MOBILE y se abre la hamburguesa */}
-          <div className={style.navbarMobileLinks}>
-            <RoleLinks />
-          </div>
-
           <button onClick={handleLogout} className={style.logoutButton}>
-            Cerrar sesión
+            <LogOut size={16} /> Salir
           </button>
+        </div>
+
+        {/* BOTON HAMBURGUESA MOVIL */}
+        <div className={style.hamburger} onClick={toggleMenu}>
+          <Menu size={28} />
         </div>
       </nav>
 
-      {/* ✅ Overlay para cerrar tocando afuera (solo cuando menú está abierto) */}
-      {isMenuOpen && <div className={style.overlay} onClick={() => setIsMenuOpen(false)} />}
+      {/* OVERLAY MOVIL */}
+      {isMenuOpen && (
+        <div className={style.mobileOverlay} onClick={toggleMenu} />
+      )}
+
+      {/* DRAWER MENU MOVIL */}
+      <div className={`${style.mobileDrawer} ${isMenuOpen ? style.open : ''}`}>
+        <div className={style.drawerHeader}>
+          <span className="text-white font-bold text-lg">Menú</span>
+          <button onClick={toggleMenu} className={style.closeBtn}>
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* INFO USUARIO EN MOVIL */}
+        <div className={style.mobileUserInfo}>
+           <div className={style.userAvatar}>
+              <User size={20} />
+            </div>
+            <div className={style.mobileUserText}>
+              <span className={style.username}>{user.full_name}</span>
+              <span className={style.userArea}>{warehouse_name}</span>
+            </div>
+        </div>
+
+        {/* ENLACES MOVIL */}
+        <div className={style.mobileLinks}>
+          <RoleLinks />
+        </div>
+
+        {/* LOGOUT MOVIL */}
+        <button onClick={handleLogout} className={`${style.logoutButton} ${style.logoutButtonMobile}`}>
+            <LogOut size={18} /> Cerrar Sesión
+        </button>
+      </div>
     </>
   );
 };

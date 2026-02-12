@@ -1,0 +1,105 @@
+.attendanceContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.tittle {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.attendanceform {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+  max-width: 400px; /* Limitar el ancho máximo para pantallas más grandes */
+}
+
+.inputgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inputfield {
+  padding: 10px;
+  font-size: 16px;
+  width: 100%;  /* Hacer que el campo ocupe todo el ancho disponible */
+  max-width: 300px; /* Limitar el ancho máximo */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.btn {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%; /* Hacer que el botón ocupe todo el ancho disponible */
+  max-width: 300px; /* Limitar el ancho máximo */
+  text-align: center;
+}
+
+.btn:hover {
+  background-color: #218838;
+}
+
+.btn.disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+button:disabled {
+  pointer-events: none;
+}
+
+/* Media queries para dispositivos móviles */
+@media (max-width: 768px) {
+  .attendanceContainer {
+    padding: 15px; /* Reducir el padding en pantallas pequeñas */
+  }
+
+  .attendanceform {
+    padding: 10px;
+  }
+
+  .inputfield {
+    font-size: 25px; /* Reducir el tamaño de la fuente en pantallas pequeñas */
+  }
+
+  .btn {
+    font-size: 14px; /* Reducir el tamaño del botón */
+    padding: 8px 16px; /* Reducir el padding en pantallas pequeñas */
+  }
+}
+
+@media (max-width: 480px) {
+  .attendanceContainer {
+    padding: 10px; /* Reducir aún más el padding en pantallas muy pequeñas */
+  }
+
+  .attendanceform {
+    width: 100%; /* Asegurarse de que el formulario ocupe todo el ancho */
+    padding: 5px;
+  }
+
+  .inputfield {
+    font-size: 18px; /* Reducir aún más el tamaño de la fuente */
+  }
+
+  .btn {
+    font-size: 12px; /* Reducir el tamaño del botón */
+    padding: 6px 12px; /* Reducir el padding del botón */
+  }
+}

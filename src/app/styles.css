@@ -59,18 +59,3 @@ body {
   opacity: 0.7;
   cursor: not-allowed;
 }
-
-/* styles/globals.css o en un archivo CSS global */
-.layoutContainer {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh; /* Esto hace que el contenedor ocupe toda la altura de la ventana */
-}
-
-main {
-  flex-grow: 1; /* Esto asegura que el contenido principal ocupe todo el espacio disponible */
-}
-
-footer {
-  margin-top: auto; /* Esto asegura que el footer se desplace al final del contenedor */
-}

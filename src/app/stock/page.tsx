@@ -114,16 +114,6 @@ export default function StockPage() {
     fetchCategories();  // Llamamos para obtener las categorías
   }, [user, selectedCategory, selectedSerie]);
 
- // Definir el rango de tallas para la categoría de zapatillas
-  const rangeTallas = ['27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44'];
-
-  // Actualizar las tallas disponibles en base al rango de tallas
-  useEffect(() => {
-    if (isShoeCategory) {
-      setTallasDisponibles(rangeTallas);
-    }
-  }, [isShoeCategory]);
-
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
     if (!q) return stock;

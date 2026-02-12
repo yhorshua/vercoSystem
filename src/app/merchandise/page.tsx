@@ -174,7 +174,7 @@ export default function StockIncomingPage() {
   };
 
   const registrarIngreso = async () => {
-    if (!user?.token || !user?.warehouseId || !user?.userId) {
+    if (!user?.token || !user?.warehouse_id || !user?.id) {
       Swal.fire({ icon: 'warning', title: 'Sesión', text: 'Falta token/warehouseId/userId.' });
       return;
     }
@@ -204,8 +204,8 @@ export default function StockIncomingPage() {
     }
 
     const payload: CreateIncomingPayload = {
-      warehouse_id: user.warehouseId,
-      user_id: user.userId,
+      warehouse_id: user.warehouse_id,
+      user_id: user.id,
       reference: reference?.trim() || 'Ingreso de mercadería',
       items: payloadItems,
     };

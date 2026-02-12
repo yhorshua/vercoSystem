@@ -55,7 +55,7 @@ export default function OrderListPage() {
   const { user } = useUser();
   const router = useRouter();
 
-  const rolUsuario = user?.role?.toLowerCase() || '';
+  const rolUsuario = user?.role?.name_role || '';
 
   console.log("rol usuario", rolUsuario);
 
@@ -69,12 +69,12 @@ export default function OrderListPage() {
 
   // Cargar pedidos desde backend
   useEffect(() => {
-    if (!user?.token || !user?.userId) return;
+    if (!user?.token || !user?.id) return;
 
     const fetchPedidos = async () => {
       try {
         const params: any = {
-          user_id: user.userId,
+          user_id: user.id,
           role: user.role,
         };
 
@@ -145,7 +145,7 @@ export default function OrderListPage() {
     if (!result.isConfirmed) return;
 
     try {
-      await approveOrder(Number(id), user.userId, user.token);
+      await approveOrder(Number(id), user.id, user.token);
 
       Swal.fire('Aprobado', 'Pedido aprobado correctamente', 'success');
 
@@ -172,7 +172,7 @@ export default function OrderListPage() {
     if (!result.isConfirmed) return;
 
     try {
-      await rejectOrder(Number(id), user.userId, result.value, user.token);
+      await rejectOrder(Number(id), user.id, result.value, user.token);
 
       Swal.fire('Anulado', 'Pedido anulado correctamente', 'success');
 

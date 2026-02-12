@@ -186,7 +186,7 @@ const marcarPorCodigo = async (codigoBarras: string) => {
       try {
         const result = await closePacking({
           order_id: Number(pedido.id),
-          user_id: user.userId,
+          user_id: user.id,
         }, user.token); // Pasa el token del usuario para la autenticación
 
         Swal.fire({
