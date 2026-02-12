@@ -1,221 +1,240 @@
-/* Estilos base */
+/* Variables y Reset Global del Módulo */
 .container {
-  max-width: 1100px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --primary: #2563eb;       /* Azul vibrante */
+  --primary-dark: #1e40af;
+  --bg-page: #f1f5f9;       /* Gris muy claro de fondo */
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  padding: 1.5rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
 }
 
 .heading {
   font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
   margin-bottom: 1.5rem;
-  text-align: center;
-  color: #0d3b66;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.inputGroup {
-  display: grid;
-  grid-template-columns: 180px 1fr 120px 1fr 120px 1fr;
-  align-items: center;
-  gap: 0.5rem 1rem;
+/* --- Layout de Tarjetas --- */
+.cardSection {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
   margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Grids Responsivos --- */
+.gridTwo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.gridThree {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.gridFour {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+/* --- Inputs y Labels --- */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .label {
-  font-weight: bold;
-  color: #333;
-  white-space: nowrap;
-  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
-.input {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
+.input, .inputDocument, .select {
+  padding: 10px 12px;
   border-radius: 8px;
-  font-size: 1rem;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  background-color: #f8fafc;
+  transition: all 0.2s;
   width: 100%;
+  color: var(--text-main);
 }
 
-.inputSerie {
-  width: 60px;
-  text-align: center;
+.input:focus, .inputDocument:focus, .select:focus {
+  outline: none;
+  background-color: #fff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.inputPrecio {
-  width: 120px;
-}
-
-.inputDescripcion {
-  width: 100%;
-  grid-column: span 3;
-}
-
-.inputClient {
-  width: 100%;
-  grid-column: span 3;
-}
-
-.input[readonly] {
-  background-color: #f0f0f0;
+.inputReadOnly {
+  background-color: #e2e8f0;
+  color: #475569;
   cursor: not-allowed;
 }
 
-.tallaField:read-only {
-  background-color: #e0e0e0;
-  color: #666;
-}
-
+/* --- Sección Tallas (Grid Especial) --- */
 .tallasContainer {
-  margin-top: 2rem;
+  margin-top: 1rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
 }
 
 .tallasLabel {
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
   display: block;
 }
 
 .tallasGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 12px;
 }
 
-.tallaInput {
+.tallaItem {
   display: flex;
   flex-direction: column;
   align-items: center;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  transition: all 0.2s;
 }
 
-.tallaLabel {
-  font-size: 0.9rem;
-  margin-bottom: 0.3rem;
+.tallaItem:focus-within {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
 }
 
-.tallaField {
+.tallaTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.tallaInput {
   width: 100%;
-  padding: 0.4rem;
-  font-size: 1rem;
-  border: 1px solid #bbb;
-  border-radius: 6px;
   text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.tallaInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  background-color: #eff6ff;
+}
+
+.stockBadge {
+  font-size: 0.7rem;
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+/* --- Botones --- */
+.scanButton {
+  background-color: #334155;
+  color: white;
+  border: none;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+  height: 42px; /* Altura igual a inputs */
+}
+
+.scanButton:hover {
+  background-color: #1e293b;
 }
 
 .addButton {
-  margin-top: 2rem;
-  background-color: #245580;
-  color: white;
-  font-weight: bold;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.addButton:hover {
-  background-color: #1b4468;
-}
-
-/* Tabla responsiva */
-.tableContainer {
-  margin-top: 32px;
-  border-top: 1px solid #ccc;
-  padding-top: 16px;
-}
-
-.responsiveWrapper {
   width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.table {
-  width: 100%;
-  min-width: 800px;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.tableCell {
-  padding: 6px 8px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-  white-space: nowrap;
-}
-
-.table td,
-.table th {
-  text-align: center;
-  vertical-align: middle;
-  padding: 12px;
-}
-
-.deleteButton {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-}
-
-.registrarButton {
-  margin-top: 24px;
-  padding: 10px 24px;
-  background-color: #39cb05;
+  background-color: var(--primary);
   color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.registrarButton:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.registrarButton:hover:not(:disabled) {
-  background-color: #089861;
-}
-
-
-.labelDocument {
-width: 100%;
-  grid-column: span 2;
-}
-
-.inputDocument {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 14px;
+  border-radius: 10px;
   font-size: 1rem;
-  width: 100%;
-}
-/*
-.scanButton {
-  background-color: #007bff;
-  color: white;
-  padding: 1rem 1rem;
-  margin-left: 10px;
-  border-radius: 5px;
+  font-weight: 700;
+  border: none;
   cursor: pointer;
-}
-*/
-.scanButton:hover {
-  background-color: #0056b3;
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);
 }
 
-/* Estilos generales para la cámara */
-.cameraContainer {
-  position: relative;
-  width: 100%;
-  height: 400px; /* Ajusta según el tamaño deseado */
-  background-color: black;
-  border-radius: 8px;
+.addButton:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.addButton:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --- Cámara Overlay --- */
+.cameraWrapper {
+  margin-top: 1rem;
+  border-radius: 12px;
   overflow: hidden;
+  position: relative;
+  background: black;
+  height: 300px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
 }
 
 .scannerOverlay {
@@ -223,172 +242,187 @@ width: 100%;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80%; /* Ajusta el ancho del área de escaneo */
-  height: 40%; /* Ajusta la altura del área de escaneo */
-  border: 2px solid red; /* Contorno para hacerla más visible */
+  width: 70%;
+  height: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
 }
 
-.redLineTop,
-.redLineBottom,
-.redLineLeft,
-.redLineRight {
+.scannerOverlay::after {
+  content: '';
   position: absolute;
-  background-color: red;
-  z-index: 10;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: red;
+  opacity: 0.7;
+  animation: scan 2s infinite linear;
 }
 
-/* Líneas rojas en las cuatro esquinas */
-.redLineTop {
-  top: 10px;
-  left: 10px;
-  width: calc(100% - 20px); /* Ajusta el ancho de la línea */
-  height: 3px;
+@keyframes scan {
+  0% { top: 10%; }
+  50% { top: 90%; }
+  100% { top: 10%; }
 }
 
-.redLineBottom {
-  bottom: 10px;
-  left: 10px;
-  width: calc(100% - 20px); /* Ajusta el ancho de la línea */
-  height: 3px;
+/* --- Tabla de Pedido (Carrito) --- */
+.tableCard {
+  background: var(--bg-card);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.redLineLeft {
-  top: 10px;
-  left: 10px;
-  width: 3px;
-  height: calc(100% - 20px); /* Ajusta el alto de la línea */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
 }
 
-.redLineRight {
-  top: 10px;
-  right: 10px;
-  width: 3px;
-  height: calc(100% - 20px); /* Ajusta el alto de la línea */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
 }
 
-/* Estilo para el botón de escanear */
-.scanButton {
-  width: 200px;
-  padding: 10px 24px;
-  background-color: #000000;
-  color: white;
+.table th {
+  background: #f8fafc;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  border-bottom: 2px solid var(--border);
+}
+
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.deleteButton {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
   border: none;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s;
 }
 
-.scanButton:hover {
-  background-color: #0056b3;
+.deleteButton:hover {
+  background: var(--danger);
+  color: white;
 }
 
-.scanButton:disabled {
-  background-color: #ccc;
+/* --- Footer de Pago (Dentro de PedidoTabla) --- */
+.paymentSection {
+  padding: 1.5rem;
+  background-color: #f8fafc;
+  border-top: 1px solid var(--border);
+}
+
+.paymentHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.totalBig {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.paymentMethodGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.paymentTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.registerButton {
+  width: 100%;
+  background-color: var(--success);
+  color: white;
+  font-weight: 700;
+  padding: 16px;
+  border-radius: 12px;
+  border: none;
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+}
+
+.registerButton:hover:not(:disabled) {
+  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+}
+
+.registerButton:disabled {
+  background-color: #cbd5e1;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* Mobile adjustments */
+.errorText {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* --- Responsive Media Queries --- */
 @media (max-width: 768px) {
-  .inputGroup {
-    display: flex;
+  .container {
+    padding: 1rem;
+  }
+  
+  .heading {
+    font-size: 1.4rem;
+  }
+  
+  .cardSection {
+    padding: 1rem;
+  }
+  
+  .scanRow {
     flex-direction: column;
   }
-
-  .inputDescripcion,
-  .inputPrecio,
-  .inputSerie {
-    width: 100%;
-    grid-column: unset;
-  }
-
-  .addButton {
+  
+  .scanButton {
     width: 100%;
   }
 
-  .table {
-    font-size: 0.85rem;
-  }
-
-  .table th:nth-child(3),
-  .table td:nth-child(3),
-  .table th:nth-child(8),
-  .table td:nth-child(8) {
-    display: none; /* Oculta columna Serie y Eliminar */
+  .paymentHeader {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
-.formFooter {
-  margin-top: 16px;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 1fr 1fr auto;
-  align-items: end;
-}
-
-.paymentPanel {
-  grid-column: 1 / -1;
-  padding: 12px;
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 12px;
-  background: #fff;
-}
-
-.panelTitle {
-  margin: 0 0 10px 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.paymentGrid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.inputError {
-  border: 1px solid #e11d48 !important;
-}
-
-.helperError {
-  color: #e11d48;
-  font-size: 12px;
-}
-
-.registrarButton {
-  white-space: nowrap;
-  height: 42px;
-  padding: 0 16px;
-  border-radius: 10px;
-}
-
-@media (max-width: 900px) {
-  .formFooter {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .registrarButton {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-
-  .paymentGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 520px) {
-  .formFooter {
-    grid-template-columns: 1fr;
-  }
-
-  .paymentGrid {
-    grid-template-columns: 1fr;
-  }
-}
-

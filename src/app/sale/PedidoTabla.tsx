@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react';
 
 import { registerSale, CreateSalePayload, PaymentMethod } from '../services/saleServices';
 import type { ItemUI } from '../components/types';
+import { CreditCard, DollarSign, CheckCircle, Trash2 } from 'lucide-react';
 
 
 interface Cliente {
@@ -26,31 +27,16 @@ interface Cliente {
   provincia: string;
   distrito: string;
 }
-/*
-export interface Item {
-  codigo: string;
-  descripcion: string;
-  serie: string;
-  precio: number;
-  cantidades: Record<number, number>;
-  total: number;
 
-  product_id: number;
-  unit_of_measure: string;
-  sizeIdBySizeNumber: Record<number, number>;
-}
-*/
 interface PedidoTablaProps {
   items: ItemUI[];
   onDelete: (index: number) => void;
   cliente: Cliente | null;
-
   user: {
     token: string;
     warehouseId: number;
     userId: number;
   } | null;
-
   onSaleRegistered?: () => void;
 }
 
@@ -74,7 +60,7 @@ export default function PedidoTabla({
   const totalPrecio = items.reduce((sum, item) => sum + item.total * item.precio, 0);
 
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
-  const [tipoDocumentoVenta, setTipoDocumentoVenta] = useState<'boleta' | 'factura'>('boleta');
+
   // ====== EFECTIVO ======
   const [efectivoEntregado, setEfectivoEntregado] = useState<string>('');
 
@@ -95,24 +81,19 @@ export default function PedidoTabla({
     return efectivoEntregadoNum < totalPrecio;
   }, [metodoPago, efectivoEntregado, efectivoEntregadoNum, totalPrecio]);
 
-  // ====== YAPE / PLIN / TARJETA ======
+  // ====== OPERACIONES (Yape/Plin/Tarjeta) ======
   const [numeroOperacion, setNumeroOperacion] = useState<string>('');
 
   const requiereOperacion = useMemo(() => {
-    return (
-      metodoPago === 'yape' ||
-      metodoPago === 'plin' ||
-      metodoPago === 'tarjetaDebito' ||
-      metodoPago === 'tarjetaCredito'
-    );
+    return ['yape', 'plin', 'tarjetaDebito', 'tarjetaCredito'].includes(metodoPago);
   }, [metodoPago]);
 
   const operacionInvalida = useMemo(() => {
     if (!requiereOperacion) return false;
-    return numeroOperacion.trim().length < 6;
+    return numeroOperacion.trim().length < 4; // Reduje a 4 por flexibilidad
   }, [requiereOperacion, numeroOperacion]);
 
-  // ====== YAPE / EFECTIVO (mixto) ======
+  // ====== MIXTO (Yape + Efectivo) ======
   const [montoYape, setMontoYape] = useState<string>('');
   const [operacionYape, setOperacionYape] = useState<string>('');
   const [efectivoEntregadoMixto, setEfectivoEntregadoMixto] = useState<string>('');
@@ -141,26 +122,11 @@ export default function PedidoTabla({
 
   const mixtoInvalido = useMemo(() => {
     if (metodoPago !== 'yapeEfectivo') return false;
-
-    if (montoYape.trim() === '') return true;
-    if (montoYapeNum <= 0) return true;
-    if (montoYapeNum >= totalPrecio) return true;
-    if (operacionYape.trim().length < 6) return true;
-
-    if (efectivoEntregadoMixto.trim() === '') return true;
+    if (montoYapeNum <= 0 || montoYapeNum >= totalPrecio) return true;
+    if (operacionYape.trim().length < 4) return true;
     if (efectivoEntregadoMixtoNum < montoEfectivoMixto) return true;
-
     return false;
-  }, [
-    metodoPago,
-    montoYape,
-    montoYapeNum,
-    totalPrecio,
-    operacionYape,
-    efectivoEntregadoMixto,
-    efectivoEntregadoMixtoNum,
-    montoEfectivoMixto,
-  ]);
+  }, [metodoPago, montoYapeNum, totalPrecio, operacionYape, efectivoEntregadoMixtoNum, montoEfectivoMixto]);
 
   // ====== OBSEQUIO ======
   const [motivoObsequio, setMotivoObsequio] = useState<string>('');
@@ -168,10 +134,9 @@ export default function PedidoTabla({
 
   const obsequioInvalido = useMemo(() => {
     if (metodoPago !== 'obsequio') return false;
-    return motivoObsequio.trim().length < 5;
+    return motivoObsequio.trim().length < 3;
   }, [metodoPago, motivoObsequio]);
 
-  // ====== VALIDACIÓN GENERAL ======
   const isPagoValido = useMemo(() => {
     if (metodoPago === 'efectivo') return !efectivoInvalido;
     if (requiereOperacion) return !operacionInvalida;
@@ -194,47 +159,43 @@ export default function PedidoTabla({
   // TABLA
   // =======================
   const columns: ColumnDef<ItemUI>[] = [
-    { accessorKey: 'codigo', header: 'Artículo', cell: (info) => info.getValue() as any },
-    { accessorKey: 'descripcion', header: 'Descripción', cell: (info) => info.getValue() as any },
-    { accessorKey: 'serie', header: 'Serie', cell: (info) => info.getValue() as any },
-    {
-      header: 'Cantidades por talla',
-      cell: (info) => {
-        const item = info.row.original;
-        const tallas = Object.keys(item.cantidades);  // Acceder a las tallas como claves de 'cantidades'
-        return tallas.map((talla) => `${talla}: ${item.cantidades[talla]}`).join(', ');
-      },
+    { accessorKey: 'codigo', header: 'Cod.', cell: (info) => info.getValue() },
+    { accessorKey: 'descripcion', header: 'Desc.', cell: (info) => info.getValue() },
+    { 
+        id: 'tallas',
+        header: 'Tallas',
+        cell: (info) => {
+            const item = info.row.original;
+            return Object.entries(item.cantidades)
+                .map(([t, q]) => `[${t}]: ${q}`)
+                .join(', ');
+        }
     },
-    { accessorKey: 'total', header: 'Pares', cell: (info) => info.getValue() as any },
+    { accessorKey: 'total', header: 'Cant.', cell: (info) => info.getValue() },
     {
       id: 'precio',
       header: 'Precio',
-      cell: (info) => {
-        // Aquí mostramos el precio con descuento si existe
-        const precio = info.row.original.precio;
-        return Number(precio).toFixed(2); // Mostrar el precio con 2 decimales
-      },
+      cell: (info) => `S/ ${Number(info.row.original.precio).toFixed(2)}`,
     },
     {
-      id: 'valor',
-      header: 'Valor',
-      cell: (info) => (info.row.original.total * info.row.original.precio).toFixed(2),
+      id: 'subtotal',
+      header: 'Subtotal',
+      cell: (info) => `S/ ${(info.row.original.total * info.row.original.precio).toFixed(2)}`,
     },
     {
       id: 'acciones',
-      header: 'Eliminar',
+      header: '',
       cell: (info) => (
         <button
           className={styles.deleteButton}
           onClick={() => onDelete(info.row.index)}
           title="Eliminar"
         >
-          🗑️
+          <Trash2 size={16} />
         </button>
       ),
     },
   ];
-
 
   const table = useReactTable({
     data: items,
@@ -242,84 +203,43 @@ export default function PedidoTabla({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // =======================
-  // ✅ REGISTRAR VENTA BD
-  // =======================
   const handleRegistrarVentaBD = async () => {
     if (!user?.token || !user?.warehouseId || !user?.userId) {
-      Swal.fire({ icon: 'warning', title: 'Sesión', text: 'Falta token / warehouseId / userId.' });
+      Swal.fire({ icon: 'warning', text: 'Sesión no válida.' });
       return;
     }
-
-    if (!items.length) {
-      Swal.fire({ icon: 'warning', title: 'Carrito vacío', text: 'Agrega productos antes de registrar.' });
-      return;
-    }
-
     if (!isPagoValido) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Pago incompleto',
-        text: 'Completa correctamente los campos del método de pago seleccionado.',
-      });
+      Swal.fire({ icon: 'warning', text: 'Datos de pago incompletos.' });
       return;
     }
 
-    // 1) items payload
     const payloadItems: CreateSalePayload['items'] = [];
-
     for (const it of items) {
-      const tallas = Object.keys(it.cantidades); // Esto da las claves de las tallas (S, M, L, etc.)
-
-      for (const talla of tallas) {
-        const qty = Number(it.cantidades[talla] || 0);
-
-        if (qty <= 0) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Sin cantidades válidas',
-            text: `No hay cantidades válidas para la talla ${talla} del artículo ${it.codigo}`,
-          });
-          return;  // Detiene el proceso si no hay cantidades válidas
-        }
-
-        const product_size_id = it.sizeIdBySizeNumber[talla as keyof typeof it.sizeIdBySizeNumber];
+      for (const [talla, qty] of Object.entries(it.cantidades)) {
+        if (Number(qty) <= 0) continue;
+        const product_size_id = it.sizeIdBySizeNumber[Number(talla) || talla]; 
+        // Nota: asumiendo que sizeIdBySizeNumber mapea talla -> id
+        
         if (!product_size_id) {
-          await Swal.fire({
-            icon: 'warning',
-            title: 'Talla sin ID',
-            text: `No existe product_size_id para la talla ${talla} del artículo ${it.codigo}`,
-          });
-          return;
+            Swal.fire({ icon: 'error', text: `Error de ID talla ${talla}` });
+            return;
         }
 
         payloadItems.push({
           product_id: it.product_id,
           product_size_id,
-          quantity: qty,
+          quantity: Number(qty),
           unit_of_measure: it.unit_of_measure || 'PAR',
           unit_price: it.precio,
         });
       }
     }
 
-    console.log('Payload Items:', payloadItems);
-
-    if (!payloadItems.length) {
-      Swal.fire({ icon: 'warning', title: 'Sin cantidades', text: 'No hay cantidades válidas para registrar.' });
-      return;
-    }
-
-    // 2) payment payload (llaves exactas del DTO del back)
     const payment_method = metodoPago as PaymentMethod;
-
     const payment: CreateSalePayload['payment'] =
       payment_method === 'efectivo'
         ? { efectivoEntregado: efectivoEntregadoNum, vuelto: vueltoEfectivo }
-        : payment_method === 'yape' ||
-          payment_method === 'plin' ||
-          payment_method === 'tarjetaDebito' ||
-          payment_method === 'tarjetaCredito'
+        : ['yape', 'plin', 'tarjetaDebito', 'tarjetaCredito'].includes(payment_method)
           ? { numeroOperacion: numeroOperacion.trim() }
           : payment_method === 'yapeEfectivo'
             ? {
@@ -340,13 +260,13 @@ export default function PedidoTabla({
       items: payloadItems,
     };
 
-    console.log('Payload:', payload);
     const confirm = await Swal.fire({
       icon: 'question',
-      title: 'Confirmar venta',
-      text: `Registrar venta por S/ ${totalPrecio.toFixed(2)} ?`,
+      title: 'Confirmar Venta',
+      text: `Total: S/ ${totalPrecio.toFixed(2)}`,
       showCancelButton: true,
-      confirmButtonText: 'Sí, registrar',
+      confirmButtonColor: '#10b981',
+      confirmButtonText: 'Registrar',
       cancelButtonText: 'Cancelar',
     });
 
@@ -354,42 +274,39 @@ export default function PedidoTabla({
 
     try {
       const res = await registerSale(payload, user.token);
-
       await Swal.fire({
         icon: 'success',
-        title: 'Venta registrada',
+        title: '¡Venta Exitosa!',
         text: `Código: ${res?.sale?.sale_code ?? ''}`,
+        timer: 2000,
+        showConfirmButton: false
       });
-
       resetPagoStates();
       onSaleRegistered?.();
     } catch (e: any) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: e?.message || 'No se pudo registrar la venta',
-      });
+      Swal.fire({ icon: 'error', text: e?.message || 'Error al registrar' });
     }
   };
 
+  if (items.length === 0) {
+      return <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>El carrito está vacío.</div>;
+  }
+
   return (
-    <div className={styles.tableContainer}>
-      <div className={styles.responsiveWrapper}>
+    <div className={styles.tableCard}>
+      <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                    {flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
               </tr>
             ))}
           </thead>
-
           <tbody>
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id}>
@@ -401,237 +318,123 @@ export default function PedidoTabla({
               </tr>
             ))}
           </tbody>
-
-          <tfoot>
-            <tr>
-              <td colSpan={4}><strong>Total General</strong></td>
-              <td>{totalUnidades}</td>
-              <td></td>
-              <td><strong>{totalPrecio.toFixed(2)}</strong></td>
-              <td></td>
-            </tr>
-          </tfoot>
         </table>
       </div>
 
-      {/* Footer pago */}
-      <div className={styles.formFooter}>
-        {/* Documento */}
-
-        {/* Método pago */}
-        <div className={styles.inputGroup}>
-          <label className={styles.label}>Método de Pago:</label>
-          <select
-            value={metodoPago}
-            onChange={(e) => setMetodoPago(e.target.value as PaymentMethod)}
-          >
-            <option value="efectivo">Efectivo</option>
-            <option value="yape">Yape</option>
-            <option value="plin">Plin</option>
-            <option value="tarjetaDebito">Tarjeta Débito</option>
-            <option value="tarjetaCredito">Tarjeta Crédito</option>
-            <option value="yapeEfectivo">Yape/Efectivo</option>
-            <option value="obsequio">Obsequio</option>
-          </select>
+      <div className={styles.paymentSection}>
+        <div className={styles.paymentHeader}>
+            <div>
+                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Total Productos: {totalUnidades}</span>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.9rem', color: '#64748b', display: 'block' }}>Total a Pagar</span>
+                <span className={styles.totalBig}>S/ {totalPrecio.toFixed(2)}</span>
+            </div>
         </div>
 
-        {/* EFECTIVO */}
-        {metodoPago === 'efectivo' && (
-          <div className={styles.paymentPanel}>
-            <h4 className={styles.panelTitle}>Pago en efectivo</h4>
-            <div className={styles.paymentGrid}>
-              <div className={styles.field}>
-                <label className={styles.label}>Total (S/)</label>
-                <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Efectivo entregado (S/)</label>
-                <input
-                  className={`${styles.input} ${efectivoInvalido ? styles.inputError : ''}`}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={efectivoEntregado}
-                  onChange={(e) => setEfectivoEntregado(e.target.value)}
-                  placeholder="Ej: 100.00"
-                />
-                {efectivoInvalido && (
-                  <small className={styles.helperError}>
-                    El efectivo entregado debe ser mayor o igual al total.
-                  </small>
-                )}
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Vuelto (S/)</label>
-                <input className={styles.input} value={vueltoEfectivo.toFixed(2)} readOnly />
-              </div>
+        <div className={styles.paymentMethodGrid}>
+             <div className={styles.paymentTitle}>
+                <CreditCard size={18} /> Método de Pago
+             </div>
+             
+             <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                <select
+                    className={styles.select}
+                    value={metodoPago}
+                    onChange={(e) => {
+                        setMetodoPago(e.target.value as PaymentMethod);
+                        resetPagoStates();
+                    }}
+                >
+                    <option value="efectivo">💵 Efectivo</option>
+                    <option value="yape">📱 Yape</option>
+                    <option value="plin">📱 Plin</option>
+                    <option value="tarjetaDebito">💳 Tarjeta Débito</option>
+                    <option value="tarjetaCredito">💳 Tarjeta Crédito</option>
+                    <option value="yapeEfectivo">🔀 Mixto (Yape + Efectivo)</option>
+                    <option value="obsequio">🎁 Obsequio</option>
+                </select>
             </div>
-          </div>
-        )}
 
-        {/* YAPE/PLIN/TARJETAS */}
-        {(metodoPago === 'yape' ||
-          metodoPago === 'plin' ||
-          metodoPago === 'tarjetaDebito' ||
-          metodoPago === 'tarjetaCredito') && (
-            <div className={styles.paymentPanel}>
-              <h4 className={styles.panelTitle}>
-                {metodoPago === 'yape' && 'Pago con Yape'}
-                {metodoPago === 'plin' && 'Pago con Plin'}
-                {metodoPago === 'tarjetaDebito' && 'Pago con Tarjeta Débito'}
-                {metodoPago === 'tarjetaCredito' && 'Pago con Tarjeta Crédito'}
-              </h4>
+            {/* CAMPOS DINAMICOS SEGUN PAGO */}
+            {metodoPago === 'efectivo' && (
+                <>
+                   <div className={styles.inputGroup}>
+                      <label className={styles.label}>Paga con</label>
+                      <input 
+                        type="number" 
+                        className={styles.input} 
+                        value={efectivoEntregado} 
+                        onChange={e => setEfectivoEntregado(e.target.value)} 
+                        placeholder="S/ 0.00"
+                      />
+                   </div>
+                   <div className={styles.inputGroup}>
+                      <label className={styles.label}>Vuelto</label>
+                      <input className={`${styles.input} ${styles.inputReadOnly}`} value={`S/ ${vueltoEfectivo.toFixed(2)}`} readOnly />
+                   </div>
+                </>
+            )}
 
-              <div className={styles.paymentGrid}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Total (S/)</label>
-                  <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
+            {requiereOperacion && (
+                <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                     <label className={styles.label}>N° Operación / Voucher</label>
+                     <input 
+                        className={styles.input} 
+                        value={numeroOperacion} 
+                        onChange={e => setNumeroOperacion(e.target.value)} 
+                        placeholder="Ej: 123456"
+                      />
                 </div>
+            )}
 
-                <div className={styles.field}>
-                  <label className={styles.label}>N° Operación / Voucher</label>
-                  <input
-                    className={`${styles.input} ${operacionInvalida ? styles.inputError : ''}`}
-                    value={numeroOperacion}
-                    onChange={(e) => setNumeroOperacion(e.target.value)}
-                    placeholder="Ej: 000123456"
-                  />
-                  {operacionInvalida && (
-                    <small className={styles.helperError}>
-                      Ingresa un número de operación válido (mín. 6 caracteres).
-                    </small>
-                  )}
+            {metodoPago === 'yapeEfectivo' && (
+                <>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>Monto Yape</label>
+                        <input type="number" className={styles.input} value={montoYape} onChange={e => setMontoYape(e.target.value)} />
+                    </div>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>Operación Yape</label>
+                        <input className={styles.input} value={operacionYape} onChange={e => setOperacionYape(e.target.value)} />
+                    </div>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>Restante Efectivo</label>
+                        <input className={`${styles.input} ${styles.inputReadOnly}`} value={montoEfectivoMixto.toFixed(2)} readOnly />
+                    </div>
+                    <div className={styles.inputGroup}>
+                        <label className={styles.label}>Paga Efectivo</label>
+                        <input type="number" className={styles.input} value={efectivoEntregadoMixto} onChange={e => setEfectivoEntregadoMixto(e.target.value)} />
+                    </div>
+                    <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                        <label className={styles.label}>Vuelto</label>
+                        <input className={`${styles.input} ${styles.inputReadOnly}`} value={vueltoMixto.toFixed(2)} readOnly />
+                    </div>
+                </>
+            )}
+
+            {metodoPago === 'obsequio' && (
+                 <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                     <label className={styles.label}>Motivo</label>
+                     <input 
+                        className={styles.input} 
+                        value={motivoObsequio} 
+                        onChange={e => setMotivoObsequio(e.target.value)} 
+                        placeholder="Justificación..."
+                      />
                 </div>
+            )}
+        </div>
 
-                <div className={styles.field}>
-                  <label className={styles.label}>Monto (S/)</label>
-                  <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* MIXTO */}
-        {metodoPago === 'yapeEfectivo' && (
-          <div className={styles.paymentPanel}>
-            <h4 className={styles.panelTitle}>Pago mixto (Yape + Efectivo)</h4>
-
-            <div className={styles.paymentGrid}>
-              <div className={styles.field}>
-                <label className={styles.label}>Total (S/)</label>
-                <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Monto Yape (S/)</label>
-                <input
-                  className={`${styles.input} ${mixtoInvalido ? styles.inputError : ''}`}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={montoYape}
-                  onChange={(e) => setMontoYape(e.target.value)}
-                  placeholder="Ej: 50.00"
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>N° Operación Yape</label>
-                <input
-                  className={`${styles.input} ${mixtoInvalido ? styles.inputError : ''}`}
-                  value={operacionYape}
-                  onChange={(e) => setOperacionYape(e.target.value)}
-                  placeholder="Ej: 000123456"
-                />
-              </div>
-            </div>
-
-            <div className={styles.paymentGrid} style={{ marginTop: 12 }}>
-              <div className={styles.field}>
-                <label className={styles.label}>Monto en efectivo (S/)</label>
-                <input className={styles.input} value={montoEfectivoMixto.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Efectivo entregado (S/)</label>
-                <input
-                  className={`${styles.input} ${mixtoInvalido ? styles.inputError : ''}`}
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step="0.01"
-                  value={efectivoEntregadoMixto}
-                  onChange={(e) => setEfectivoEntregadoMixto(e.target.value)}
-                  placeholder="Ej: 60.00"
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Vuelto (S/)</label>
-                <input className={styles.input} value={vueltoMixto.toFixed(2)} readOnly />
-              </div>
-
-              {mixtoInvalido && (
-                <small className={styles.helperError}>
-                  Verifica: monto Yape (0 &lt; yape &lt; total), operación válida y efectivo entregado ≥ monto efectivo.
-                </small>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* OBSEQUIO */}
-        {metodoPago === 'obsequio' && (
-          <div className={styles.paymentPanel}>
-            <h4 className={styles.panelTitle}>Obsequio</h4>
-
-            <div className={styles.paymentGrid}>
-              <div className={styles.field}>
-                <label className={styles.label}>Total (S/)</label>
-                <input className={styles.input} value={totalPrecio.toFixed(2)} readOnly />
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Motivo (obligatorio)</label>
-                <input
-                  className={`${styles.input} ${obsequioInvalido ? styles.inputError : ''}`}
-                  value={motivoObsequio}
-                  onChange={(e) => setMotivoObsequio(e.target.value)}
-                  placeholder="Ej: Promoción / compensación"
-                />
-                {obsequioInvalido && (
-                  <small className={styles.helperError}>
-                    Ingresa un motivo válido (mín. 5 caracteres).
-                  </small>
-                )}
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Autorizado por (opcional)</label>
-                <input
-                  className={styles.input}
-                  value={autorizadoPor}
-                  onChange={(e) => setAutorizadoPor(e.target.value)}
-                  placeholder="Ej: Administrador"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ BOTÓN BD */}
-        <button
-          className={styles.registrarButton}
-          onClick={handleRegistrarVentaBD}
-          disabled={items.length === 0 || !isPagoValido || !user?.token}
-          title={!user?.token ? 'Inicia sesión' : ''}
+        <button 
+            className={styles.registerButton} 
+            onClick={handleRegistrarVentaBD}
+            disabled={!isPagoValido}
         >
-          Registrar Venta (BD)
+            <CheckCircle size={20} style={{ display: 'inline', marginRight: 8 }}/> 
+            Confirmar Venta
         </button>
+        {!isPagoValido && <p className={styles.errorText} style={{ textAlign: 'center' }}>* Revisa los montos de pago</p>}
       </div>
     </div>
   );
