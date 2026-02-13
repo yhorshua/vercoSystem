@@ -153,6 +153,13 @@ const Navbar = () => {
           <Link href="/asistencia" className={style.navbarLink} onClick={handleLinkClick}>
             Asistencia
           </Link>
+
+          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Package size={18} />Registro de stock
+          </Link>
+          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
+            Registro de productos
+          </Link>
         </>
       )}
     </>

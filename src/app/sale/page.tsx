@@ -279,11 +279,11 @@ export default function RegisterSalePage() {
       scanner.decodeFromVideoDevice(null, videoElement, (result) => {
         if (result) {
           const codigoCompleto = result.getText().toUpperCase();
-          const code7 = codigoCompleto.substring(0, 7);
+          const code7 = codigoCompleto.substring(0, 10);
           setCodigoArticulo(code7);
 
-          if (codigoCompleto.length >= 9) {
-            const tallaEscaneada = Number.parseInt(codigoCompleto.substring(7, 9), 10);
+          if (codigoCompleto.length >= 12) {
+            const tallaEscaneada = Number.parseInt(codigoCompleto.substring(10, 12), 13);
             const disponible = stockPorTalla[tallaEscaneada] || 0;
             if (disponible > 0) {
               setCantidades((prev) => {
@@ -305,11 +305,11 @@ export default function RegisterSalePage() {
 
   const handleBarcodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.trim().toUpperCase();
-    const code7 = raw.substring(0, 7);
+    const code7 = raw.substring(0, 12);
     setCodigoArticulo(code7);
 
     if (raw.length >= 9) {
-      const tallaEscaneada = Number.parseInt(raw.substring(7, 9), 10);
+      const tallaEscaneada = Number.parseInt(raw.substring(10, 12), 13);
       const disponible = stockPorTalla[tallaEscaneada] || 0;
       if (disponible > 0) {
         setCantidades((prev) => {

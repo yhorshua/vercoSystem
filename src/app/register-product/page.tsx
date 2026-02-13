@@ -1,6 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import { 
+  PackagePlus, 
+  Box, 
+  Tag, 
+  DollarSign, 
+  Layers, 
+  Plus, 
+  Trash2, 
+  Save, 
+  ListPlus,
+  Wand2,
+  X
+} from 'lucide-react';
+
 import { CreateProductDto } from './CreateProductDto';
 import { createProduct } from '../services/productsService';
 import { getCategories } from '../services/categoryService';
@@ -8,13 +23,16 @@ import { useUser } from '../context/UserContext';
 import styles from './register.module.css';
 
 export default function CreateProductPage() {
+    const { user } = useUser();
+    
+    // Estados del Formulario
     const [articleCode, setArticleCode] = useState('');
     const [articleDescription, setArticleDescription] = useState('');
     const [articleSeries, setArticleSeries] = useState('');
     const [typeOrigin, setTypeOrigin] = useState('');
-    const [manufacturingCost, setManufacturingCost] = useState<number>(0);
-    const [unitPrice, setUnitPrice] = useState<number>(0);
-    const [sellingPrice, setSellingPrice] = useState<number>(0);
+    const [manufacturingCost, setManufacturingCost] = useState<number>(0); // En UI: Precio Venta
+    const [unitPrice, setUnitPrice] = useState<number>(0); // En UI: Precio Unitario
+    const [sellingPrice, setSellingPrice] = useState<number>(0); // No usado en UI, pero requerido en DTO
     const [brandName, setBrandName] = useState('');
     const [modelCode, setModelCode] = useState('');
     const [categoryId, setCategoryId] = useState<number>(0);
@@ -22,119 +40,110 @@ export default function CreateProductPage() {
     const [color, setColor] = useState('');
     const [stockMinimum, setStockMinimum] = useState<number>(0);
     const [productImage, setProductImage] = useState('');
-    const [sizes, setSizes] = useState<string[]>([]); // Array de tallas
+    
+    // Estados para Tallas
+    const [sizes, setSizes] = useState<string[]>([]);
+    const [newSize, setNewSize] = useState('');
+    const [isShoeCategory, setIsShoeCategory] = useState<boolean>(false);
+    const [sizeRange, setSizeRange] = useState<{ min: number, max: number } | null>(null);
     const [lotPair, setLotPair] = useState<number>(0);
-    const [categories, setCategories] = useState<any[]>([]); // Este estado lo usamos para cargar las categorías de un API
-    const [error, setError] = useState<string>('');
+
+    // Estados de Datos
+    const [categories, setCategories] = useState<any[]>([]);
+    const [products, setProducts] = useState<CreateProductDto[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [newSize, setNewSize] = useState(''); // Estado para manejar el input de talla
-    const [isShoeCategory, setIsShoeCategory] = useState<boolean>(false); // Estado para verificar si la categoría es zapatillas
-    const [sizeRange, setSizeRange] = useState<{ min: number, max: number } | null>(null); // Estado para guardar el rango de tallas basado en la serie seleccionada
-    const { user } = useUser(); // Acceder al contexto del usuario para obtener el token
-    const [products, setProducts] = useState<CreateProductDto[]>([]); // Estado para almacenar los productos agregados
 
     useEffect(() => {
         const fetchCategories = async () => {
-            try {
-                if (user?.token) {
-                    const categoriesData = await getCategories(user.token); // Llamada al servicio para obtener categorías usando el token
+            if (user?.token) {
+                try {
+                    const categoriesData = await getCategories(user.token);
                     setCategories(categoriesData);
-                } else {
-                    setError('Token no disponible');
+                } catch (error) {
+                    console.error('Error al cargar categorías', error);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar las categorías.' });
                 }
-            } catch (error) {
-                console.error('Error al cargar categorías', error);
-                setError('No se pudo cargar las categorías');
             }
         };
-
         fetchCategories();
     }, [user]);
 
     const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCategoryId = Number(e.target.value);
-        setCategoryId(selectedCategoryId);  // Ahora categoryId será siempre un número
-        setIsShoeCategory(selectedCategoryId === 1);  // Verificar si la categoría seleccionada es "Zapatillas"
-        setArticleSeries('');  // Limpiar el campo de serie
-        setSizeRange(null);  // Limpiar el rango de tallas
+        setCategoryId(selectedCategoryId);
+        setIsShoeCategory(selectedCategoryId === 1); 
+        setArticleSeries('');
+        setSizeRange(null);
     };
 
     const handleSeriesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setArticleSeries(e.target.value);
-        // Validar la serie y establecer el rango de tallas correspondiente
-        if (e.target.value === '3') {
-            setSizeRange({ min: 27, max: 32 });
-        } else if (e.target.value === '4') {
-            setSizeRange({ min: 33, max: 39 });
-        } else if (e.target.value === '5') {
-            setSizeRange({ min: 38, max: 44 });
-        } else if (e.target.value === '8') {
-            setSizeRange({ min: 37, max: 44 });
-        } else {
-            setSizeRange(null); // Si la serie no es una zapatilla, limpiar el rango de tallas
-        }
+        const val = e.target.value;
+        setArticleSeries(val);
+        if (val === '3') setSizeRange({ min: 27, max: 32 });
+        else if (val === '4') setSizeRange({ min: 33, max: 39 });
+        else if (val === '5') setSizeRange({ min: 38, max: 44 });
+        else if (val === '8') setSizeRange({ min: 37, max: 44 });
+        else setSizeRange(null);
     };
 
     const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'unitPrice' | 'manufacturingCost') => {
-        let value = e.target.value.replace('S/. ', '').replace(/[^0-9.]/g, '').trim();  // Elimina el símbolo "S/." y cualquier otro carácter no numérico
-
-        // Permitir un solo punto decimal
+        let value = e.target.value.replace(/[^0-9.]/g, '');
         const pointCount = (value.match(/\./g) || []).length;
-        if (pointCount > 1) {
-            return;  // Si ya hay más de un punto decimal, no permite más
-        }
+        if (pointCount > 1) return;
 
-        // Convertir el valor a número flotante
-        if (!isNaN(parseFloat(value))) {
-            const parsedValue = parseFloat(value);
-            if (field === 'unitPrice') {
-                setUnitPrice(parsedValue);  // Actualiza el estado para Precio Unitario
-            } else if (field === 'manufacturingCost') {
-                setManufacturingCost(parsedValue);  // Actualiza el estado para Precio de Venta
-            }
-        }
-    };
-
-    const handleSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setNewSize(e.target.value.trim()); // Actualizar el estado de la nueva talla
-    };
-
-    const handleAutoAddSizes = () => {
-        if (sizeRange) {
-            const sizesToAdd = [];
-            for (let i = sizeRange.min; i <= sizeRange.max; i++) {
-                sizesToAdd.push(i.toString());
-            }
-            setSizes(sizesToAdd);
+        const parsedValue = parseFloat(value);
+        if (!isNaN(parsedValue)) {
+            if (field === 'unitPrice') setUnitPrice(parsedValue);
+            else if (field === 'manufacturingCost') setManufacturingCost(parsedValue);
+        } else if (value === '') {
+             if (field === 'unitPrice') setUnitPrice(0);
+             else if (field === 'manufacturingCost') setManufacturingCost(0);
         }
     };
 
     const handleAddSize = () => {
-        if (newSize && !sizes.includes(newSize)) {
+        const trimmedSize = newSize.trim();
+        if (trimmedSize && !sizes.includes(trimmedSize)) {
             if (isShoeCategory && sizeRange) {
-                const sizeNumber = parseInt(newSize);
+                const sizeNumber = parseInt(trimmedSize);
                 if (sizeNumber < sizeRange.min || sizeNumber > sizeRange.max) {
-                    setError(`Talla fuera de rango. El rango permitido es de ${sizeRange.min} a ${sizeRange.max}`);
+                    Swal.fire({ icon: 'warning', text: `Talla fuera de rango (${sizeRange.min} - ${sizeRange.max})` });
                     return;
                 }
             }
-            setSizes((prevSizes) => [...prevSizes, newSize]); // Agregar la talla al array de tallas
-            setNewSize(''); // Limpiar el input después de agregar
+            setSizes((prev) => [...prev, trimmedSize]);
+            setNewSize('');
         }
     };
 
-    const handleRemoveSize = (size: string) => {
-        setSizes((prevSizes) => prevSizes.filter((item) => item !== size)); // Eliminar la talla
+    const handleAutoAddSizes = () => {
+        if (sizeRange) {
+            const sizesToAdd: string[] = [];
+            for (let i = sizeRange.min; i <= sizeRange.max; i++) {
+                sizesToAdd.push(i.toString());
+            }
+            // Merge unique sizes
+            setSizes((prev) => Array.from(new Set([...prev, ...sizesToAdd])).sort((a,b) => Number(a)-Number(b)));
+        }
+    };
+
+    const handleRemoveSize = (sizeToRemove: string) => {
+        setSizes((prev) => prev.filter((s) => s !== sizeToRemove));
     };
 
     const addProductToTable = () => {
+        if(!articleCode || !articleDescription || !categoryId || sizes.length === 0) {
+            Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Verifica código, descripción, categoría y tallas.' });
+            return;
+        }
+
         const newProduct: CreateProductDto = {
             article_code: articleCode,
             article_description: articleDescription,
             article_series: articleSeries,
             type_origin: typeOrigin,
-            manufacturing_cost: manufacturingCost,
-            unit_price: unitPrice,
+            manufacturing_cost: manufacturingCost, // Mapeado a "Precio Venta" por lógica de usuario original
+            unit_price: unitPrice,                 // Mapeado a "Precio Unitario"
             selling_price: sellingPrice,
             brand_name: brandName,
             model_code: modelCode,
@@ -147,8 +156,9 @@ export default function CreateProductPage() {
             lot_pair: lotPair,
         };
 
-        setProducts((prevProducts) => [...prevProducts, newProduct]); // Agregar el producto a la tabla
-        clearFields(); // Limpiar los campos del formulario después de agregar el producto
+        setProducts((prev) => [...prev, newProduct]);
+        clearFields();
+        Swal.fire({ icon: 'success', title: 'Agregado', text: 'Producto listo para registrar.', timer: 1500, showConfirmButton: false });
     };
 
     const clearFields = () => {
@@ -161,256 +171,256 @@ export default function CreateProductPage() {
         setSellingPrice(0);
         setBrandName('');
         setModelCode('');
-        setCategoryId(0);
+        // No reseteamos categoryId para agilizar la carga masiva de una misma categoria
+        // setCategoryId(0); 
         setMaterialType('');
         setColor('');
         setStockMinimum(0);
         setProductImage('');
         setSizes([]);
         setLotPair(0);
+        setNewSize('');
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
+        if (products.length === 0) return;
         setLoading(true);
-        setError('');
-
         try {
-            // Enviar la lista completa de productos
-            const response = await createProduct(products); // Enviar todos los productos en la lista
-            console.log('Productos creados:', response);
-            alert('Productos creados con éxito');
-            setProducts([]); // Limpiar la lista de productos después de la creación
+            await createProduct(products);
+            Swal.fire({ 
+                icon: 'success', 
+                title: '¡Productos Creados!', 
+                text: `${products.length} productos registrados exitosamente.` 
+            });
+            setProducts([]);
         } catch (error: any) {
-            console.error('Error al crear los productos:', error);
-            setError('Hubo un error al crear los productos. Intenta nuevamente.');
+            console.error(error);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un error al crear los productos.' });
         } finally {
             setLoading(false);
         }
     };
 
-
-    // Función para eliminar un producto de la tabla
     const handleDeleteProduct = (index: number) => {
-        setProducts((prevProducts) => prevProducts.filter((_, i) => i !== index)); // Eliminar producto
+        setProducts((prev) => prev.filter((_, i) => i !== index));
     };
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>Crear Producto</h1>
+            <div className={styles.header}>
+                <PackagePlus size={32} color="#0f172a" />
+                <h1 className={styles.title}>Crear Producto</h1>
+            </div>
 
-            <form onSubmit={handleSubmit} className={styles.form}>
-                <div className={styles.row}>
-                    <div className={styles.column}>
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>Código de Artículo</label>
-                            <input
-                                className={styles.inputField}
-                                type="text"
-                                value={articleCode}
-                                onChange={(e) => setArticleCode(e.target.value)}
-                                required
-                            />
-                        </div>
+            {/* FORMULARIO */}
+            <div className={styles.card}>
+                <h2 className={styles.cardTitle}>
+                    <Box size={20} /> Información General
+                </h2>
 
-                        {/* Mostrar solo el campo Serie si la categoría es "Zapatillas" */}
-                        {isShoeCategory && (
-                            <div className={styles.inputGroup}>
-                                <label className={styles.label}>Serie</label>
-                                <input
-                                    className={styles.inputField}
-                                    type="text"
-                                    value={articleSeries}
-                                    onChange={handleSeriesChange}
-                                    required
-                                />
-                            </div>
-                        )}
-
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>Origen</label>
-                            <select
-                                className={styles.inputField}
-                                value={typeOrigin}
-                                onChange={(e) => setTypeOrigin(e.target.value)}
-                                required
-                            >
-                                <option value="">Seleccionar Origen</option>
-                                <option value="NACIONAL">NACIONAL</option>
-                                <option value="IMPORTADO">IMPORTADO</option>
-                            </select>
-                        </div>
-
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>Categoría</label>
-                            <select
-                                className={styles.inputField}
-                                value={categoryId}
-                                onChange={handleCategoryChange}
-                            >
-                                <option value="">Seleccionar Categoría</option>  {/* Opción predeterminada */}
-                                {categories.map((category) => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
+                <div className={styles.formGrid}>
+                    {/* COLUMNA 1 */}
+                    <div className={styles.field}>
+                         <label className={styles.label}>Código de Artículo</label>
+                         <input
+                            className={styles.input}
+                            value={articleCode}
+                            onChange={(e) => setArticleCode(e.target.value)}
+                            placeholder="Ej. ABC-123"
+                        />
                     </div>
 
-                    <div className={styles.column}>
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>Descripción</label>
+                    <div className={styles.field}>
+                         <label className={styles.label}>Descripción</label>
+                         <input
+                            className={styles.input}
+                            value={articleDescription}
+                            onChange={(e) => setArticleDescription(e.target.value)}
+                            placeholder="Nombre del producto"
+                        />
+                    </div>
+
+                    <div className={styles.field}>
+                        <label className={styles.label}>Categoría</label>
+                        <select className={styles.select} value={categoryId} onChange={handleCategoryChange}>
+                            <option value="0">Seleccionar...</option>
+                            {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {isShoeCategory && (
+                        <div className={styles.field}>
+                            <label className={styles.label}>Serie</label>
                             <input
-                                className={styles.inputField}
-                                type="text"
-                                value={articleDescription}
-                                onChange={(e) => setArticleDescription(e.target.value)}
-                                required
+                                className={styles.input}
+                                value={articleSeries}
+                                onChange={handleSeriesChange}
+                                placeholder="Ej. 3, 4, 5"
                             />
                         </div>
+                    )}
 
+                    <div className={styles.field}>
+                        <label className={styles.label}>Origen</label>
+                        <select className={styles.select} value={typeOrigin} onChange={(e) => setTypeOrigin(e.target.value)}>
+                            <option value="">Seleccionar...</option>
+                            <option value="NACIONAL">NACIONAL</option>
+                            <option value="IMPORTADO">IMPORTADO</option>
+                        </select>
+                    </div>
+
+                     <div className={styles.field}>
+                         <label className={styles.label}>Marca</label>
+                         <input
+                            className={styles.input}
+                            value={brandName}
+                            onChange={(e) => setBrandName(e.target.value)}
+                            placeholder="Opcional"
+                        />
+                    </div>
+                </div>
+
+                <h2 className={styles.cardTitle} style={{ marginTop: '2rem' }}>
+                    <DollarSign size={20} /> Precios
+                </h2>
+
+                <div className={styles.formGrid}>
+                     <div className={styles.field}>
+                        <label className={styles.label}>Precio Unitario (Costo)</label>
                         <div className={styles.inputGroup}>
-                            <label className={styles.label}>Precio Unitario S/.</label>
-                            <div className={styles.inputWithCurrency}>
-                                <input
-                                    className={styles.inputField}
-                                    type="number"
-                                    step="0.01" // Permite decimales
-                                    value={unitPrice}
-                                    onChange={(e) => handleCurrencyChange(e, 'unitPrice')}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>Precio de Venta S/.</label>
-                            <div className={styles.inputWithCurrency}>
-                                <input
-                                    className={styles.inputField}
-                                    type="number"
-                                    step="0.01" // Permite decimales
-                                    value={manufacturingCost}
-                                    onChange={(e) => handleCurrencyChange(e, 'manufacturingCost')}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-
-                        <div className={styles.inputGroup}>
-                            <label className={styles.label}>Marca</label>
+                            <DollarSign size={16} className={styles.inputIcon} />
                             <input
-                                className={styles.inputField}
-                                type="text"
-                                value={brandName}
-                                onChange={(e) => setBrandName(e.target.value)}
+                                className={`${styles.input} ${styles.inputWithIcon}`}
+                                type="number"
+                                step="0.01"
+                                value={unitPrice === 0 ? '' : unitPrice}
+                                onChange={(e) => handleCurrencyChange(e, 'unitPrice')}
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
+
+                    <div className={styles.field}>
+                        <label className={styles.label}>Precio de Venta</label>
+                        <div className={styles.inputGroup}>
+                            <DollarSign size={16} className={styles.inputIcon} />
+                            <input
+                                className={`${styles.input} ${styles.inputWithIcon}`}
+                                type="number"
+                                step="0.01"
+                                value={manufacturingCost === 0 ? '' : manufacturingCost}
+                                onChange={(e) => handleCurrencyChange(e, 'manufacturingCost')}
+                                placeholder="0.00"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className={styles.inputGroup}>
-                    <label className={styles.label}>Tallas</label>
-                    <div className={styles.sizeInputWrapper}>
-                        {/* Mostrar el campo de tallas dependiendo de la categoría */}
-                        {(isShoeCategory || !isShoeCategory) && (
-                            <input
-                                className={styles.inputField}
-                                type="text"
-                                value={newSize}
-                                onChange={handleSizeChange}
-                                placeholder="Ingrese talla"
-                            />
-                        )}
-
-                        <button
-                            type="button"
-                            onClick={handleAddSize}
-                            className={styles.addSizeButton}
-                            disabled={!newSize}  // Habilitar solo si hay un valor en el input
-                        >
-                            Agregar Talla
+                <div className={styles.sizesSection}>
+                    <h3 className={styles.label} style={{ fontSize: '1rem', display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+                        <Layers size={18} /> Gestión de Tallas
+                    </h3>
+                    
+                    <div className={styles.sizeControls}>
+                         <input
+                            className={styles.sizeInput}
+                            value={newSize}
+                            onChange={(e) => setNewSize(e.target.value)}
+                            placeholder="Talla"
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddSize()}
+                        />
+                        <button type="button" onClick={handleAddSize} className={styles.btnAddSize}>
+                            <Plus size={16} style={{ display: 'inline', marginRight: 4 }} /> Agregar
                         </button>
-
+                        
                         {isShoeCategory && sizeRange && (
-                            <button
-                                type="button"
-                                onClick={handleAutoAddSizes}
-                                className={styles.addSizeButton}
-                            >
-                                Agregar Tallas Automáticas
+                             <button type="button" onClick={handleAutoAddSizes} className={`${styles.btnAddSize} ${styles.btnAuto}`}>
+                                <Wand2 size={16} style={{ display: 'inline', marginRight: 4 }} /> 
+                                Rango Automático ({sizeRange.min}-{sizeRange.max})
                             </button>
                         )}
                     </div>
 
-                    <div className={styles.sizeList}>
-                        {sizes.map((size) => (
-                            <div key={size} className={styles.sizeItem}>
-                                {size}{' '}
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveSize(size)}
-                                    className={styles.removeSizeButton}
-                                >
-                                    Eliminar
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                    {sizes.length > 0 ? (
+                        <div className={styles.sizeList}>
+                            {sizes.map((s) => (
+                                <div key={s} className={styles.sizeTag}>
+                                    {s}
+                                    <button type="button" onClick={() => handleRemoveSize(s)} className={styles.removeSizeBtn}>
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p style={{ fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                            No has agregado tallas aún.
+                        </p>
+                    )}
                 </div>
 
-                <div className={styles.submitGroup}>
-                    <button type="button" onClick={addProductToTable} className={styles.submitButton}>
-                        Agregar Producto
+                <button type="button" onClick={addProductToTable} className={styles.btnAddToTable}>
+                    <ListPlus size={20} /> Agregar Producto a la Lista
+                </button>
+            </div>
+
+            {/* TABLA DE PRE-REGISTRO */}
+            {products.length > 0 && (
+                <div className={styles.card}>
+                    <h2 className={styles.cardTitle}>
+                        <Tag size={20} /> Productos a Registrar ({products.length})
+                    </h2>
+                    
+                    <div className={styles.tableContainer}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descripción</th>
+                                    <th>Serie</th>
+                                    <th>Tallas</th>
+                                    <th>P. Venta</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {products.map((p, idx) => (
+                                    <tr key={idx}>
+                                        <td>{p.article_code.toUpperCase()}</td>
+                                        <td>{p.article_description.toUpperCase()}</td>
+                                        <td>{p.article_series || '-'}</td>
+                                        <td>
+                                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                                {p.sizes.join(', ')}
+                                            </span>
+                                        </td>
+                                        <td style={{ fontWeight: 'bold' }}>S/ {p.manufacturing_cost.toFixed(2)}</td>
+                                        <td>
+                                            <button 
+                                                onClick={() => handleDeleteProduct(idx)} 
+                                                className={styles.btnDelete}
+                                                title="Eliminar de la lista"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button 
+                        onClick={handleSubmit} 
+                        disabled={loading} 
+                        className={styles.btnSubmit}
+                    >
+                        <Save size={20} /> {loading ? 'Registrando...' : 'Guardar Todo en Base de Datos'}
                     </button>
                 </div>
-            </form>
-
-            <div className={styles.tableContainer}>
-                <table className={styles.table}>
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Descripción</th>
-                            <th>Serie</th>
-                            <th>Tallas</th>
-                            <th>Precio</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {products.map((product, index) => (
-                            <tr key={index}>
-                                <td>{product.article_code}</td>
-                                <td>{product.article_description}</td>
-                                <td>{product.article_series}</td>
-                                <td>{product.sizes.join(', ')}</td>
-                                <td>{product.unit_price}</td>
-                                <td>
-                                    <button
-                                        onClick={() => handleDeleteProduct(index)}
-                                        className={styles.deleteButton}
-                                    >
-                                        Eliminar
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <button
-                    onClick={handleSubmit}  // Llamamos a handleSubmit cuando el botón es presionado
-                    className={styles.submitButton}
-                    disabled={loading || products.length === 0}  // Habilitar solo si hay productos en la lista
-                >
-                    {loading ? 'Cargando...' : 'Registrar Productos'}
-                </button>
-
-            </div>
+            )}
         </div>
     );
 }

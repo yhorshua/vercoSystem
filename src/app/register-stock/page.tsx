@@ -1,17 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useReactTable, createColumnHelper, getCoreRowModel, getSortedRowModel, flexRender } from '@tanstack/react-table';
-import { getProductsByCodeOrDescription } from '../services/productsService'; // Importar el servicio para la búsqueda
-import { registerStockForMultipleItems } from '../services/stockServices'; // Importar el servicio para registrar el stock
-import styles from './page-register.module.css';
+import Swal from 'sweetalert2';
+import { 
+  Search, 
+  PackagePlus, 
+  Save, 
+  Box, 
+  Tag, 
+  Layers, 
+  PlusCircle, 
+  Trash2 
+} from 'lucide-react';
+
+import { getProductsByCodeOrDescription } from '../services/productsService';
+import { registerStockForMultipleItems } from '../services/stockServices';
 import { useUser } from '../context/UserContext';
 
-interface Tallas {
-  [talla: string]: number;
-}
+import styles from './page-register.module.css';
 
-// Cambiar la declaración de "sizes" en StockItem
 interface StockItem {
   product_id: number;
   article_code: string;
@@ -35,141 +43,163 @@ interface StockItem {
   };
   sizes: {
     size: string;
-    id: number;   // Aquí agregamos el id de la talla
+    id: number;
     quantity: number;
   }[];
 }
 
-
 export default function StockPage() {
-  const [productData, setProductData] = useState<StockItem | null>(null);  // Estado para almacenar el producto encontrado
-  const [searchQuery, setSearchQuery] = useState('');  // Estado para almacenar la consulta de búsqueda
-  const [loading, setLoading] = useState(false);  // Estado para manejar la carga
-  const [cantidadTallas, setCantidadTallas] = useState<{ [key: string]: number }>({});  // Estado para las cantidades de tallas
-  const [stockData, setStockData] = useState<StockItem[]>([]); // Datos de stock agregados a la tabla
-  const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState(true);  // Estado para habilitar/deshabilitar el botón de guardar
   const { user } = useUser();
+  
+  const [productData, setProductData] = useState<StockItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [cantidadTallas, setCantidadTallas] = useState<{ [key: string]: number }>({});
+  
+  // Lista de productos listos para registrar
+  const [stockData, setStockData] = useState<StockItem[]>([]);
 
-  // Función para buscar productos por código
+  // Buscar producto
   const handleSearch = async () => {
-    if (!searchQuery) return;
+    if (!searchQuery.trim()) return;
     setLoading(true);
+    setProductData(null);
+    setCantidadTallas({});
 
     try {
-      // Llamar al servicio para obtener el producto
       const product = await getProductsByCodeOrDescription(searchQuery);
-      setProductData(product);
+      if(product) {
+          setProductData(product);
+      } else {
+          Swal.fire({ icon: 'info', title: 'Sin resultados', text: 'No se encontró el producto.' });
+      }
     } catch (error) {
       console.error(error);
-      alert('Producto no encontrado');
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Ocurrió un error al buscar el producto.' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Cuando la cantidad de una talla cambie, se actualizará la tabla
-  const handleCantidadChange = (size: string, value: number) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSearch();
+  };
+
+  const handleCantidadChange = (size: string, value: string) => {
+    const num = parseInt(value, 10);
+    if (isNaN(num) || num < 0) return;
+    
     setCantidadTallas((prevState) => ({
       ...prevState,
-      [size]: value,
+      [size]: num,
     }));
   };
 
-  // Función para agregar la información del producto y las cantidades a la tabla
-  // Función para agregar la información del producto y las cantidades a la tabla
-  // Función para agregar la información del producto y las cantidades a la tabla
+  // Agregar producto a la tabla temporal
   const addProductToTable = () => {
     if (!productData) return;
 
+    // Verificar si hay cantidades ingresadas
+    const totalQty = Object.values(cantidadTallas).reduce((a, b) => a + b, 0);
+    if (totalQty === 0) {
+        Swal.fire({ icon: 'warning', text: 'Ingresa al menos una cantidad.' });
+        return;
+    }
+
     const newProduct: StockItem = {
-      product_id: productData.product_id,
-      article_code: productData.article_code,
-      article_description: productData.article_description,
-      article_series: productData.article_series,
-      material_type: productData.material_type,
-      color: productData.color,
-      stock_minimum: productData.stock_minimum,
-      product_image: productData.product_image,
-      price: productData.price,
-      category: productData.category,
-      series: productData.series,
-      sizes: productData.sizes.map(size => {
-        const quantity = cantidadTallas[size.size]; // Obtiene la cantidad ingresada para la talla
-        return {
-          size: size.size,  // El nombre visible de la talla
-          id: size.id,      // El ID de la talla
-          quantity: quantity || 0,  // La cantidad ingresada para esa talla
-        };
-      }),
+      ...productData,
+      sizes: productData.sizes.map(size => ({
+        size: size.size,
+        id: size.id,
+        quantity: cantidadTallas[size.size] || 0,
+      })).filter(s => s.quantity > 0), // Solo guardamos tallas con cantidad > 0
     };
 
     setStockData((prev) => [...prev, newProduct]);
-    setCantidadTallas({}); // Limpiamos las cantidades después de agregar el producto
-    setIsSaveButtonDisabled(false); // Habilitamos el botón de registrar
+    setProductData(null);
+    setSearchQuery('');
+    setCantidadTallas({});
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Agregado',
+        text: 'Producto agregado a la lista. Sigue buscando o registra el stock.',
+        timer: 1500,
+        showConfirmButton: false
+    });
   };
 
+  const handleRemoveItem = (index: number) => {
+    setStockData((prev) => prev.filter((_, i) => i !== index));
+  };
 
-
-  // Función para registrar el stock en el backend
-  const handleRegisterStock = async (): Promise<void> => {
+  // Registrar todo en BD
+  const handleRegisterStock = async () => {
     const warehouseId = user?.warehouse_id;
 
     if (!warehouseId) {
-      alert('No se ha encontrado el ID del almacén.');
+      Swal.fire({ icon: 'error', text: 'No tienes un almacén asignado.' });
       return;
     }
 
-    // Mapear las tallas y cantidades correctamente, enviando el productSizeId
     const productsToRegister = stockData.flatMap((item) =>
       item.sizes.map((size) => ({
         productId: item.product_id,
-        productSizeId: size.id,  // Usamos el ID de la talla
+        productSizeId: size.id,
         quantity: size.quantity,
       }))
     );
 
-    console.log({
-      warehouseId,
-      products: productsToRegister,
-    });
-
     try {
       await registerStockForMultipleItems(warehouseId, productsToRegister);
-      alert('Stock registrado correctamente');
+      
+      Swal.fire({ 
+          icon: 'success', 
+          title: '¡Stock Registrado!', 
+          text: 'El inventario ha sido actualizado correctamente.' 
+      });
+      
       setStockData([]);
-      setIsSaveButtonDisabled(true);
     } catch (error) {
       console.error(error);
-      alert('Error al registrar el stock');
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo registrar el stock.' });
     }
   };
 
+  // Renderizado de las tallas (Grid de inputs)
+  const renderSizes = () => {
+    if (!productData?.sizes || productData.sizes.length === 0) {
+      return <p style={{ color: '#64748b' }}>No hay tallas configuradas para este producto.</p>;
+    }
 
-  // Renderizar las tallas disponibles dependiendo de la categoría
- // Renderizar las tallas disponibles dependiendo de la categoría
-const renderSizes = () => {
-  // Verificar si el producto tiene tallas
-  if (productData?.sizes && productData.sizes.length > 0) {
-    return productData.sizes.map((size) => (
-      <div key={size.id} className={styles.sizeInput}>
-        <label>{size.size}:</label>
-        <input
-          type="number"
-          value={cantidadTallas[size.size] || 0}
-          onChange={(e) => handleCantidadChange(size.size, parseInt(e.target.value, 10))}
-          min="0"
-          className={styles.sizeInputField}
-        />
+    // Ordenar tallas para que sea amigable (numérico si es posible)
+    const sortedSizes = [...productData.sizes].sort((a, b) => {
+        const na = Number(a.size);
+        const nb = Number(b.size);
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.size.localeCompare(b.size);
+    });
+
+    return (
+      <div className={styles.sizesGrid}>
+        {sortedSizes.map((size) => (
+          <div key={size.id} className={styles.sizeCard}>
+            <label className={styles.sizeLabel}>{size.size}</label>
+            <input
+              type="number"
+              value={cantidadTallas[size.size] === 0 ? '' : cantidadTallas[size.size] || ''}
+              onChange={(e) => handleCantidadChange(size.size, e.target.value)}
+              min="0"
+              placeholder="0"
+              className={styles.sizeInput}
+            />
+          </div>
+        ))}
       </div>
-    ));
-  }
+    );
+  };
 
-  // Si no tiene tallas, mostramos un mensaje o no renderizamos nada
-  return <p>No hay tallas disponibles para este producto.</p>;
-};
-
-
-  // Columnas para la tabla usando useReactTable
+  // Configuración de la tabla
   const columnHelper = createColumnHelper<StockItem>();
   const columns = [
     columnHelper.accessor('article_code', {
@@ -182,17 +212,29 @@ const renderSizes = () => {
       header: 'Serie',
     }),
     columnHelper.accessor('sizes', {
-      header: 'Tallas',
+      header: 'Tallas a Ingresar',
       cell: (info) => (
-        <div>
-          {info.getValue().map((size: { size: string; quantity: number }) => (
-            <div key={size.size}>{size.size}: {size.quantity}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          {info.getValue().map((size) => (
+            <span key={size.size} className={styles.sizeTag}>
+               {size.size}: {size.quantity}
+            </span>
           ))}
         </div>
       ),
     }),
-    columnHelper.accessor('price', {
-      header: 'Precio',
+    columnHelper.display({
+      id: 'actions',
+      header: 'Acción',
+      cell: (info) => (
+        <button
+          onClick={() => handleRemoveItem(info.row.index)}
+          className={styles.deleteButton}
+          title="Eliminar"
+        >
+          <Trash2 size={18} />
+        </button>
+      ),
     }),
   ];
 
@@ -205,89 +247,115 @@ const renderSizes = () => {
 
   return (
     <div className={styles.container}>
-      <h1>Buscar Producto</h1>
-      <div className={styles.inputGroup}>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Buscar por código de artículo"
-          className={styles.inputField}
-        />
-        <button onClick={handleSearch} className={styles.searchButton}>
-          Buscar
-        </button>
+      <div className={styles.header}>
+        <PackagePlus size={32} color="#0f172a" />
+        <h1 className={styles.title}>Ingreso de Mercadería</h1>
       </div>
 
-      {loading && <p className={styles.loading}>Cargando...</p>}
+      {/* TARJETA 1: BUSCADOR */}
+      <div className={styles.card}>
+        <h2 className={styles.cardTitle}>Buscar Producto</h2>
+        <div className={styles.searchContainer}>
+            <div className={styles.inputGroup}>
+                <Search className={styles.searchIcon} size={20} />
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Escanear código de barras o escribir código..."
+                    className={styles.inputSearch}
+                    autoFocus
+                />
+            </div>
+            <button onClick={handleSearch} className={styles.searchButton} disabled={loading}>
+                {loading ? 'Buscando...' : 'Buscar'}
+            </button>
+        </div>
+        {loading && <p className={styles.loadingText}>Cargando datos del producto...</p>}
+      </div>
 
+      {/* TARJETA 2: DETALLES DEL PRODUCTO (Solo si se encontró) */}
       {productData && (
-        <div className={styles.productInfo}>
-          <div className={styles.productField}>
-            <div>
-              <label>Código:</label>
-              <input type="text" value={productData.article_code} disabled className={styles.inputDisabled} />
+        <div className={styles.card} style={{ border: '2px solid #bfdbfe' }}>
+            <h2 className={styles.cardTitle} style={{ color: '#2563eb' }}>
+                <Box size={20} /> Detalles del Producto
+            </h2>
+            
+            <div className={styles.productGrid}>
+                <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Código</label>
+                    <div className={styles.inputDisabled}>{productData.article_code}</div>
+                </div>
+                <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Descripción</label>
+                    <div className={styles.inputDisabled}>{productData.article_description}</div>
+                </div>
+                <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Serie</label>
+                    <div className={styles.inputDisabled}>{productData.article_series}</div>
+                </div>
+                <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Categoría</label>
+                    <div className={styles.inputDisabled}>{productData.category?.name || '-'}</div>
+                </div>
+                <div className={styles.fieldGroup}>
+                    <label className={styles.label}>Precio Venta</label>
+                    <div className={styles.inputDisabled}>S/ {Number(productData.price).toFixed(2)}</div>
+                </div>
             </div>
-            <div>
-              <label>Descripción:</label>
-              <input type="text" value={productData.article_description} disabled className={styles.inputDisabled} />
-            </div>
-            <div>
-              <label>Serie:</label>
-              <input type="text" value={productData.article_series} disabled className={styles.inputDisabled} />
-            </div>
-            <div>
-              <label>Categoría:</label>
-              <input type="text" value={productData.category?.name || ''} disabled className={styles.inputDisabled} />
-            </div>
-            <div>
-              <label>Precio de venta:</label>
-              <input type="text" value={productData.price} disabled className={styles.inputDisabled} />
-            </div>
-          </div>
 
-          <div className={styles.sizes}>
-            <h4>Ingresar cantidades:</h4>
-            {renderSizes()}
-          </div>
+            <div className={styles.sizesSection}>
+                <h3 className={styles.label} style={{ fontSize: '1rem', display: 'flex', gap: '8px' }}>
+                    <Layers size={18}/> Ingresar Cantidades por Talla
+                </h3>
+                {renderSizes()}
+            </div>
 
-          <button onClick={addProductToTable} className={styles.saveButton}>
-            Guardar Producto
-          </button>
+            <button onClick={addProductToTable} className={styles.addProductBtn}>
+                <PlusCircle size={20} /> Agregar a la Lista
+            </button>
         </div>
       )}
 
-      <div className={styles.tableContainer}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Descripción</th>
-              <th>Serie</th>
-              <th>Tallas</th>
-              <th>Saldo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* TARJETA 3: LISTA DE PRODUCTOS A INGRESAR */}
+      {stockData.length > 0 && (
+        <div className={styles.card}>
+            <h2 className={styles.cardTitle}>
+                <Tag size={20} /> Productos Listos para Registrar ({stockData.length})
+            </h2>
 
-      <button
-        onClick={handleRegisterStock}
-        className={styles.registerButton}
-        disabled={stockData.length === 0}  // El botón solo se habilita si hay productos en la tabla
-      >
-        Registrar Stock
-      </button>
+            <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Serie</th>
+                        <th>Cantidades</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table.getRowModel().rows.map((row) => (
+                    <tr key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                        ))}
+                    </tr>
+                    ))}
+                </tbody>
+                </table>
+            </div>
 
+            <button
+                onClick={handleRegisterStock}
+                className={styles.registerStockBtn}
+            >
+                <Save size={24} /> Registrar Ingreso en Almacén
+            </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -92,6 +92,7 @@
 }
 
 .inputField, .selectField {
+  text-transform: uppercase;
   width: 100%;
   padding: 12px 12px 12px 40px; /* Espacio para el icono */
   border: 1px solid var(--border-color);

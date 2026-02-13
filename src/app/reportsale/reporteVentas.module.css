@@ -1,156 +1,273 @@
+/* Variables y Reset */
 .container {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  
   width: 100%;
-  margin: auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.title {
-  font-size: 22px;
-  font-weight: 700;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  padding: 1.5rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
 }
 
-.card {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid #d7d7d7;
-  border-radius: 10px;
-}
-
-.grid4 {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.header {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
   gap: 12px;
 }
 
-.field label {
-  display: block;
+.title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+}
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.8rem;
+}
+
+/* Grid de Filtros */
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .control {
   width: 100%;
-  padding: 10px;
+  padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid #ccc;
-  margin-top: 6px;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: var(--text-main);
+  transition: all 0.2s;
 }
 
+.control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.control:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Acciones */
 .actions {
-  margin-top: 12px;
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+.btnPrimary, .btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
 }
 
 .btnPrimary {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #111;
-  background: #111;
-  color: #fff;
-  cursor: pointer;
-  font-weight: 600;
+  background-color: var(--text-main);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.btnPrimaryDisabled {
-  background: #eee;
-  color: #111;
+.btnPrimary:hover:not(:disabled) {
+  background-color: #1e293b;
+  transform: translateY(-1px);
+}
+
+.btnPrimary:disabled {
+  background-color: #94a3b8;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btnSecondary {
-  padding: 10px 14px;
+  background-color: white;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--text-main);
+}
+
+/* Stats Cards (Resumen) */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: white;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.statIconBox {
+  width: 48px;
+  height: 48px;
   border-radius: 10px;
-  border: 1px solid #111;
-  background: #fff;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.iconBlue { background: #eff6ff; color: #2563eb; }
+.iconGreen { background: #f0fdf4; color: #166534; }
+.iconPurple { background: #f5f3ff; color: #7c3aed; }
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
-.tableWrap {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* Tabla */
+.tableContainer {
+  width: 100%;
   overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 700px;
 }
 
 .th {
+  background-color: #f8fafc;
+  padding: 12px 16px;
   text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid #ddd;
-  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--border);
 }
 
 .td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #f0f0f0;
-  white-space: nowrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text-main);
 }
 
-/* Media Queries para pantallas pequeñas (mobile) */
+.tr:last-child .td {
+  border-bottom: none;
+}
+
+.tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Estado Vacío */
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .grid4 {
-    grid-template-columns: 1fr; /* 1 columna para pantallas pequeñas */
-  }
-
-  /* Botones se alinean en una columna */
-  .actions {
-    flex-direction: column;
-  }
-
-  .field {
-    grid-template-columns: 1fr; /* Ajuste en los campos para una sola columna */
-  }
-
-  /* Ajuste de tamaño del texto */
-  .title {
-    font-size: 18px; /* Reducir tamaño del título en móviles */
+  .container {
+    padding: 1rem;
   }
   
-
-  /* Ajuste de las tablas */
-  .tableWrap {
-    overflow-x: auto; /* Asegurarse de que la tabla sea desplazable en pantallas pequeñas */
+  .header {
+    margin-bottom: 1.5rem;
   }
 
-  .th, .td {
-    font-size: 12px; /* Reducir el tamaño de la fuente para pantallas más pequeñas */
+  .title {
+    font-size: 1.5rem;
   }
-}
-
-
-/* Media Queries para pantallas pequeñas (mobile) */
-@media (max-width: 768px) {
-  .grid4 {
-    grid-template-columns: 1fr; /* 1 columna para pantallas pequeñas */
-  }
-
-  /* Botones se alinean en una columna */
+  
   .actions {
     flex-direction: column;
   }
-
-  .field {
-    grid-template-columns: 1fr; /* Ajuste en los campos para una sola columna */
+  
+  .btnPrimary, .btnSecondary {
+    width: 100%;
   }
 
-  /* Ajuste de tamaño del texto */
-  .title {
-    font-size: 18px; /* Reducir tamaño del título en móviles */
-  }
-
-  /* Ajuste de las tablas */
-  .tableWrap {
-    overflow-x: auto; /* Asegurarse de que la tabla sea desplazable en pantallas pequeñas */
-  }
-
-  .th, .td {
-    font-size: 12px; /* Reducir el tamaño de la fuente para pantallas más pequeñas */
+  .statCard {
+    padding: 1rem;
   }
 }

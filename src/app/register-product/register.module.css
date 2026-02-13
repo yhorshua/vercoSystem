@@ -1,323 +1,323 @@
-/* Contenedor principal */
+/* Variables y Reset */
 .container {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --danger: #ef4444;
+
   width: 100%;
-  margin: auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 900px;
-  box-sizing: border-box;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  padding: 1.5rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
 }
 
-/* Título */
+.header {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .title {
-  text-align: center;
-  color: #2a5d84;
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
 }
 
-/* Mensaje de error */
-.error {
-  color: red;
-  margin-bottom: 20px;
-  text-align: center;
-  font-size: 14px;
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
 }
 
-/* Estilos para el formulario */
-.form {
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Grids del Formulario */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.field {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  width: 100%;
+  gap: 6px;
 }
 
-/* Organiza los elementos en 2 columnas para pantallas grandes */
-.row {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-/* Estilos para las columnas */
-.column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 250px;
-}
-
-/* Estilo de los inputs */
-.inputGroup {
-  display: flex;
-  flex-direction: column;
-}
-
-.inputField {
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease;
-}
-
-.inputField:focus {
-  border-color: #2a5d84;
-  outline: none;
-}
-
-/* Etiquetas */
 .label {
-  font-size: 14px;
-  margin-bottom: 5px;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-muted);
 }
 
-/* Listado de tallas */
-.sizeInputWrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sizeList {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.sizeItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.addSizeButton {
-  background-color: #2a5d84;
-  color: white;
-  padding: 8px 16px;
-  font-size: 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.addSizeButton:hover {
-  background-color: #1c4b63;
-}
-
-.removeSizeButton {
-  background-color: #e0e0e0;
-  color: #333;
-  padding: 6px 12px;
-  font-size: 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.removeSizeButton:hover {
-  background-color: #ccc;
-}
-
-/* Estilo de los botones */
-.submitButton {
-  background-color: #2a5d84;
-  color: white;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.input, .select {
   width: 100%;
-  transition: background-color 0.3s ease;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: var(--text-main);
+  transition: all 0.2s;
+  text-transform: uppercase;
 }
 
-.submitButton:disabled {
-  background-color: #ccc;
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.submitButton:hover:not(:disabled) {
-  background-color: #1c4b63;
+/* Inputs con Icono (Moneda) */
+.inputGroup {
+  position: relative;
 }
 
-/* Estilos para dispositivos móviles */
-@media screen and (max-width: 768px) {
-  .container {
-    padding: 15px;
-  }
-
-  .title {
-    font-size: 20px;
-  }
-
-  .row {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .column {
-    flex: none;
-  }
-
- .inputWithCurrency {
-    display: flex;
-    align-items: center;
-    position: relative;
+.inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
-.currencySymbol {
-    position: absolute;
-    left: 10px;
-    font-size: 16px;
-    color: #333;
-    pointer-events: none; /* Evita que el símbolo interfiera con la escritura */
+.inputWithIcon {
+  padding-left: 36px;
 }
 
-.inputField {
-    padding-left: 40px;  /* Asegura que haya espacio para el símbolo */
-    width: 100%;
-    text-align: right;  /* Opcional: alinea el valor a la derecha */
-    border: 1px solid #ccc;  /* Agrega un borde opcional */
+/* Sección de Tallas */
+.sizesSection {
+  background-color: #f8fafc;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  margin-top: 1rem;
 }
 
-.inputField {
-    padding-left: 30px;  /* Para dejar espacio al símbolo de la moneda */
-    width: 100%;
+.sizeControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1rem;
+  align-items: center;
 }
 
-
-  .submitButton {
-    padding: 14px;
-    font-size: 18px;
-  }
-
-  .sizeInputWrapper {
-    flex-direction: column;
-    gap: 10px;
-  }
+.sizeInput {
+  max-width: 120px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-weight: 600;
 }
 
-@media screen and (max-width: 480px) {
-  .title {
-    font-size: 18px;
-  }
-
-  .inputField {
-    font-size: 14px;
-  }
-
-  .submitButton {
-    padding: 10px;
-    font-size: 16px;
-  }
-
-  .label {
-    font-size: 12px;
-  }
+.btnAddSize {
+  background-color: var(--text-main);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
 }
 
+.btnAddSize:hover:not(:disabled) {
+  background-color: #1e293b;
+}
 
-/* Estilos para la tabla */
+.btnAddSize:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.btnAuto {
+  background-color: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+.btnAuto:hover {
+  background-color: #bae6fd;
+}
+
+/* Lista de Tallas (Tags) */
+.sizeList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sizeTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.removeSizeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.removeSizeBtn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* Botón Agregar a Tabla */
+.btnAddToTable {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 14px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s;
+}
+
+.btnAddToTable:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Tabla */
 .tableContainer {
-  overflow-x: auto;  /* Esto permite el desplazamiento horizontal en pantallas pequeñas */
-  margin-top: 20px;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-top: 1rem;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
-  box-sizing: border-box;
-}
-
-.table th,
-.table td {
-  padding: 12px;
-  text-align: left;
-  border: 1px solid #ccc;
+  min-width: 700px;
 }
 
 .table th {
-  background-color: #f4f4f4;
-  color: #2a5d84;
-  font-weight: bold;
+  background: #f8fafc;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--border);
 }
 
 .table td {
-  font-size: 14px;
-  color: #333;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
 }
 
-.table td button {
-  background-color: #e0e0e0;
-  color: #333;
-  padding: 6px 12px;
-  font-size: 12px;
+.btnDelete {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
   border: none;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s;
 }
 
-.table td button:hover {
-  background-color: #ccc;
+.btnDelete:hover {
+  background: var(--danger);
+  color: white;
 }
 
-/* Estilos para la tabla en dispositivos móviles */
-@media screen and (max-width: 768px) {
-  .table th,
-  .table td {
-    padding: 8px;
-    font-size: 12px;  /* Reducir el tamaño de la fuente en pantallas pequeñas */
-  }
-
-  .table td {
-    word-wrap: break-word; /* Para evitar que el contenido de las celdas se desborde */
-    text-align: center;  /* Centrar los datos en dispositivos móviles */
-  }
-
-  .table th {
-    font-size: 14px;  /* Aumentar ligeramente el tamaño de las cabeceras */
-  }
-
-  .tableContainer {
-    margin-top: 15px;
-  }
-
-  /* Hacer la tabla desplazable horizontalmente */
-  .table {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;  /* Habilitar scroll horizontal */
-  }
+/* Botón Final Submit */
+.btnSubmit {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 16px;
+  background-color: var(--success);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s;
 }
 
-/* Estilos para pantallas más pequeñas */
-@media screen and (max-width: 480px) {
-  .table th,
-  .table td {
-    padding: 6px;
-    font-size: 10px; /* Reducir aún más el tamaño de la fuente */
-  }
+.btnSubmit:hover:not(:disabled) {
+  background-color: #059669;
+  transform: translateY(-2px);
+}
 
-  .table td button {
-    font-size: 10px;
-    padding: 4px 8px;  /* Reducir el tamaño de los botones */
-  }
+.btnSubmit:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
-  .table th {
-    font-size: 12px;
+/* Mobile */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  .formGrid {
+    grid-template-columns: 1fr;
   }
 }

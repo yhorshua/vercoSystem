@@ -2,6 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
+import { 
+  BarChart3, 
+  Search, 
+  Download, 
+  RefreshCw, 
+  Calendar, 
+  User, 
+  Filter, 
+  DollarSign, 
+  ShoppingBag, 
+  Store 
+} from 'lucide-react';
 
 import { useUser } from '../context/UserContext';
 import {
@@ -10,7 +22,6 @@ import {
     getSellerCommissionReport,
     getInventoryIngressReport,
     getCashClosureReport,
-    getOperatingExpenses,
     SalesReportRowDTO,
     SalesPaymentDTO
 } from '../services/reportServices';
@@ -34,13 +45,13 @@ export default function ReporteVentasPage() {
 
     const canUse = useMemo(() => Boolean(token && warehouseId), [token, warehouseId]);
 
-    const [reportType, setReportType] = useState<string>('DAY'); // Selector del tipo de reporte
+    const [reportType, setReportType] = useState<string>('DAY');
     const [date, setDate] = useState(todayISO());
     const [from, setFrom] = useState(todayISO());
     const [to, setTo] = useState(todayISO());
 
     const [sellers, setSellers] = useState<SellerOption[]>([]);
-    const [sellerId, setSellerId] = useState<string>(''); // '' = todos
+    const [sellerId, setSellerId] = useState<string>('');
     const [loadingSellers, setLoadingSellers] = useState(false);
 
     const [loading, setLoading] = useState(false);
@@ -94,6 +105,7 @@ export default function ReporteVentasPage() {
 
     useEffect(() => {
         void loadSellers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canUse, warehouseId]);
 
     const handleSearch = async () => {
@@ -102,15 +114,11 @@ export default function ReporteVentasPage() {
             return;
         }
 
-        // Validaciones
-        if (reportType === 'DAY') {
-            if (!date) {
-                Swal.fire({ icon: 'warning', title: 'Fecha', text: 'Selecciona una fecha' });
-                return;
-            }
-        } else if (reportType === 'SELLER') {
-            // No es necesario seleccionar fechas para el reporte de vendedor
-        } else {
+        if (reportType === 'DAY' && !date) {
+            Swal.fire({ icon: 'warning', title: 'Fecha', text: 'Selecciona una fecha' });
+            return;
+        }
+        if (reportType !== 'DAY' && reportType !== 'SELLER') {
             if (!from || !to) {
                 Swal.fire({ icon: 'warning', title: 'Fechas', text: 'Selecciona fecha inicio y fin' });
                 return;
@@ -124,7 +132,6 @@ export default function ReporteVentasPage() {
         setLoading(true);
         try {
             const userId = sellerId ? Number(sellerId) : undefined;
-
             let r;
             if (reportType === 'DAY') {
                 r = await getSalesReport({ warehouseId, type: 'DAY', date, userId }, token);
@@ -139,7 +146,6 @@ export default function ReporteVentasPage() {
             } else if (reportType === 'SELLER_COMMISSION') {
                 r = await getSellerCommissionReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
             }
-
             setReport(r);
         } catch (e: any) {
             Swal.fire({ icon: 'error', title: 'Error', text: e?.message || 'No se pudo consultar reporte' });
@@ -149,64 +155,74 @@ export default function ReporteVentasPage() {
         }
     };
 
-    const primaryBtnClass = `${styles.btnPrimary} ${(!canUse || loading) ? styles.btnPrimaryDisabled : ''}`;
-
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>Reporte de Ventas</h1>
+            <div className={styles.header}>
+                <BarChart3 size={32} color="#0f172a" />
+                <h1 className={styles.title}>Reporte de Ventas</h1>
+            </div>
 
             {!canUse && (
                 <div className={styles.card}>
-                    <b>Falta sesión</b>
-                    <p>Necesitas token y warehouseId para consultar reportes.</p>
+                    <p style={{ color: 'red' }}>Necesitas iniciar sesión para consultar reportes.</p>
                 </div>
             )}
 
+            {/* CARD DE FILTROS */}
             <div className={styles.card}>
-                <div className={styles.grid4}>
-                    {/* Selector de Tipo de Reporte */}
+                <h2 className={styles.cardTitle}>
+                    <Filter size={18} /> Filtros de Búsqueda
+                </h2>
+                
+                <div className={styles.filterGrid}>
+                    {/* Tipo */}
                     <div className={styles.field}>
-                        <label>Tipo de Reporte</label>
-                        <select
-                            value={reportType}
-                            onChange={(e) => setReportType(e.target.value)}
-                            className={styles.control}
-                        >
-                            <option value="DAY">Ventas por Día</option>
-                            <option value="RANGE">Ventas por Rango (Semana/Mes)</option>
-                            <option value="CASH_CLOSURE">Cierre de Caja</option>
-                            <option value="PRODUCT">Ventas por Producto</option>
-                            <option value="CLIENT">Ventas por Cliente</option>
-                            <option value="INVENTORY">Ingreso de Mercadería</option>
-                            <option value="SELLER_COMMISSION">Comisiones de Vendedores</option>
-                            <option value="WEEKLY_PROFIT">Utilidad Semanal</option>
-                        </select>
-                    </div>
-
-                    {/* Selector de Vendedor */}
-                    {reportType !== 'SELLER_COMMISSION' && (
-                        <div className={styles.field}>
-                            <label>Vendedor</label>
-                            <select
-                                value={sellerId}
-                                onChange={(e) => setSellerId(e.target.value)}
-                                disabled={loadingSellers}
+                        <label className={styles.label}>Tipo de Reporte</label>
+                        <div style={{ position: 'relative' }}>
+                             <select
+                                value={reportType}
+                                onChange={(e) => setReportType(e.target.value)}
                                 className={styles.control}
                             >
-                                <option value="">Todos</option>
-                                {sellers.map((s) => (
-                                    <option key={s.id} value={String(s.id)}>
-                                        {s.full_name}
-                                    </option>
-                                ))}
+                                <option value="DAY">📅 Ventas por Día</option>
+                                <option value="RANGE">🗓️ Ventas por Rango</option>
+                                <option value="CASH_CLOSURE">🔒 Cierre de Caja</option>
+                                <option value="PRODUCT">📦 Ventas por Producto</option>
+                                <option value="CLIENT">👥 Ventas por Cliente</option>
+                                <option value="INVENTORY">📥 Ingreso Mercadería</option>
+                                <option value="SELLER_COMMISSION">💰 Comisiones</option>
+                                <option value="WEEKLY_PROFIT">📈 Utilidad Semanal</option>
                             </select>
+                        </div>
+                    </div>
+
+                    {/* Vendedor */}
+                    {reportType !== 'SELLER_COMMISSION' && (
+                        <div className={styles.field}>
+                            <label className={styles.label}>Vendedor</label>
+                            <div style={{ position: 'relative' }}>
+                                <select
+                                    value={sellerId}
+                                    onChange={(e) => setSellerId(e.target.value)}
+                                    disabled={loadingSellers}
+                                    className={styles.control}
+                                >
+                                    <option value="">Todos los vendedores</option>
+                                    {sellers.map((s) => (
+                                        <option key={s.id} value={String(s.id)}>
+                                            {s.full_name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <User size={16} style={{ position: 'absolute', right: 10, top: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+                            </div>
                         </div>
                     )}
 
-                    {/* Selector de Fechas */}
+                    {/* Fechas */}
                     {reportType === 'DAY' ? (
-                        <div className={styles.field} style={{ gridColumn: 'span 2' }}>
-                            <label>Fecha</label>
+                        <div className={styles.field}>
+                            <label className={styles.label}>Fecha Consulta</label>
                             <input
                                 type="date"
                                 value={date}
@@ -217,7 +233,7 @@ export default function ReporteVentasPage() {
                     ) : (
                         <>
                             <div className={styles.field}>
-                                <label>Desde</label>
+                                <label className={styles.label}>Desde</label>
                                 <input
                                     type="date"
                                     value={from}
@@ -225,9 +241,8 @@ export default function ReporteVentasPage() {
                                     className={styles.control}
                                 />
                             </div>
-
                             <div className={styles.field}>
-                                <label>Hasta</label>
+                                <label className={styles.label}>Hasta</label>
                                 <input
                                     type="date"
                                     value={to}
@@ -239,65 +254,104 @@ export default function ReporteVentasPage() {
                     )}
                 </div>
 
+                {/* Botones de Acción */}
                 <div className={styles.actions}>
-                    <button onClick={handleSearch} disabled={!canUse || loading} className={primaryBtnClass}>
-                        {loading ? 'Consultando...' : 'Consultar'}
+                    <button onClick={handleSearch} disabled={!canUse || loading} className={styles.btnPrimary}>
+                        <Search size={18} />
+                        {loading ? 'Consultando...' : 'Generar Reporte'}
                     </button>
 
                     <button onClick={loadSellers} disabled={!canUse || loadingSellers} className={styles.btnSecondary}>
-                        {loadingSellers ? 'Cargando...' : 'Refrescar vendedores'}
+                        <RefreshCw size={16} className={loadingSellers ? 'animate-spin' : ''} />
+                        Actualizar Vendedores
                     </button>
 
-                    <button onClick={handleDownloadPdf} disabled={!report} className={primaryBtnClass}>
-                        Generar PDF
+                    <button onClick={handleDownloadPdf} disabled={!report} className={styles.btnSecondary} title="Descargar PDF">
+                        <Download size={18} /> PDF
                     </button>
                 </div>
             </div>
 
             {/* RESULTADOS */}
             {report && (
-                <div style={{ marginTop: 12 }}>
-                    <div className={styles.card}>
-                        <b>Tienda:</b> {report.meta.warehouse_name ?? `#${report.meta.warehouse_id}`} &nbsp;|&nbsp;
-                        <b>Ventas:</b> {report.meta.total_sales} &nbsp;|&nbsp;
-                        <b>Total:</b> {report.meta.total_amount.toFixed(2)}
+                <div>
+                    {/* Tarjetas de Resumen (Stats) */}
+                    <div className={styles.statsGrid}>
+                        <div className={styles.statCard}>
+                            <div className={`${styles.statIconBox} ${styles.iconBlue}`}>
+                                <Store size={24} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statLabel}>Tienda/Almacén</span>
+                                <span className={styles.statValue}>{report.meta?.warehouse_name ?? `#${report.meta?.warehouse_id ?? '-'}`}</span>
+                            </div>
+                        </div>
+
+                        <div className={styles.statCard}>
+                            <div className={`${styles.statIconBox} ${styles.iconPurple}`}>
+                                <ShoppingBag size={24} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statLabel}>Total Ventas</span>
+                                <span className={styles.statValue}>{report.meta?.total_sales ?? 0}</span>
+                            </div>
+                        </div>
+
+                        <div className={styles.statCard}>
+                            <div className={`${styles.statIconBox} ${styles.iconGreen}`}>
+                                <DollarSign size={24} />
+                            </div>
+                            <div className={styles.statInfo}>
+                                <span className={styles.statLabel}>Monto Total</span>
+                                <span className={styles.statValue}>S/ {Number(report.meta?.total_amount || 0).toFixed(2)}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className={styles.tableWrap}>
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th className={styles.th}>Código</th>
-                                    <th className={styles.th}>Fecha</th>
-                                    <th className={styles.th}>Vendedor</th>
-                                    <th className={styles.th}>Total</th>
-                                    <th className={styles.th}>Métodos</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {report.sales.map((s: SalesReportRowDTO) => (
-                                    <tr key={s.sale_id}>
-                                        <td className={styles.td}>{s.sale_code}</td>
-                                        <td className={styles.td}>{new Date(s.sale_date).toLocaleString()}</td>
-                                        <td className={styles.td}>{s.user_name}</td>
-                                        <td className={styles.td}>{s.total_amount}</td>
-                                        <td className={styles.td}>
-                                            {s.payments?.length
-                                                ? s.payments.map((p: SalesPaymentDTO) => p.method).join(', ')
-                                                : s.payment_method ?? '-'}
-                                        </td>
-                                    </tr>
-                                ))}
-
-                                {report.sales.length === 0 && (
+                    {/* Tabla de Resultados */}
+                    <div className={styles.card} style={{ padding: 0, overflow: 'hidden' }}>
+                        <div className={styles.tableContainer}>
+                            <table className={styles.table}>
+                                <thead>
                                     <tr>
-                                        <td className={styles.td} colSpan={5}>
-                                            Sin ventas en el rango seleccionado.
-                                        </td>
+                                        <th className={styles.th}>Código</th>
+                                        <th className={styles.th}>Fecha / Hora</th>
+                                        <th className={styles.th}>Vendedor</th>
+                                        <th className={styles.th}>Total (S/)</th>
+                                        <th className={styles.th}>Método Pago</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {report.sales?.map((s: SalesReportRowDTO) => (
+                                        <tr key={s.sale_id} className={styles.tr}>
+                                            <td className={styles.td}>
+                                                <span style={{ fontWeight: 600 }}>{s.sale_code}</span>
+                                            </td>
+                                            <td className={styles.td}>
+                                                {new Date(s.sale_date).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td className={styles.td}>{s.user_name}</td>
+                                            <td className={styles.td} style={{ color: '#166534', fontWeight: 700 }}>
+                                                {Number(s.total_amount).toFixed(2)}
+                                            </td>
+                                            <td className={styles.td}>
+                                                {s.payments?.length
+                                                    ? s.payments.map((p: SalesPaymentDTO) => p.method).join(', ')
+                                                    : <span style={{ textTransform: 'capitalize' }}>{s.payment_method ?? '-'}</span>}
+                                            </td>
+                                        </tr>
+                                    ))}
+
+                                    {(!report.sales || report.sales.length === 0) && (
+                                        <tr>
+                                            <td className={styles.td} colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                                                No se encontraron registros para este rango de fechas.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}
