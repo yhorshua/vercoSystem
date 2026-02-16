@@ -1,24 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { LogIn, LogOut, Navigation, UserCircle2, CheckCircle2 } from 'lucide-react';
+import { LogIn, LogOut, Navigation, CheckCircle2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { ClockWidget } from '../components/clockWidget';
-import { useUser } from '../context/UserContext'; // Usamos el UserContext para acceder al usuario
-import { markAttendance } from '../services/attendanceService'; // Importar el servicio real
+import { useUser } from '../context/UserContext';
+import { markAttendance, hasUserEnteredToday } from '../services/attendanceService'; // Asegúrate de importar correctamente
 
 const MarkAttendance = () => {
-  // 1. Accedemos al usuario desde el UserContext
   const { user } = useUser(); // Accedemos al contexto del usuario
-  
-  // Estados de la lógica original
+
+  // Estados
   const [userId] = useState<number>(user?.id || 0);  // Usamos el userId desde el contexto
   const [ubicacion, setUbicacion] = useState('');
   const [locationStatus, setLocationStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [isEntradaMarked, setIsEntradaMarked] = useState<boolean>(false);
+  const [isEntradaMarked, setIsEntradaMarked] = useState<boolean>(false); // Marca si la entrada ya está registrada
   const [loading, setLoading] = useState(false);
 
-  // Función para obtener la ubicación del usuario (mejorada con geolocalización)
+  // Función para obtener la ubicación del usuario
   const getLocation = () => {
     setLocationStatus('loading');
     if (navigator.geolocation) {
@@ -52,7 +51,23 @@ const MarkAttendance = () => {
     getLocation(); // Llamamos a getLocation al montar el componente
   }, []);
 
-  // Manejador principal para marcar asistencia (entrada o salida)
+  // Verificar si el usuario ya marcó la entrada al regresar al módulo
+  useEffect(() => {
+    if (user?.id) {
+      // Consumiendo el servicio correctamente
+      hasUserEnteredToday(user.id).then((response) => {
+        if (response && response.tipo === 'entrada') {
+          setIsEntradaMarked(true); // Si el tipo es 'entrada', habilitamos la salida
+        } else {
+          setIsEntradaMarked(false); // Si no ha marcado entrada, habilitamos el botón de entrada
+        }
+      }).catch((error) => {
+        console.error('Error al verificar la entrada del usuario:', error);
+      });
+    }
+  }, [user?.id]); // Este efecto se ejecutará cuando el userId cambie
+
+  // Función para marcar asistencia
   const handleMarkAttendance = async (type: 'entrada' | 'salida') => {
     if (!ubicacion) {
       getLocation(); // Intentamos obtener la ubicación de nuevo
@@ -62,9 +77,7 @@ const MarkAttendance = () => {
     setLoading(true);
 
     try {
-      // Llamada al servicio real para marcar la entrada o salida
       const successMessage = await markAttendance(userId, type, ubicacion); // Usamos el servicio real
-      
       Swal.fire({
         icon: 'success',
         title: 'Registrado',
@@ -72,7 +85,6 @@ const MarkAttendance = () => {
         timer: 2000,
         showConfirmButton: false
       });
-
       if (type === 'entrada') {
         setIsEntradaMarked(true); // Si se marca entrada, habilitamos la salida
       } else {
@@ -95,7 +107,7 @@ const MarkAttendance = () => {
       {/* Main content */}
       <main className="w-full max-w-lg px-6 py-8 space-y-6 bg-white rounded-xl shadow-lg">
         
-        {/* Widget de Reloj (Reutilizado de la generación anterior) */}
+        {/* Widget de Reloj */}
         <ClockWidget />
 
         {/* Tarjeta de Estado de Ubicación */}
@@ -104,7 +116,7 @@ const MarkAttendance = () => {
           ${locationStatus === 'loading' ? 'bg-blue-50 border-blue-100 text-blue-800' : ''}
           ${locationStatus === 'error' ? 'bg-rose-50 border-rose-100 text-rose-800' : ''}
         `}>
-          <div className={`p-2 rounded-full ${locationStatus === 'success' ? 'bg-emerald-100' : 
+          <div className={`p-2 rounded-full ${locationStatus === 'success' ? 'bg-emerald-100' :
             locationStatus === 'loading' ? 'bg-blue-100' : 'bg-rose-100'}`}>
             <Navigation size={20} className={locationStatus === 'loading' ? 'animate-pulse' : ''} />
           </div>
@@ -121,9 +133,10 @@ const MarkAttendance = () => {
           )}
         </div>
 
-        {/* Botones de Acción - Diseño "Llamativo" */}
+        {/* Botones de Acción */}
         <div className="grid grid-cols-1 gap-6">
           {/* Botón de Entrada */}
+          {!isEntradaMarked && (
           <button
             type="button"
             onClick={() => handleMarkAttendance('entrada')}
@@ -154,8 +167,9 @@ const MarkAttendance = () => {
                </div>
             )}
           </button>
+          )}
 
-          {/* Botón de Salida (Solo visible/activo si ya marcó entrada) */}
+          {/* Botón de Salida */}
           <div className={`transition-all duration-500 ${isEntradaMarked ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4 pointer-events-none filter blur-sm'}`}>
             <button
               type="button"
@@ -176,7 +190,6 @@ const MarkAttendance = () => {
             </button>
           </div>
         </div>
-    
       </main>
     </div>
   );

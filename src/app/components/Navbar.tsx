@@ -18,7 +18,8 @@ import {
   Users, 
   BarChart3, 
   Tags, 
-  Box 
+  Box, 
+  ClipboardPen
 } from 'lucide-react';
 import style from './page.module.css';
 
@@ -158,7 +159,7 @@ const Navbar = () => {
             <Package size={18} />Registro de stock
           </Link>
           <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de productos
+            <ClipboardPen size={18}/>Registro de productos
           </Link>
         </>
       )}
@@ -170,7 +171,7 @@ const Navbar = () => {
       <nav className={style.navbar}>
         {/* LOGO */}
         <div className={style.navbarLogo}>
-          <Link href="/">
+          <Link href="/home">
              <Image src="/img/verco_logo.png" alt="Logo Empresa" width={50} height={30} style={{ objectFit: 'contain' }} />
           </Link>
         </div>

@@ -42,6 +42,7 @@ export type SalesReportResponse = {
   sales: SalesReportRowDTO[];
 };
 
+// Función para manejar errores de forma segura
 function safeErrorMessage(text: string) {
   try {
     const j = JSON.parse(text);
@@ -51,6 +52,33 @@ function safeErrorMessage(text: string) {
   return text || 'Error consultando reporte';
 }
 
+// Función genérica para hacer peticiones fetch con token
+async function fetchJson<T>(url: string, token: string, options?: RequestInit): Promise<T> {
+  if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
+
+  const res = await fetch(`${API_URL}${url}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`, // Enviamos el token en la cabecera
+      ...(options?.headers || {}),
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(safeErrorMessage(text));
+  }
+
+  return res.json();  // Devuelve la respuesta en formato JSON
+}
+
+// ==========================
+// API calls
+// ==========================
+
+// Obtener reporte de ventas
 export async function getSalesReport(
   params: GetSalesReportParams,
   token: string,
@@ -77,7 +105,7 @@ export async function getSalesReport(
   const res = await fetch(`${API_URL}/reports/sales?${q.toString()}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviar el token
     },
     cache: 'no-store',
   });
@@ -90,6 +118,7 @@ export async function getSalesReport(
   return res.json();
 }
 
+// Obtener reporte de comisión de vendedor
 export async function getSellerCommissionReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -113,7 +142,7 @@ export async function getSellerCommissionReport(params: GetSalesReportParams, to
   const res = await fetch(`${API_URL}/reports/seller-commission?${queryParams.toString()}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviar el token
     },
     cache: 'no-store',
   });
@@ -126,6 +155,7 @@ export async function getSellerCommissionReport(params: GetSalesReportParams, to
   return res.json();
 }
 
+// Obtener reporte de utilidad semanal
 export async function getWeeklyProfitReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -149,7 +179,7 @@ export async function getWeeklyProfitReport(params: GetSalesReportParams, token:
   const res = await fetch(`${API_URL}/reports/weekly-profit?${queryParams.toString()}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviar el token
     },
     cache: 'no-store',
   });
@@ -162,6 +192,7 @@ export async function getWeeklyProfitReport(params: GetSalesReportParams, token:
   return res.json();
 }
 
+// Obtener reporte de ingreso de inventario
 export async function getInventoryIngressReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -185,7 +216,7 @@ export async function getInventoryIngressReport(params: GetSalesReportParams, to
   const res = await fetch(`${API_URL}/reports/inventory-ingress?${queryParams.toString()}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviar el token
     },
     cache: 'no-store',
   });
@@ -197,6 +228,8 @@ export async function getInventoryIngressReport(params: GetSalesReportParams, to
 
   return res.json();
 }
+
+// Obtener reporte de cierre de caja
 export async function getCashClosureReport(params: GetSalesReportParams, token: string): Promise<SalesReportResponse> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -220,7 +253,7 @@ export async function getCashClosureReport(params: GetSalesReportParams, token: 
   const res = await fetch(`${API_URL}/reports/cash-closure?${queryParams.toString()}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviar el token
     },
     cache: 'no-store',
   });
@@ -233,8 +266,7 @@ export async function getCashClosureReport(params: GetSalesReportParams, token: 
   return res.json();
 }
 
-// services/reportServices.ts
-
+// Obtener reporte de gastos operativos
 export async function getOperatingExpenses(start: string, end: string, token: string): Promise<number> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -245,7 +277,7 @@ export async function getOperatingExpenses(start: string, end: string, token: st
   const res = await fetch(`${API_URL}/cash-movements/operating-expenses?${queryParams.toString()}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviar el token
     },
     cache: 'no-store',
   });
@@ -257,4 +289,3 @@ export async function getOperatingExpenses(start: string, end: string, token: st
 
   return res.json(); // El resultado esperado es un número
 }
-

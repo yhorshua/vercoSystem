@@ -1,4 +1,3 @@
-// /services/saleServices.ts
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export type PaymentMethod =
@@ -14,27 +13,16 @@ export type CreateSalePayload = {
   warehouse_id: number;
   user_id: number;
   customer_id?: number;
-
-  // ⚠️ Solo envíalo si tu backend ya lo acepta en CreateSaleDto
-  // document_type?: 'boleta' | 'factura';
-
   payment_method: PaymentMethod;
 
   payment?: {
-    // efectivo
     efectivoEntregado?: number;
     vuelto?: number;
-
-    // yape/plin/tarjetas
     numeroOperacion?: string;
-
-    // mixto
     yapeMonto?: number;
     yapeOperacion?: string;
     efectivoEntregadoMixto?: number;
     vueltoMixto?: number;
-
-    // obsequio
     motivoObsequio?: string;
     autorizadoPor?: string;
   };
@@ -50,7 +38,6 @@ export type CreateSalePayload = {
 
 function safeErrorMessage(text: string) {
   try {
-    // si tu back devuelve JSON con message
     const j = JSON.parse(text);
     if (typeof j?.message === 'string') return j.message;
     if (Array.isArray(j?.message)) return j.message.join('\n');
@@ -58,6 +45,7 @@ function safeErrorMessage(text: string) {
   return text || 'Error registrando venta';
 }
 
+// Función para registrar una venta
 export async function registerSale(payload: CreateSalePayload, token: string) {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -65,19 +53,20 @@ export async function registerSale(payload: CreateSalePayload, token: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviar el token en la cabecera de autorización
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload),  // Cuerpo de la solicitud con la información de la venta
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(safeErrorMessage(text));
+    throw new Error(safeErrorMessage(text));  // Manejo de errores de la API
   }
 
-  return res.json();
+  return res.json();  // Retorna la respuesta de la API
 }
 
+// Función para obtener el stock de un producto en un almacén específico
 export async function getProductStockByWarehouseAndCode(
   warehouseId: number,
   articleCode: string,
@@ -90,16 +79,16 @@ export async function getProductStockByWarehouseAndCode(
     {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`, // Enviar el token en la cabecera de autorización
       },
-      cache: 'no-store',
+      cache: 'no-store',  // Deshabilitar cache
     }
   );
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Error consultando stock (${res.status})`);
+    throw new Error(text || `Error consultando stock (${res.status})`);  // Manejo de errores de la API
   }
 
-  return res.json();
+  return res.json();  // Retorna la respuesta con los datos de stock
 }

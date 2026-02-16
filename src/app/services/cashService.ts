@@ -1,6 +1,6 @@
-// /services/cashServices.ts
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// Función para manejar errores de forma segura
 function safeErrorMessage(text: string) {
   try {
     const j = JSON.parse(text);
@@ -10,6 +10,7 @@ function safeErrorMessage(text: string) {
   return text || 'Error';
 }
 
+// Función genérica para hacer peticiones fetch con token
 async function fetchJson<T>(url: string, token: string, options?: RequestInit): Promise<T> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -17,7 +18,7 @@ async function fetchJson<T>(url: string, token: string, options?: RequestInit): 
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`, // Enviamos el token en la cabecera
       ...(options?.headers || {}),
     },
     cache: 'no-store',
@@ -44,7 +45,6 @@ export type CashSession = {
   closed_at: string | null;
 
   opening_cash: number;
-
   closing_cash_counted: number | null;
   closing_expected_cash: number | null;
   difference: number | null;
@@ -53,17 +53,15 @@ export type CashSession = {
   notes: string | null;
 };
 
-// En tu back tú ya tienes CashMovement con type y payment_method
 export type CashMovement = {
   id: number;
   session_id: number;
   warehouse_id: number;
   user_id: number;
 
-  // ejemplo: 'SALE' | 'EXPENSE' | 'OPENING' | 'CLOSING' ...
-  type: string;
+  type: string; // ejemplo: 'SALE' | 'EXPENSE' | 'OPENING' | 'CLOSING'
   payment_method: string | null; // efectivo/yape/plin/tarjeta...
-  amount: number; // + ingreso / - egreso (o según tu regla)
+  amount: number; // + ingreso / - egreso
   operation_number: string | null;
 
   reference_sale_id?: number | null;
@@ -76,15 +74,13 @@ export type CashMovement = {
 export type CashSummary = {
   session: CashSession;
 
-  // totales por método
   totalsByMethod: Record<string, number>;
 
-  // totales generales
   totalIncome: number;
   totalExpense: number;
   net: number;
 
-  expectedCash: number; // lo que debería haber en efectivo (si manejas efectivo separado)
+  expectedCash: number;
 };
 
 // ==========================
@@ -102,7 +98,7 @@ export type ExpensePayload = {
   user_id: number;
   session_id: number;
 
-  amount: number; // positivo (el back lo convertirá a salida) o negativo, según tu diseño
+  amount: number;
   description: string;
 };
 

@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('access_token')?.value || null;
+  // Obtener el token desde las cabeceras 'Authorization' si está presente
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '') || null;
   const publicPaths = ['/login', '/register'];
 
   // Si ya tiene token e intenta ir al login, mándalo al home

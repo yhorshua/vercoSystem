@@ -28,14 +28,15 @@ export async function registerIncoming(payload: CreateIncomingPayload, token: st
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,  // Enviar el token de autorización
     },
     body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(safeErrorMessage(text));
+    throw new Error(safeErrorMessage(text));  // Manejamos el error de forma segura
   }
-  return res.json();
+
+  return res.json();  // Devuelve la respuesta en formato JSON
 }

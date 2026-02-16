@@ -2,18 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { 
-  PackagePlus, 
-  Box, 
-  Tag, 
-  DollarSign, 
-  Layers, 
-  Plus, 
-  Trash2, 
-  Save, 
-  ListPlus,
-  Wand2,
-  X
+import {
+    PackagePlus,
+    Box,
+    Tag,
+    DollarSign,
+    Layers,
+    Plus,
+    Trash2,
+    Save,
+    ListPlus,
+    Wand2,
+    X
 } from 'lucide-react';
 
 import { CreateProductDto } from './CreateProductDto';
@@ -24,7 +24,7 @@ import styles from './register.module.css';
 
 export default function CreateProductPage() {
     const { user } = useUser();
-    
+
     // Estados del Formulario
     const [articleCode, setArticleCode] = useState('');
     const [articleDescription, setArticleDescription] = useState('');
@@ -40,7 +40,7 @@ export default function CreateProductPage() {
     const [color, setColor] = useState('');
     const [stockMinimum, setStockMinimum] = useState<number>(0);
     const [productImage, setProductImage] = useState('');
-    
+
     // Estados para Tallas
     const [sizes, setSizes] = useState<string[]>([]);
     const [newSize, setNewSize] = useState('');
@@ -71,7 +71,7 @@ export default function CreateProductPage() {
     const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCategoryId = Number(e.target.value);
         setCategoryId(selectedCategoryId);
-        setIsShoeCategory(selectedCategoryId === 1); 
+        setIsShoeCategory(selectedCategoryId === 1);
         setArticleSeries('');
         setSizeRange(null);
     };
@@ -96,8 +96,8 @@ export default function CreateProductPage() {
             if (field === 'unitPrice') setUnitPrice(parsedValue);
             else if (field === 'manufacturingCost') setManufacturingCost(parsedValue);
         } else if (value === '') {
-             if (field === 'unitPrice') setUnitPrice(0);
-             else if (field === 'manufacturingCost') setManufacturingCost(0);
+            if (field === 'unitPrice') setUnitPrice(0);
+            else if (field === 'manufacturingCost') setManufacturingCost(0);
         }
     };
 
@@ -123,7 +123,7 @@ export default function CreateProductPage() {
                 sizesToAdd.push(i.toString());
             }
             // Merge unique sizes
-            setSizes((prev) => Array.from(new Set([...prev, ...sizesToAdd])).sort((a,b) => Number(a)-Number(b)));
+            setSizes((prev) => Array.from(new Set([...prev, ...sizesToAdd])).sort((a, b) => Number(a) - Number(b)));
         }
     };
 
@@ -132,7 +132,7 @@ export default function CreateProductPage() {
     };
 
     const addProductToTable = () => {
-        if(!articleCode || !articleDescription || !categoryId || sizes.length === 0) {
+        if (!articleCode || !articleDescription || !categoryId || sizes.length === 0) {
             Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Verifica código, descripción, categoría y tallas.' });
             return;
         }
@@ -184,13 +184,22 @@ export default function CreateProductPage() {
 
     const handleSubmit = async () => {
         if (products.length === 0) return;
+
+        if (!user?.token) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Token no disponible',
+                text: 'No se pudo realizar la acción porque no se encuentra el token.'
+            });
+            return;
+        }
         setLoading(true);
         try {
-            await createProduct(products);
-            Swal.fire({ 
-                icon: 'success', 
-                title: '¡Productos Creados!', 
-                text: `${products.length} productos registrados exitosamente.` 
+            await createProduct(products, user?.token);
+            Swal.fire({
+                icon: 'success',
+                title: '¡Productos Creados!',
+                text: `${products.length} productos registrados exitosamente.`
             });
             setProducts([]);
         } catch (error: any) {
@@ -221,8 +230,8 @@ export default function CreateProductPage() {
                 <div className={styles.formGrid}>
                     {/* COLUMNA 1 */}
                     <div className={styles.field}>
-                         <label className={styles.label}>Código de Artículo</label>
-                         <input
+                        <label className={styles.label}>Código de Artículo</label>
+                        <input
                             className={styles.input}
                             value={articleCode}
                             onChange={(e) => setArticleCode(e.target.value)}
@@ -231,8 +240,8 @@ export default function CreateProductPage() {
                     </div>
 
                     <div className={styles.field}>
-                         <label className={styles.label}>Descripción</label>
-                         <input
+                        <label className={styles.label}>Descripción</label>
+                        <input
                             className={styles.input}
                             value={articleDescription}
                             onChange={(e) => setArticleDescription(e.target.value)}
@@ -271,9 +280,9 @@ export default function CreateProductPage() {
                         </select>
                     </div>
 
-                     <div className={styles.field}>
-                         <label className={styles.label}>Marca</label>
-                         <input
+                    <div className={styles.field}>
+                        <label className={styles.label}>Marca</label>
+                        <input
                             className={styles.input}
                             value={brandName}
                             onChange={(e) => setBrandName(e.target.value)}
@@ -287,7 +296,7 @@ export default function CreateProductPage() {
                 </h2>
 
                 <div className={styles.formGrid}>
-                     <div className={styles.field}>
+                    <div className={styles.field}>
                         <label className={styles.label}>Precio Unitario (Costo)</label>
                         <div className={styles.inputGroup}>
                             <DollarSign size={16} className={styles.inputIcon} />
@@ -322,9 +331,9 @@ export default function CreateProductPage() {
                     <h3 className={styles.label} style={{ fontSize: '1rem', display: 'flex', gap: '8px', marginBottom: '1rem' }}>
                         <Layers size={18} /> Gestión de Tallas
                     </h3>
-                    
+
                     <div className={styles.sizeControls}>
-                         <input
+                        <input
                             className={styles.sizeInput}
                             value={newSize}
                             onChange={(e) => setNewSize(e.target.value)}
@@ -334,10 +343,10 @@ export default function CreateProductPage() {
                         <button type="button" onClick={handleAddSize} className={styles.btnAddSize}>
                             <Plus size={16} style={{ display: 'inline', marginRight: 4 }} /> Agregar
                         </button>
-                        
+
                         {isShoeCategory && sizeRange && (
-                             <button type="button" onClick={handleAutoAddSizes} className={`${styles.btnAddSize} ${styles.btnAuto}`}>
-                                <Wand2 size={16} style={{ display: 'inline', marginRight: 4 }} /> 
+                            <button type="button" onClick={handleAutoAddSizes} className={`${styles.btnAddSize} ${styles.btnAuto}`}>
+                                <Wand2 size={16} style={{ display: 'inline', marginRight: 4 }} />
                                 Rango Automático ({sizeRange.min}-{sizeRange.max})
                             </button>
                         )}
@@ -372,7 +381,7 @@ export default function CreateProductPage() {
                     <h2 className={styles.cardTitle}>
                         <Tag size={20} /> Productos a Registrar ({products.length})
                     </h2>
-                    
+
                     <div className={styles.tableContainer}>
                         <table className={styles.table}>
                             <thead>
@@ -398,8 +407,8 @@ export default function CreateProductPage() {
                                         </td>
                                         <td style={{ fontWeight: 'bold' }}>S/ {p.manufacturing_cost.toFixed(2)}</td>
                                         <td>
-                                            <button 
-                                                onClick={() => handleDeleteProduct(idx)} 
+                                            <button
+                                                onClick={() => handleDeleteProduct(idx)}
                                                 className={styles.btnDelete}
                                                 title="Eliminar de la lista"
                                             >
@@ -412,9 +421,9 @@ export default function CreateProductPage() {
                         </table>
                     </div>
 
-                    <button 
-                        onClick={handleSubmit} 
-                        disabled={loading} 
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
                         className={styles.btnSubmit}
                     >
                         <Save size={20} /> {loading ? 'Registrando...' : 'Guardar Todo en Base de Datos'}

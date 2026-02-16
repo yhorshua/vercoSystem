@@ -20,14 +20,14 @@ export async function getWarehouses(token?: string): Promise<WarehouseRow[]> {
 
   return Array.isArray(data)
     ? data
-        .map((w: any) => ({
-          id: Number(w?.id),
-          warehouse_name: String(w?.warehouse_name ?? ''),
-          type: w?.type ?? null,
-          location: w?.location ?? null,
-          status: Boolean(w?.status),
-        }))
-        .filter((w) => w.id > 0 && w.warehouse_name)
+      .map((w: any) => ({
+        id: Number(w?.id),
+        warehouse_name: String(w?.warehouse_name ?? ''),
+        type: w?.type ?? null,
+        location: w?.location ?? null,
+        status: Boolean(w?.status),
+      }))
+      .filter((w) => w.id > 0 && w.warehouse_name)
     : [];
 }
 
