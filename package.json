@@ -23,6 +23,7 @@
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.563.0",
+    "motion": "^12.34.3",
     "next": "15.4.3",
     "pdfmake": "^0.2.20",
     "react": "19.1.0",

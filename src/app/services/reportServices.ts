@@ -3,6 +3,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export type SalesReportType = 'DAY' | 'RANGE';
 
+export type SalesReportDetailDTO = {
+  product_id: number;
+  article_code: string;
+  article_description: string;
+  size: string;
+  quantity: number;
+  unit_price: number;
+  purchase_price: number;
+  line_total: number;
+  profit: number;
+};
+
 export type GetSalesReportParams = {
   warehouseId: number;
   type: SalesReportType;
@@ -28,9 +40,11 @@ export type SalesReportRowDTO = {
   total_amount: number;
   payment_method?: string | null; // fallback si no hay payments
   payments?: SalesPaymentDTO[];   // si tu back ya lo devuelve
+  details?: SalesReportDetailDTO[]; // Asegúrate de que esto sea correcto según tu modelo de datos
 };
 
 export type SalesReportMetaDTO = {
+  total_operating_expenses?: number;
   warehouse_id: number;
   warehouse_name?: string | null;
   total_sales: number;

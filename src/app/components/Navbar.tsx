@@ -158,8 +158,11 @@ const Navbar = () => {
           <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} />Registro de stock
           </Link>
+          <Link href="/change" className={style.navbarLink} onClick={handleLinkClick}>
+            Cambio o Devolución
+          </Link>
           <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-            <ClipboardPen size={18}/>Registro de productos
+            Registro de Producto
           </Link>
         </>
       )}

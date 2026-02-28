@@ -1,0 +1,189 @@
+/* change.module.css */
+
+/* Estilos generales */
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  flex-direction: column;
+  background-color: #f7fafc;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.headerTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.formContainer {
+  background-color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+.stepIndicator {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.step {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  font-weight: bold;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.step.active {
+  background-color: #4c51bf;
+  color: white;
+}
+
+.step.selected {
+  color: green;
+}
+
+.step.past {
+  background-color: #38a169;
+  color: white;
+}
+
+.stepIndicator .connector {
+  position: absolute;
+  top: 1.25rem;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e8f0;
+  z-index: -1;
+}
+
+.inputText {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.inputSelect {
+  width: 100%;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  font-size: 1rem;
+}
+
+.textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.buttonPrimary {
+  background-color: #6366f1;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+.buttonPrimary:hover {
+  background-color: #4f46e5;
+}
+
+.errorMessage {
+  color: red;
+  font-size: 0.875rem;
+}
+
+.confirmationContainer {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.confirmationContainer p {
+  font-size: 1.125rem;
+  margin-top: 1rem;
+}
+
+.confirmationContainer button {
+  margin-top: 2rem;
+  background-color: #38a169;
+  width: auto;
+}
+
+.confirmationContainer button:hover {
+  background-color: #2f855a;
+}
+
+/* En change.module.css */
+
+/* Botón para seleccionar productos */
+.selectButton {
+  background-color: #6366f1;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+/* Botón de producto seleccionado */
+.selectedButton {
+  background-color: #38a169;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+/* Responsividad */
+@media (max-width: 768px) {
+  .formContainer {
+    padding: 1.5rem;
+  }
+
+  .headerTitle {
+    font-size: 1.5rem;
+  }
+
+  .stepIndicator {
+    flex-direction: column;
+  }
+
+  .stepIndicator .step {
+    margin-bottom: 0.5rem;
+  }
+
+  .stepIndicator .step.active {
+    margin-top: 1rem;
+  }
+}

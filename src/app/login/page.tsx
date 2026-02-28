@@ -26,7 +26,7 @@ export default function LoginPage() {
         title: 'Datos incompletos',
         text: 'Por favor ingresa correo y contraseña.',
         confirmButtonColor: '#3b82f6',
-        background: '#1e293b',
+        background: '#000000',
         color: '#fff'
       });
       return;
@@ -71,7 +71,7 @@ export default function LoginPage() {
         title: 'Error de acceso',
         text: error.message || 'Credenciales incorrectas.',
         confirmButtonColor: '#ef4444',
-        background: '#1e293b',
+        background: '#000000',
         color: '#fff'
       });
       setLoading(false);
@@ -100,8 +100,6 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h2 className="text-2xl font-semibold text-white tracking-tight">Bienvenido al Sistema</h2>
-          <p className="text-slate-400 mt-2">Gestión administrativa y control de inventario</p>
         </div>
       </div>
 
@@ -134,14 +132,14 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={busy}
-                  className="block w-full pl-12 pr-4 h-10 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
+                  className="block w-full pl-12 pr-4 h-10 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm mb-6" 
                   placeholder="usuario@verco.com.pe"
                 />
               </div>
             </div>
 
             {/* Input Contraseña */}
-            <div className="space-y-2">
+            <div className="space-y-2 mb-6">
               <label className="text-sm font-medium text-slate-300 ml-1">Contraseña</label>
               <div className="relative">
                 <div className="absolute inset-y-0 right-2 pl-4 flex items-center pointer-events-none text-slate-500">
@@ -153,7 +151,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   disabled={busy}
-                  className="block w-full pl-12 pr-4 h-10 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
+                  className="block w-full pl-12 pr-4 h-10 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm mb-8"
                   placeholder="••••••••"
                 />
               </div>
@@ -169,7 +167,7 @@ export default function LoginPage() {
                     ? 'bg-slate-700 cursor-not-allowed opacity-80'
                     : 'bg-blue-600 hover:bg-blue-500 hover:shadow-blue-500/20 hover:-translate-y-0.5'
                   }
-              `}
+              mt-8`} 
               >
                 {busy ? (
                   <>

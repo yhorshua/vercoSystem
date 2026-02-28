@@ -29,6 +29,7 @@ import { getSellersByWarehouse, SellerOption } from '../services/userServices';
 
 import styles from './reporteVentas.module.css';
 import { buildSalesReportPdfBlob } from '../utils/salesReportPdf';
+import { buildWeeklyProfitReportPdfBlob } from '../utils/weeklyReportPdf';
 
 function todayISO() {
     const d = new Date();
@@ -70,38 +71,46 @@ export default function ReporteVentasPage() {
         }
     };
 
-    async function handleDownloadPdf() {
-        if (!report) {
-            Swal.fire({ icon: 'warning', title: 'Reporte', text: 'Primero consulta un reporte.' });
-            return;
-        }
+   async function handleDownloadPdf() {
+    if (!report) {
+        Swal.fire({ icon: 'warning', title: 'Reporte', text: 'Primero consulta un reporte.' });
+        return;
+    }
 
-        try {
-            const pdfBlob = await buildSalesReportPdfBlob(report, {
+    try {
+        let pdfBlob;
+        if (reportType === 'WEEKLY_PROFIT') {
+            pdfBlob = await buildWeeklyProfitReportPdfBlob(report, {
+                periodLabel: `Del ${from} al ${to}`, // Puedes ajustar esto si prefieres un periodo diferente
+            });
+        } else {
+            // Aquí llamas a tu función de PDF de ventas (o la que esté configurada)
+            pdfBlob = await buildSalesReportPdfBlob(report, {
                 periodLabel:
                     reportType === 'DAY'
                         ? `Día ${date}`
                         : `Del ${from} al ${to}`,
             });
-
-            const fileName =
-                reportType === 'DAY'
-                    ? `reporte_ventas_${date}.pdf`
-                    : `reporte_ventas_${from}_al_${to}.pdf`;
-
-            const url = URL.createObjectURL(pdfBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-
-        } catch (e: any) {
-            Swal.fire({ icon: 'error', title: 'PDF', text: e?.message || 'No se pudo generar el PDF' });
         }
+
+        const fileName =
+            reportType === 'DAY'
+                ? `reporte_ventas_${date}.pdf`
+                : `reporte_ventas_${from}_al_${to}.pdf`;
+
+        const url = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+    } catch (e: any) {
+        Swal.fire({ icon: 'error', title: 'PDF', text: e?.message || 'No se pudo generar el PDF' });
     }
+}
 
     useEffect(() => {
         void loadSellers();
