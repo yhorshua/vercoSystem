@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { BrowserMultiFormatReader } from '@zxing/library';
-import { 
-  User, 
-  Search, 
-  Scan, 
-  ShoppingCart, 
-  CreditCard, 
-  Tag, 
+import {
+  User,
+  Search,
+  Scan,
+  ShoppingCart,
+  CreditCard,
+  Tag,
   Box,
   BadgePercent
 } from 'lucide-react';
@@ -34,7 +34,7 @@ type ApiStockRow = {
   warehouse_id: number;
   product_id: number;
   product_size_id: number | null;
-  size: string | null; 
+  size: string | null;
   quantity: number;
   unit_of_measure: string;
 };
@@ -104,7 +104,9 @@ export default function RegisterSalePage() {
 
   const stopScanning = () => {
     setScanning(false);
-    if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop()); // Detiene el flujo de video
+    }
   };
 
   const buildFromApi = (data: ApiProductResponse) => {
@@ -257,15 +259,15 @@ export default function RegisterSalePage() {
   // Handlers Cámara
   const handleScanButtonClick = async () => {
     if (scanning) {
-        stopScanning();
-        return;
+      stopScanning();
+      return;
     }
     setScanning(true);
 
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('La cámara no está disponible.');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
       });
       setCameraStream(stream);
 
@@ -276,6 +278,7 @@ export default function RegisterSalePage() {
       document.getElementById('camera-container')?.appendChild(videoElement);
 
       const scanner = new BrowserMultiFormatReader();
+
       scanner.decodeFromVideoDevice(null, videoElement, (result) => {
         if (result) {
           const codigoCompleto = result.getText().toUpperCase();
@@ -335,7 +338,7 @@ export default function RegisterSalePage() {
     setCantidades((prev) => ({ ...prev, [talla]: cantidad }));
   };
 
- const agregarItem = () => {
+  const agregarItem = () => {
     // 1. Filtrar solo cantidades mayores a 0 para agregar al carrito
     const cantidadesFiltradas: Record<string, number> = {};
     let total = 0;
@@ -349,8 +352,8 @@ export default function RegisterSalePage() {
     });
 
     if (!codigoArticulo || total === 0) {
-         Swal.fire({ icon: 'info', text: 'Ingresa un código y selecciona cantidades válidas (mayor a 0).' });
-         return;
+      Swal.fire({ icon: 'info', text: 'Ingresa un código y selecciona cantidades válidas (mayor a 0).' });
+      return;
     }
 
     if (!currentProductId) {
@@ -399,8 +402,8 @@ export default function RegisterSalePage() {
         <ShoppingCart size={32} />
         <h1>Punto de Venta</h1>
       </div>
-
-      {/* SECCIÓN 1: DATOS DEL CLIENTE */}
+      {/*
+      {/* SECCIÓN 1: DATOS DEL CLIENTE 
       <section className={styles.cardSection}>
         <h2 className={styles.cardTitle}>
             <User size={20} /> Datos del Cliente
@@ -472,7 +475,7 @@ export default function RegisterSalePage() {
                 />
             </div>
              
-             {/* Tipo de Comprobante para Venta */}
+             {/* Tipo de Comprobante para Venta *
             <div className={styles.inputGroup}>
                 <label className={styles.label}>Comprobante a emitir</label>
                 <select 
@@ -486,125 +489,125 @@ export default function RegisterSalePage() {
             </div>
         </div>
       </section>
-
+*/}
       {/* SECCIÓN 2: AGREGAR PRODUCTO */}
       <section className={styles.cardSection}>
         <h2 className={styles.cardTitle}>
-            <Tag size={20} /> Producto
+          <Tag size={20} /> Producto
         </h2>
 
         <div className={styles.gridTwo}>
-            <div className={styles.inputGroup}>
-                <label className={styles.label}>Código (Escanear)</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <input 
-                        className={styles.input} 
-                        value={codigoArticulo} 
-                        onChange={handleBarcodeInput} 
-                        ref={inputRef} 
-                        placeholder="Escanear o digitar..."
-                    />
-                    <button className={styles.scanButton} onClick={handleScanButtonClick} type="button">
-                        {scanning ? 'Detener' : <><Scan size={18}/> Scan</>}
-                    </button>
-                </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Código (Escanear)</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                className={styles.input}
+                value={codigoArticulo}
+                onChange={handleBarcodeInput}
+                ref={inputRef}
+                placeholder="Escanear o digitar..."
+              />
+              <button className={styles.scanButton} onClick={handleScanButtonClick} type="button">
+                {scanning ? 'Detener' : <><Scan size={18} /> Scan</>}
+              </button>
             </div>
+          </div>
 
-            {scanning && (
-                <div className={styles.cameraWrapper} id="camera-container">
-                <div className={styles.scannerOverlay}></div>
-                </div>
-            )}
+          {scanning && (
+            <div className={styles.cameraWrapper} id="camera-container">
+              <div className={styles.scannerOverlay}></div>
+            </div>
+          )}
         </div>
 
         <div className={`${styles.gridFour} ${styles.mt4}`} style={{ marginTop: '1rem' }}>
-             <div className={styles.inputGroup}>
-                <label className={styles.label}>Descripción</label>
-                <input className={`${styles.input} ${styles.inputReadOnly}`} value={descripcion} readOnly />
-            </div>
-             <div className={styles.inputGroup}>
-                <label className={styles.label}>Serie</label>
-                <input className={`${styles.input} ${styles.inputReadOnly}`} value={serie} readOnly />
-            </div>
-             <div className={styles.inputGroup}>
-                <label className={styles.label}>Precio Unit. (S/)</label>
-                <input
-                    className={styles.input}
-                    type="number"
-                    value={precio}
-                    onChange={(e) => setPrecio(Number.parseFloat(e.target.value) || 0)}
-                />
-            </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Descripción</label>
+            <input className={`${styles.input} ${styles.inputReadOnly}`} value={descripcion} readOnly />
+          </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Serie</label>
+            <input className={`${styles.input} ${styles.inputReadOnly}`} value={serie} readOnly />
+          </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Precio Unit. (S/)</label>
+            <input
+              className={styles.input}
+              type="number"
+              value={precio}
+              onChange={(e) => setPrecio(Number.parseFloat(e.target.value) || 0)}
+            />
+          </div>
         </div>
 
         {/* Descuentos */}
         <div className={styles.gridTwo} style={{ marginTop: '1rem', background: '#fffbeb', padding: '10px', borderRadius: '8px' }}>
-             <div className={styles.inputGroup}>
-                <label className={styles.label} style={{ color: '#b45309' }}><BadgePercent size={14}/> Descuento Global (S/)</label>
-                <input
-                    className={styles.input}
-                    type="number"
-                    value={descuento}
-                    onChange={(e) => setDescuento(Number(e.target.value))}
-                    placeholder="0.00"
-                />
-            </div>
-             <div className={styles.inputGroup}>
-                <label className={styles.label} style={{ color: '#b45309' }}>Total con Dcto.</label>
-                <input className={`${styles.input} ${styles.inputReadOnly}`} value={totalConDescuento.toFixed(2)} readOnly />
-            </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.label} style={{ color: '#b45309' }}><BadgePercent size={14} /> Descuento Global (S/)</label>
+            <input
+              className={styles.input}
+              type="number"
+              value={descuento}
+              onChange={(e) => setDescuento(Number(e.target.value))}
+              placeholder="0.00"
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label className={styles.label} style={{ color: '#b45309' }}>Total con Dcto.</label>
+            <input className={`${styles.input} ${styles.inputReadOnly}`} value={totalConDescuento.toFixed(2)} readOnly />
+          </div>
         </div>
 
         {/* Grid de Tallas */}
         {tallasDisponibles.length > 0 && (
-            <div className={styles.tallasContainer}>
-                <label className={styles.tallasLabel}>Selecciona Cantidades por Talla:</label>
-                <div className={styles.tallasGrid}>
-                    {tallasDisponibles.map((talla) => (
-                        <div key={talla} className={styles.tallaItem}>
-                            <span className={styles.tallaTitle}>{talla}</span>
-                            <input
-                                className={styles.tallaInput}
-                                type="number"
-                                min={0}
-                                placeholder="0"
-                                value={cantidades[talla] === 0 ? '' : cantidades[talla] ?? ''}
-                                onChange={(e) => handleCantidadChange(talla, e.target.value)}
-                            />
-                            <span className={styles.stockBadge}>Stock: {stockPorTalla[talla] ?? 0}</span>
-                        </div>
-                    ))}
+          <div className={styles.tallasContainer}>
+            <label className={styles.tallasLabel}>Selecciona Cantidades por Talla:</label>
+            <div className={styles.tallasGrid}>
+              {tallasDisponibles.map((talla) => (
+                <div key={talla} className={styles.tallaItem}>
+                  <span className={styles.tallaTitle}>{talla}</span>
+                  <input
+                    className={styles.tallaInput}
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={cantidades[talla] === 0 ? '' : cantidades[talla] ?? ''}
+                    onChange={(e) => handleCantidadChange(talla, e.target.value)}
+                  />
+                  <span className={styles.stockBadge}>Stock: {stockPorTalla[talla] ?? 0}</span>
                 </div>
+              ))}
             </div>
+          </div>
         )}
 
-        <button 
-            className={styles.addButton} 
-            onClick={agregarItem} 
-            disabled={!currentProductId || Object.keys(cantidades).length === 0}
+        <button
+          className={styles.addButton}
+          onClick={agregarItem}
+          disabled={!currentProductId || Object.keys(cantidades).length === 0}
         >
-            <Box size={20} /> Agregar al Pedido
+          <Box size={20} /> Agregar al Pedido
         </button>
       </section>
 
       {/* SECCIÓN 3: CARRITO Y PAGO */}
       <section className={styles.cardSection}>
-         <h2 className={styles.cardTitle}>
-            <ShoppingCart size={20} /> Carrito de Compras
+        <h2 className={styles.cardTitle}>
+          <ShoppingCart size={20} /> Carrito de Compras
         </h2>
         <PedidoTabla
-            items={items}
-            onDelete={handleDeleteItem}
-            cliente={cliente}
-            user={
+          items={items}
+          onDelete={handleDeleteItem}
+          cliente={cliente}
+          user={
             user?.token && user?.warehouse_id && user?.id
-                ? { token: user.token, warehouseId: user.warehouse_id, userId: user.id }
-                : null
-            }
-            onSaleRegistered={() => {
-                setItems([]);
-                Swal.fire({ icon: 'success', title: 'Venta Registrada', timer: 2000, showConfirmButton: false });
-            }}
+              ? { token: user.token, warehouseId: user.warehouse_id, userId: user.id }
+              : null
+          }
+          onSaleRegistered={() => {
+            setItems([]);
+            Swal.fire({ icon: 'success', title: 'Venta Registrada', timer: 2000, showConfirmButton: false });
+          }}
         />
       </section>
     </div>
