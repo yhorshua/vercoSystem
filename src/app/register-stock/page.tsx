@@ -55,6 +55,7 @@ export default function StockPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [cantidadTallas, setCantidadTallas] = useState<{ [key: string]: number }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Lista de productos listos para registrar
   const [stockData, setStockData] = useState<StockItem[]>([]);
@@ -148,8 +149,13 @@ export default function StockPage() {
   const handleRegisterStock = async () => {
     const warehouseId = user?.warehouse_id;
 
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
     if (!warehouseId) {
       Swal.fire({ icon: 'error', text: 'No tienes un almacén asignado.' });
+      setIsSubmitting(false);
       return;
     }
     const productsToRegister = stockData.flatMap((item) =>
@@ -173,7 +179,10 @@ export default function StockPage() {
     } catch (error) {
       console.error(error);
       Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo registrar el stock.' });
-    }
+    }finally {
+    // Habilitar el botón nuevamente después de que el proceso haya terminado
+    setIsSubmitting(false);
+  }
   };
 
   // Renderizado de las tallas (Grid de inputs)
@@ -362,7 +371,7 @@ export default function StockPage() {
             onClick={handleRegisterStock}
             className={styles.registerStockBtn}
           >
-            <Save size={24} /> Registrar Ingreso en Almacén
+            <Save size={24} /> {isSubmitting ? 'Registrando...' : 'Registrar Ingreso en Almacén'}
           </button>
         </div>
       )}

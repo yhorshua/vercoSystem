@@ -17,6 +17,7 @@ type Computed = {
   byCategory: Array<{ category: string; total_sales: number; total_amount: number; total_profit: number }>;
   totalZapatillasAmount: number;
   totalZapatillasProfit: number;
+  warehouseName: string;
 };
 
 const n = (v: any) => {
@@ -39,6 +40,11 @@ function computeFromSales(report: SalesReportResponse): Computed {
   let operatingExpenses = 0;
   let totalZapatillasAmount = 0;
   let totalZapatillasProfit = 0;
+  let warehouseName = '';
+
+   if (sales.length > 0) {
+    warehouseName = report.sales[0].warehouse_name || 'Tienda Desconocida';
+  }
 
   for (const s of sales) {
     const saleTotal = n(s.total_amount);
@@ -91,6 +97,7 @@ function computeFromSales(report: SalesReportResponse): Computed {
     byCategory: Array.from(categoryMap.values()),  // Retornar el array de categorías
     totalZapatillasAmount,  // Total de ventas de zapatillas
     totalZapatillasProfit,  // Total de utilidad por zapatillas
+    warehouseName,
   };
 }
 
@@ -100,7 +107,7 @@ export async function buildWeeklyProfitReportPdfBlob(
 ): Promise<Blob> {
   const c = computeFromSales(report);
   const meta: any = report.meta ?? {};
-  const warehouseName = meta.warehouse_name ?? `Tienda #${meta.warehouse_name ?? ''}`;
+  const warehouseName = c.warehouseName ?? `Tienda #${c.warehouseName ?? ''}`;
   const period = opts?.periodLabel ?? 'Periodo según consulta';
   const generatedAt = new Date().toLocaleString('es-PE');
 

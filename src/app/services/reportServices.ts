@@ -37,6 +37,8 @@ export type SalesReportRowDTO = {
   sale_date: string; // ISO
   user_id: number;
   user_name: string;
+  warehouse_id: number;
+  warehouse_name?: string | null;
   total_amount: number;
   payment_method?: string | null; // fallback si no hay payments
   payments?: SalesPaymentDTO[];   // si tu back ya lo devuelve

@@ -43,6 +43,7 @@ export default function ReporteVentasPage() {
     const { user } = useUser();
     const token = user?.token || '';
     const warehouseId = user?.warehouse_id || 0;
+    const warehouseName = user?.warehouse?.warehouse_name || '';
 
     const canUse = useMemo(() => Boolean(token && warehouseId), [token, warehouseId]);
 
@@ -95,8 +96,8 @@ export default function ReporteVentasPage() {
 
         const fileName =
             reportType === 'DAY'
-                ? `reporte_ventas_${date}.pdf`
-                : `reporte_ventas_${from}_al_${to}.pdf`;
+                ? `reporte_ventas_${warehouseName}_${date}.pdf`
+                : `reporte_ventas_${warehouseName}_${from}_al_${to}.pdf`;
 
         const url = URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
