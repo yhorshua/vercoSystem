@@ -94,6 +94,8 @@
   color: var(--text-main);
 }
 
+
+
 .input:focus, .inputDocument:focus, .select:focus {
   outline: none;
   background-color: #fff;

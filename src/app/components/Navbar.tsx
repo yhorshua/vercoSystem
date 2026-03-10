@@ -123,6 +123,9 @@ const Navbar = () => {
           <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
             Usuarios
           </Link>
+          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
+            Registro de Producto
+          </Link>
         </>
       )}
 
@@ -160,9 +163,6 @@ const Navbar = () => {
           </Link>
           <Link href="/change" className={style.navbarLink} onClick={handleLinkClick}>
             Cambio o Devolución
-          </Link>
-          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de Producto
           </Link>
         </>
       )}

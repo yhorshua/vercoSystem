@@ -10,12 +10,13 @@ import {
   Search, CheckCircle2, Package, ArrowLeftRight,
   RotateCcw, Scan, Plus, Minus, DollarSign, ChevronLeft, ArrowRight
 } from 'lucide-react';
+import Swal from "sweetalert2";
 
 const Change = () => {
   const { user } = useUser();
   const [step, setStep] = useState<AppStep>('SEARCH');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const [saleCode, setSaleCode] = useState('');
   const [currentSale, setCurrentSale] = useState<Sale | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<SaleDetail | null>(null);
@@ -40,10 +41,20 @@ const Change = () => {
         setCurrentSale(sale);
         setStep('SELECTION');
       } else {
-        alert('Venta no encontrada.');
+        Swal.fire({
+          icon: 'warning',
+          title: 'Venta no encontrada',
+          text: 'Verifique el código del ticket.',
+          confirmButtonColor: '#4f46e5'
+        });
       }
     } catch {
-      alert('Error de servidor.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de servidor',
+        text: 'Intente nuevamente.',
+        confirmButtonColor: '#ef4444'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -64,17 +75,32 @@ const Change = () => {
         setNewProductPrice(Number(stock.price) || 0);
         setSelectedNewSizeId(null);
       } else {
-        alert('Sin stock disponible.');
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sin stock',
+          text: 'No hay stock disponible para este producto.',
+          confirmButtonColor: '#f59e0b'
+        });
       }
     } catch {
-      alert('Error en búsqueda.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo buscar el producto.',
+        confirmButtonColor: '#ef4444'
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const submitFinal = async () => {
-    if (requestType === RequestType.EXCHANGE && !selectedNewSizeId) return alert('Selecciona una talla');
+    if (requestType === RequestType.EXCHANGE && !selectedNewSizeId) return Swal.fire({
+      icon: 'warning',
+      title: 'Seleccione una talla',
+      text: 'Debe elegir una talla para continuar.',
+      confirmButtonColor: '#4f46e5'
+    });;
     setIsSubmitting(true);
     try {
       if (requestType === RequestType.RETURN) {
@@ -97,7 +123,12 @@ const Change = () => {
       }
       setStep('CONFIRMATION');
     } catch {
-      alert('Error al procesar');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo completar la operación.',
+        confirmButtonColor: '#ef4444'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -130,10 +161,10 @@ const Change = () => {
         <AnimatePresence mode="wait">
           {/* STEP 1: BUSCAR TICKET */}
           {step === 'SEARCH' && (
-            <motion.div 
+            <motion.div
               key="search"
-              initial={{ opacity: 0, scale: 0.95 }} 
-              animate={{ opacity: 1, scale: 1 }} 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="flex items-center justify-center min-h-[60vh]"
             >
@@ -145,7 +176,7 @@ const Change = () => {
                   <h2 className="text-2xl font-black text-slate-800">Localizar Venta</h2>
                   <p className="text-slate-400 text-sm mt-1">Ingrese el código del ticket para iniciar</p>
                 </div>
-                
+
                 <div className="space-y-4">
                   <input
                     autoFocus
@@ -154,9 +185,9 @@ const Change = () => {
                     value={saleCode}
                     onChange={(e) => setSaleCode(e.target.value)}
                   />
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting || !saleCode.trim()} 
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !saleCode.trim()}
                     className="w-full bg-indigo-600 text-white font-bold py-5 rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:shadow-none"
                   >
                     {isSubmitting ? 'Verificando...' : 'Continuar'}
@@ -168,10 +199,10 @@ const Change = () => {
 
           {/* STEP 2: SELECCIÓN DE PRODUCTO ORIGINAL */}
           {step === 'SELECTION' && (
-            <motion.div 
+            <motion.div
               key="selection"
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
@@ -180,8 +211,8 @@ const Change = () => {
                   <h2 className="text-2xl font-black text-slate-800">¿Qué producto devuelve?</h2>
                   <p className="text-slate-400 text-sm">Seleccione el artículo del ticket que será procesado</p>
                 </div>
-                <button 
-                  onClick={() => setStep('SEARCH')} 
+                <button
+                  onClick={() => setStep('SEARCH')}
                   className="self-start md:self-center px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all flex items-center gap-2"
                 >
                   <ChevronLeft size={14} /> Cambiar Ticket
@@ -193,11 +224,10 @@ const Change = () => {
                   <div
                     key={detail.id}
                     onClick={() => handleSelectOriginal(detail)}
-                    className={`group p-5 rounded-2xl border-2 cursor-pointer transition-all relative overflow-hidden ${
-                      selectedProduct?.id === detail.id 
-                        ? 'border-indigo-600 bg-white shadow-xl shadow-indigo-100' 
-                        : 'border-white bg-white hover:border-slate-200 hover:shadow-md'
-                    }`}
+                    className={`group p-5 rounded-2xl border-2 cursor-pointer transition-all relative overflow-hidden ${selectedProduct?.id === detail.id
+                      ? 'border-indigo-600 bg-white shadow-xl shadow-indigo-100'
+                      : 'border-white bg-white hover:border-slate-200 hover:shadow-md'
+                      }`}
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="bg-indigo-50 px-2 py-1 rounded-lg">
@@ -235,10 +265,10 @@ const Change = () => {
 
           {/* STEP 3: PROCESO DE CAMBIO/DEVOLUCIÓN */}
           {step === 'DETAILS' && (
-            <motion.div 
+            <motion.div
               key="details"
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
             >
@@ -287,21 +317,19 @@ const Change = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setRequestType(RequestType.EXCHANGE)}
-                        className={`py-4 px-4 rounded-2xl border-2 font-black text-xs flex items-center justify-center gap-2 transition-all ${
-                          requestType === RequestType.EXCHANGE 
-                            ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md shadow-indigo-100' 
-                            : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                        }`}
+                        className={`py-4 px-4 rounded-2xl border-2 font-black text-xs flex items-center justify-center gap-2 transition-all ${requestType === RequestType.EXCHANGE
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md shadow-indigo-100'
+                          : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                          }`}
                       >
                         <ArrowLeftRight size={16} /> Cambio
                       </button>
                       <button
                         onClick={() => setRequestType(RequestType.RETURN)}
-                        className={`py-4 px-4 rounded-2xl border-2 font-black text-xs flex items-center justify-center gap-2 transition-all ${
-                          requestType === RequestType.RETURN 
-                            ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md shadow-indigo-100' 
-                            : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
-                        }`}
+                        className={`py-4 px-4 rounded-2xl border-2 font-black text-xs flex items-center justify-center gap-2 transition-all ${requestType === RequestType.RETURN
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md shadow-indigo-100'
+                          : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'
+                          }`}
                       >
                         <RotateCcw size={16} /> Devolución
                       </button>
@@ -345,8 +373,8 @@ const Change = () => {
                           onKeyDown={(e) => e.key === 'Enter' && handleSearchNewProduct()}
                         />
                       </div>
-                      <button 
-                        onClick={handleSearchNewProduct} 
+                      <button
+                        onClick={handleSearchNewProduct}
                         className="bg-indigo-600 text-white px-6 rounded-2xl hover:bg-indigo-700 active:scale-95 transition-all shadow-lg shadow-indigo-200"
                       >
                         <Search size={22} />
@@ -354,8 +382,8 @@ const Change = () => {
                     </div>
 
                     {newProductData ? (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }} 
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-8"
                       >
@@ -387,15 +415,14 @@ const Change = () => {
                                   key={s.id}
                                   disabled={s.stock <= 0}
                                   onClick={() => setSelectedNewSizeId(s.id)}
-                                  className={`group py-3 rounded-2xl border-2 transition-all flex flex-col items-center justify-center relative ${
-                                    selectedNewSizeId === s.id 
-                                      ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
-                                      : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
-                                  } ${s.stock <= 0 ? 'opacity-25 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                  className={`group py-3 rounded-2xl border-2 transition-all flex flex-col items-center justify-center relative ${selectedNewSizeId === s.id
+                                    ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                    : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
+                                    } ${s.stock <= 0 ? 'opacity-25 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                   <span className="text-sm font-black">{s.size}</span>
                                   <span className={`text-[8px] font-bold uppercase tracking-tighter ${selectedNewSizeId === s.id ? 'text-indigo-100' : 'text-slate-400'}`}>
-                                    Stk: {s.stock}
+                                    Stk: {s.quantity}
                                   </span>
                                 </button>
                               ))}
@@ -405,15 +432,15 @@ const Change = () => {
                           <div className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
                             <span className="text-[10px] font-black text-slate-500 ml-3 uppercase tracking-widest">Cantidad</span>
                             <div className="flex items-center gap-6">
-                              <button 
-                                onClick={() => setNewProductQuantity(Math.max(1, newProductQuantity - 1))} 
+                              <button
+                                onClick={() => setNewProductQuantity(Math.max(1, newProductQuantity - 1))}
                                 className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 hover:bg-slate-50 active:scale-90 transition-all"
                               >
                                 <Minus size={16} className="text-slate-600" />
                               </button>
                               <span className="font-black text-2xl text-slate-800 w-8 text-center">{newProductQuantity}</span>
-                              <button 
-                                onClick={() => setNewProductQuantity(newProductQuantity + 1)} 
+                              <button
+                                onClick={() => setNewProductQuantity(newProductQuantity + 1)}
                                 className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100 hover:bg-slate-50 active:scale-90 transition-all"
                               >
                                 <Plus size={16} className="text-slate-600" />
@@ -452,20 +479,19 @@ const Change = () => {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Diferencia Final</p>
                     <div className="flex items-center gap-3">
                       <span className="text-3xl font-black text-white tracking-tight">S/ {Math.abs(diff).toFixed(2)}</span>
-                      <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${
-                        diff > 0 ? 'bg-emerald-500 text-white' : 
-                        diff < 0 ? 'bg-amber-500 text-white' : 
-                        'bg-slate-700 text-slate-300'
-                      }`}>
+                      <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter ${diff > 0 ? 'bg-emerald-500 text-white' :
+                        diff < 0 ? 'bg-amber-500 text-white' :
+                          'bg-slate-700 text-slate-300'
+                        }`}>
                         {diff > 0 ? 'Cobrar' : diff < 0 ? 'Saldo Favor' : 'Mano a mano'}
                       </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-3 w-full sm:w-auto">
-                  <button 
-                    onClick={() => setStep('SELECTION')} 
+                  <button
+                    onClick={() => setStep('SELECTION')}
                     className="flex-1 sm:flex-none px-8 py-4 text-slate-400 font-black text-sm hover:text-white transition-colors"
                   >
                     ATRÁS
@@ -484,10 +510,10 @@ const Change = () => {
 
           {/* STEP 4: CONFIRMACIÓN */}
           {step === 'CONFIRMATION' && (
-            <motion.div 
+            <motion.div
               key="confirmation"
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               className="max-w-md mx-auto text-center mt-12 md:mt-24"
             >
               <div className="bg-white p-10 md:p-16 rounded-[48px] shadow-2xl shadow-slate-200/50 border border-slate-50">
@@ -498,8 +524,8 @@ const Change = () => {
                 <p className="text-slate-400 mb-10 font-medium leading-relaxed">
                   El registro se ha completado. El stock ha sido actualizado y el comprobante está listo.
                 </p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <button
+                  onClick={() => window.location.reload()}
                   className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-black active:scale-[0.98] transition-all shadow-xl shadow-slate-200"
                 >
                   NUEVA OPERACIÓN

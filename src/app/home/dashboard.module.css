@@ -12,10 +12,17 @@
   width: 100%;
   min-height: 100vh;
   background-color: var(--bg-page);
-  padding: 1.5rem;
+  padding: 1rem; /* Reduced for mobile */
   font-family: system-ui, -apple-system, sans-serif;
   color: var(--text-main);
   box-sizing: border-box;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 1.5rem;
+  }
 }
 
 /* Header */
@@ -35,17 +42,23 @@
 }
 
 .titleGroup h1 {
-  font-size: 1.8rem;
+  font-size: 1.5rem; /* Smaller for mobile */
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.02em;
   margin: 0;
 }
 
+@media (min-width: 768px) {
+  .titleGroup h1 {
+    font-size: 1.8rem;
+  }
+}
+
 .titleGroup p {
   color: var(--text-muted);
   margin-top: 0.25rem;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
 }
 
 .warehouseName {
@@ -56,6 +69,7 @@
 .refreshButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   background-color: white;
   border: 1px solid var(--border);
@@ -66,6 +80,13 @@
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: var(--shadow-sm);
+  width: 100%; /* Full width on mobile */
+}
+
+@media (min-width: 768px) {
+  .refreshButton {
+    width: auto;
+  }
 }
 
 .refreshButton:hover:not(:disabled) {
@@ -92,7 +113,7 @@
 .kpiGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
@@ -110,13 +131,13 @@
 
 .kpiCard {
   background: var(--bg-card);
-  padding: 1.5rem;
+  padding: 1.25rem;
   border-radius: 16px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   transition: transform 0.2s;
 }
 
@@ -128,20 +149,21 @@
 .kpiInfo {
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Para truncar texto largo */
+  overflow: hidden;
+  flex: 1;
 }
 
 .kpiLabel {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   letter-spacing: 0.05em;
 }
 
 .kpiValue {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-main);
   white-space: nowrap;
@@ -149,12 +171,19 @@
   text-overflow: ellipsis;
 }
 
+@media (min-width: 768px) {
+  .kpiValue {
+    font-size: 1.5rem;
+  }
+}
+
 .iconBox {
-  padding: 12px;
+  padding: 10px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: 1rem;
 }
 
 .iconBlue { background: #eff6ff; color: #2563eb; }
@@ -171,12 +200,8 @@
 
 @media (min-width: 1024px) {
   .chartsGrid {
-    grid-template-columns: 2fr 1fr; /* 2/3 para tendencia, 1/3 para pagos */
+    grid-template-columns: repeat(3, 1fr);
   }
-}
-
-.fullWidth {
-  grid-column: 1 / -1;
 }
 
 .chartCard {
@@ -184,30 +209,53 @@
   border-radius: 16px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
-  padding: 1.5rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* Important for grid items */
+}
+
+@media (min-width: 768px) {
+  .chartCard {
+    padding: 1.5rem;
+  }
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 1024px) {
+  .lgCol2 {
+    grid-column: span 2;
+  }
 }
 
 .chartHeader {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
 }
 
 .chartTitle {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-main);
 }
 
 .chartContainer {
-  height: 320px;
+  height: 280px;
   width: 100%;
   position: relative;
+}
+
+@media (min-width: 768px) {
+  .chartContainer {
+    height: 320px;
+  }
 }
 
 .emptyState {
@@ -218,19 +266,5 @@
   justify-content: center;
   color: var(--text-muted);
   text-align: center;
-}
-
-/* Ajustes Responsive para Móviles Pequeños */
-@media (max-width: 480px) {
-  .container {
-    padding: 1rem;
-  }
-  
-  .kpiValue {
-    font-size: 1.25rem;
-  }
-  
-  .chartContainer {
-    height: 280px;
-  }
+  padding: 2rem;
 }

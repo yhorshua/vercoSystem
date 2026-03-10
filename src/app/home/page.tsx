@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useEffect, useState, useMemo } from 'react';
+import ReactECharts from 'echarts-for-react';
 import { useUser } from '../context/UserContext';
 import { getSalesReport } from '../services/reportServices';
 import { 
@@ -14,9 +14,6 @@ import {
 } from 'lucide-react';
 
 import styles from './dashboard.module.css';
-
-// Importación dinámica de ECharts
-const ReactECharts = dynamic(() => import('echarts-for-react'), { ssr: false }) as React.ComponentType<any>;
 
 // --- Tipos Auxiliares ---
 interface KpiData {
@@ -75,12 +72,11 @@ export default function Dashboard() {
       }, token);
 
       // 3. Obtener Top Productos
-      // Corrección de Tipo: Inicializamos con 'any' o una interfaz laxa para evitar error "never[]"
       let productReport: { sales: any[] } = { sales: [] }; 
       try {
         productReport = await getSalesReport({
             warehouseId,
-            type: 'DAY', // Usamos PRODUCT si el backend lo soporta para obtener ranking
+            type: 'DAY',
             from: today, 
             to: today
         }, token);
@@ -160,24 +156,25 @@ export default function Dashboard() {
     fetchData();
     const interval = setInterval(fetchData, 60000); 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warehouseId, token]);
 
 
-  // --- CONFIGURACIÓN ECHARTS ---
+  // --- CONFIGURACIÓN ECHARTS (Memoized for performance and stability) ---
 
-  const trendOption = {
+  const trendOption = useMemo(() => ({
     tooltip: { trigger: 'axis', formatter: '{b}: S/ {c}' },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    grid: { left: '3%', right: '4%', bottom: '5%', containLabel: true },
     xAxis: { 
         type: 'category', 
         data: salesTrend.map(d => d.label),
-        axisLine: { lineStyle: { color: '#94a3b8' } }
+        axisLine: { lineStyle: { color: '#94a3b8' } },
+        axisLabel: { fontSize: 10 }
     },
     yAxis: { 
         type: 'value',
         axisLine: { show: false },
-        splitLine: { lineStyle: { color: '#f1f5f9' } }
+        splitLine: { lineStyle: { color: '#f1f5f9' } },
+        axisLabel: { fontSize: 10 }
     },
     series: [{
       data: salesTrend.map(d => d.value),
@@ -193,36 +190,44 @@ export default function Dashboard() {
         }
       }
     }]
-  };
+  }), [salesTrend]);
 
-  const productsOption = {
+  const productsOption = useMemo(() => ({
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+    grid: { left: '3%', right: '10%', bottom: '3%', containLabel: true },
     xAxis: { type: 'value', show: false },
     yAxis: { 
         type: 'category', 
-        data: topProducts.map(d => d.label.substring(0, 15) + (d.label.length>15?'...':'')),
+        data: topProducts.map(d => d.label.length > 12 ? d.label.substring(0, 12) + '...' : d.label),
         axisTick: { show: false },
-        axisLine: { show: false }
+        axisLine: { show: false },
+        axisLabel: { fontSize: 10 }
     },
     series: [{
       name: 'Cantidad',
       type: 'bar',
       data: topProducts.map(d => d.value),
       itemStyle: { borderRadius: [0, 4, 4, 0], color: '#10b981' },
-      label: { show: true, position: 'right' },
+      label: { show: true, position: 'right', fontSize: 10 },
       barWidth: '60%'
     }]
-  };
+  }), [topProducts]);
 
-  const paymentsOption = {
+  const paymentsOption = useMemo(() => ({
     tooltip: { trigger: 'item' },
-    legend: { bottom: '0%', left: 'center', icon: 'circle' },
+    legend: { 
+      bottom: '0%', 
+      left: 'center', 
+      icon: 'circle',
+      itemWidth: 10,
+      itemHeight: 10,
+      textStyle: { fontSize: 10 }
+    },
     series: [{
       name: 'Pagos',
       type: 'pie',
       radius: ['40%', '70%'],
-      center: ['50%', '45%'],
+      center: ['50%', '40%'],
       avoidLabelOverlap: false,
       itemStyle: {
         borderRadius: 10,
@@ -236,7 +241,7 @@ export default function Dashboard() {
       })),
       color: ['#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#10b981']
     }]
-  };
+  }), [paymentMethods]);
 
   return (
     <div className={styles.container}>
@@ -267,7 +272,7 @@ export default function Dashboard() {
                 <span className={styles.kpiValue}>S/ {kpis.totalSales.toFixed(2)}</span>
             </div>
             <div className={`${styles.iconBox} ${styles.iconBlue}`}>
-                <DollarSign size={24} />
+                <DollarSign size={20} />
             </div>
         </div>
 
@@ -277,7 +282,7 @@ export default function Dashboard() {
                 <span className={styles.kpiValue}>{kpis.transactionCount}</span>
             </div>
             <div className={`${styles.iconBox} ${styles.iconPurple}`}>
-                <ShoppingBag size={24} />
+                <ShoppingBag size={20} />
             </div>
         </div>
 
@@ -287,7 +292,7 @@ export default function Dashboard() {
                 <span className={styles.kpiValue}>S/ {kpis.averageTicket.toFixed(2)}</span>
             </div>
             <div className={`${styles.iconBox} ${styles.iconGreen}`}>
-                <CreditCard size={24} />
+                <CreditCard size={20} />
             </div>
         </div>
 
@@ -299,7 +304,7 @@ export default function Dashboard() {
                 </span>
             </div>
             <div className={`${styles.iconBox} ${styles.iconAmber}`}>
-                <Package size={24} />
+                <Package size={20} />
             </div>
         </div>
       </div>
@@ -308,39 +313,54 @@ export default function Dashboard() {
       <div className={styles.chartsGrid}>
         
         {/* Chart 1: Tendencia */}
-        <div className={`${styles.chartCard} ${styles.fullWidth} lg:col-span-2`} style={{ gridColumn: 'auto' }}>
+        <div className={`${styles.chartCard} ${styles.lgCol2}`}>
             <div className={styles.chartHeader}>
-                <TrendingUp className="text-blue-500" size={20} />
+                <TrendingUp className="text-blue-500" size={18} />
                 <h3 className={styles.chartTitle}>Tendencia de Ingresos (7 Días)</h3>
             </div>
             <div className={styles.chartContainer}>
-                 <ReactECharts option={trendOption} style={{ height: '100%', width: '100%' }} />
+                 <ReactECharts 
+                    option={trendOption} 
+                    style={{ height: '100%', width: '100%' }} 
+                    notMerge={true}
+                    lazyUpdate={true}
+                 />
             </div>
         </div>
 
         {/* Chart 2: Métodos de Pago */}
         <div className={styles.chartCard}>
             <div className={styles.chartHeader}>
-                <CreditCard className="text-violet-500" size={20} />
+                <CreditCard className="text-violet-500" size={18} />
                 <h3 className={styles.chartTitle}>Pagos (Hoy)</h3>
             </div>
             <div className={styles.chartContainer}>
-                 <ReactECharts option={paymentsOption} style={{ height: '100%', width: '100%' }} />
+                 <ReactECharts 
+                    option={paymentsOption} 
+                    style={{ height: '100%', width: '100%' }} 
+                    notMerge={true}
+                    lazyUpdate={true}
+                 />
             </div>
         </div>
 
-        {/* Chart 3: Top Productos (Ocupa todo el ancho abajo) */}
+        {/* Chart 3: Top Productos */}
         <div className={`${styles.chartCard} ${styles.fullWidth}`}>
             <div className={styles.chartHeader}>
-                <ShoppingBag className="text-emerald-500" size={20} />
+                <ShoppingBag className="text-emerald-500" size={18} />
                 <h3 className={styles.chartTitle}>Top Productos Vendidos (Hoy)</h3>
             </div>
             <div className={styles.chartContainer}>
                 {topProducts.length > 0 ? (
-                    <ReactECharts option={productsOption} style={{ height: '100%', width: '100%' }} />
+                    <ReactECharts 
+                        option={productsOption} 
+                        style={{ height: '100%', width: '100%' }} 
+                        notMerge={true}
+                        lazyUpdate={true}
+                    />
                 ) : (
                     <div className={styles.emptyState}>
-                        <Package size={48} style={{ marginBottom: 10, opacity: 0.3 }} />
+                        <Package size={40} style={{ marginBottom: 10, opacity: 0.3 }} />
                         <p>No hay datos de productos vendidos hoy.</p>
                     </div>
                 )}

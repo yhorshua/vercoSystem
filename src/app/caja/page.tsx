@@ -133,6 +133,7 @@ export default function CajaPage() {
   // Handlers
   // =============================
   const handleOpenCash = async () => {
+    if (loading) return;
     if (!canUse) {
       Swal.fire({ icon: 'warning', title: 'Sesión', text: 'Inicia sesión' });
       return;
@@ -174,6 +175,7 @@ export default function CajaPage() {
   };
 
   const handleExpense = async () => {
+    if (loading) return;
     if (!session?.id) {
       Swal.fire({ icon: 'warning', title: 'Caja', text: 'No hay caja abierta' });
       return;

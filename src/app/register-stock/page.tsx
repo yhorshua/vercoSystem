@@ -331,7 +331,7 @@ export default function StockPage() {
             {renderSizes()}
           </div>
 
-          <button onClick={addProductToTable} className={styles.addProductBtn}>
+          <button onClick={addProductToTable} className={styles.addProductBtn} disabled={isSubmitting}>
             <PlusCircle size={20} /> Agregar a la Lista
           </button>
         </div>
@@ -370,6 +370,7 @@ export default function StockPage() {
           <button
             onClick={handleRegisterStock}
             className={styles.registerStockBtn}
+            disabled={isSubmitting}
           >
             <Save size={24} /> {isSubmitting ? 'Registrando...' : 'Registrar Ingreso en Almacén'}
           </button>

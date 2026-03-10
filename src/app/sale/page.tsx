@@ -86,7 +86,7 @@ export default function RegisterSalePage() {
 
   // Carrito
   const [items, setItems] = useState<ItemUI[]>([]);
-
+  const [addingItem, setAddingItem] = useState(false);
   // Descuento
   const [descuento, setDescuento] = useState<number>(0);
   const [totalConDescuento, setTotalConDescuento] = useState<number>(0);
@@ -339,6 +339,9 @@ export default function RegisterSalePage() {
   };
 
   const agregarItem = () => {
+
+    if (addingItem) return; // evita doble click
+  setAddingItem(true);
     // 1. Filtrar solo cantidades mayores a 0 para agregar al carrito
     const cantidadesFiltradas: Record<string, number> = {};
     let total = 0;
@@ -390,6 +393,7 @@ export default function RegisterSalePage() {
     setCurrentSizeIdBySizeNumber({});
     setDescuento(0);
     setTotalConDescuento(0);
+    setAddingItem(false);
   };
 
   const handleDeleteItem = (index: number) => {
@@ -584,9 +588,9 @@ export default function RegisterSalePage() {
         <button
           className={styles.addButton}
           onClick={agregarItem}
-          disabled={!currentProductId || Object.keys(cantidades).length === 0}
+          disabled={addingItem || !currentProductId || Object.keys(cantidades).length === 0}
         >
-          <Box size={20} /> Agregar al Pedido
+          <Box size={20} /> {addingItem ? 'Agregando...' : 'Agregar al Pedido'}
         </button>
       </section>
 
