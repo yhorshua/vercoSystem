@@ -7,19 +7,21 @@ export enum RequestType {
   EXCHANGE = 'EXCHANGE',
 }
 
-export interface ChangeProductDto {
+export interface ChangeProductParams {
   sale_id: number;
   product_id: number;
   new_product_id: number;
+  new_product_size_id: number;
   quantity: number;
-  size: string;
+  old_product_price: number;
+  new_product_price: number;
 }
 
-// DTO para la devolución de producto
 export interface ReturnProductDto {
   sale_id: number;
   product_id: number;
   quantity: number;
+  price_at_return: number;   // Precio de devolución ajustado
   reason?: string;
 }
 

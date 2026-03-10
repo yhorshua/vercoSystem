@@ -3,462 +3,350 @@
 import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { changeProduct, returnProduct, getSaleByCode } from '../services/changeService';
-import { AppStep, RequestType, Sale } from './sale';
+import { AppStep, RequestType, Sale, SaleDetail } from './sale';
 import { getProductStockByWarehouseAndCode } from '../services/stockServices';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, CheckCircle2, ChevronRight, Package, ArrowLeftRight, RotateCcw, AlertCircle, Check } from 'lucide-react';
-
-const StepIndicator: React.FC<{ currentStep: AppStep }> = ({ currentStep }) => {
-  const steps: { label: string; key: AppStep }[] = [
-    { label: 'Buscar', key: 'SEARCH' },
-    { label: 'Seleccionar', key: 'SELECTION' },
-    { label: 'Detalles', key: 'DETAILS' },
-    { label: 'Listo', key: 'CONFIRMATION' }
-  ];
-
-  const currentIdx = steps.findIndex(s => s.key === currentStep);
-
-  return (
-    <div className="relative flex justify-between items-center mb-12 px-4 max-w-full mx-auto mt-6">
-      {/* Background Line */}
-      <div className="absolute top-5 left-8 right-8 h-0.5 bg-neutral-200 -z-0" />
-
-      {/* Progress Line */}
-      <motion.div
-        className="absolute top-5 left-8 h-0.5 bg-indigo-600 -z-0 origin-left"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: currentIdx / (steps.length - 1) }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
-        style={{ width: 'calc(100% - 64px)' }}
-      />
-      <div className="flex justify-between items-center w-full">
-        {steps.map((s, idx) => {
-          const isActive = s.key === currentStep;
-          const isPast = currentIdx > idx;
-
-          return (
-            <div key={s.key} className="relative z-10 flex flex-col items-center w-1/4 sm:w-1/5 lg:w-1/4">
-              <motion.div
-                initial={false}
-                animate={{
-                  backgroundColor: isActive || isPast ? '#4f46e5' : '#ffffff',
-                  borderColor: isActive || isPast ? '#4f46e5' : '#e5e5e5',
-                  scale: isActive ? 1.1 : 1
-                }}
-                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-colors duration-300 shadow-sm`}
-              >
-                {isPast ? (
-                  <Check className="w-5 h-5 text-white" />
-                ) : (
-                  <span className={isActive ? 'text-white' : 'text-neutral-400'}>{idx + 1}</span>
-                )}
-              </motion.div>
-              <span className={`absolute -bottom-7 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive ? 'text-indigo-600' : 'text-neutral-400'}`}>
-                {s.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+import {
+  Search, CheckCircle2, Package, ArrowLeftRight,
+  RotateCcw, Scan, Plus, Minus, DollarSign, ChevronLeft, ArrowRight
+} from 'lucide-react';
 
 const Change = () => {
   const { user } = useUser();
   const [step, setStep] = useState<AppStep>('SEARCH');
-  const [saleCode, setSaleCode] = useState('');
-  const [currentSale, setCurrentSale] = useState<Sale | null>(null);
-  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
-  const [requestType, setRequestType] = useState<RequestType>(RequestType.RETURN);
-  const [reason, setReason] = useState('');
-  const [newProductId, setNewProductId] = useState<number | null>(null);
-  const [newProductInfo, setNewProductInfo] = useState<any | null>(null);
-  const [newProductSizeId, setNewProductSizeId] = useState<number | null>(null);
-  const [newProductQuantity, setNewProductQuantity] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const [saleCode, setSaleCode] = useState('');
+  const [currentSale, setCurrentSale] = useState<Sale | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<SaleDetail | null>(null);
+  const [originalPrice, setOriginalPrice] = useState<number>(0);
+
+  const [requestType, setRequestType] = useState<RequestType>(RequestType.EXCHANGE);
+  const [reason, setReason] = useState('');
+
+  const [searchNewCode, setSearchNewCode] = useState('');
+  const [newProductData, setNewProductData] = useState<any | null>(null);
+  const [selectedNewSizeId, setSelectedNewSizeId] = useState<number | null>(null);
+  const [newProductQuantity, setNewProductQuantity] = useState<number>(1);
+  const [newProductPrice, setNewProductPrice] = useState<number>(0);
+
+  const handleSearchSale = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!saleCode.trim()) return;
-
     setIsSubmitting(true);
-    setError(null);
     try {
       const sale = await getSaleByCode(saleCode, user?.token || '');
       if (sale) {
         setCurrentSale(sale);
         setStep('SELECTION');
-      } else {
-        setError('No se encontró ninguna venta con ese código.');
-      }
-    } catch {
-      setError('Ocurrió un error al buscar la venta.');
-    } finally {
-      setIsSubmitting(false);
-    }
+      } else { alert('Venta no encontrada.'); }
+    } catch { alert('Error de servidor.'); } finally { setIsSubmitting(false); }
   };
 
-  const toggleProductSelection = (id: number) => {
-    setSelectedProductIds(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    );
+  const handleSelectOriginal = (detail: SaleDetail) => {
+    setSelectedProduct(detail);
+    setOriginalPrice(parseFloat(detail.unit_price || '0'));
   };
 
-  const handleProcessDetails = async () => {
-    if (selectedProductIds.length === 0) {
-      setError('Por favor, selecciona al menos un producto.');
-      return;
-    }
-    setError(null);
+  const handleSearchNewProduct = async () => {
+    if (!searchNewCode.trim()) return;
     setIsSubmitting(true);
-
     try {
-      const productCode = currentSale?.details.find(d => d.product_id === selectedProductIds[0])?.product.article_code || '';
-      if (!productCode) throw new Error('No se encontró el código del producto.');
-
-      if (!user?.warehouse_id) {
-        setError('Información de almacén no disponible.');
-        return;
-      }
-
-      const productStock = await getProductStockByWarehouseAndCode(user.warehouse_id, productCode, user.token);
-      if (productStock) {
-        setNewProductInfo(productStock);
-        setNewProductSizeId(productStock.sizes[0]?.size || '');
-        setStep('DETAILS');
-      } else {
-        setError('No se encontraron productos disponibles para el cambio.');
-      }
-    } catch {
-      setError('Error al buscar stock disponible.');
-    } finally {
-      setIsSubmitting(false);
-    }
+      const stock = await getProductStockByWarehouseAndCode(user?.warehouse_id!, searchNewCode, user?.token!);
+      if (stock) {
+        setNewProductData(stock);
+        setNewProductPrice(Number(stock.price) || 0);
+        setSelectedNewSizeId(null);
+      } else { alert('Sin stock disponible.'); }
+    } catch { alert('Error en búsqueda.'); } finally { setIsSubmitting(false); }
   };
 
   const submitFinal = async () => {
+    if (requestType === RequestType.EXCHANGE && !selectedNewSizeId) return alert('Selecciona una talla');
     setIsSubmitting(true);
-    setError(null);
     try {
-      if (!currentSale) throw new Error('No hay venta seleccionada');
-
       if (requestType === RequestType.RETURN) {
-        await returnProduct(
-          {
-            sale_id: currentSale.id,
-            product_id: selectedProductIds[0],
-            quantity: newProductQuantity,
-          },
-          user?.token || ''
-        );
+        await returnProduct({
+          sale_id: currentSale!.id,
+          product_id: selectedProduct!.product_id,
+          quantity: 1,
+          price_at_return: originalPrice
+        }, user?.token || '');
       } else {
-        await changeProduct(
-          {
-            sale_id: currentSale.id,
-            product_id: selectedProductIds[0],
-            new_product_id: newProductId!, // Ensuring `newProductId` is not null
-            quantity: newProductQuantity,
-            new_product_size_id: newProductSizeId!,
-          },
-          user?.token || ''
-        );
+        await changeProduct({
+          sale_id: currentSale!.id,
+          product_id: selectedProduct!.product_id,
+          new_product_id: newProductData.id,
+          new_product_size_id: selectedNewSizeId!,
+          quantity: newProductQuantity,
+          old_product_price: originalPrice,
+          new_product_price: newProductPrice,
+        }, user?.token || '');
       }
-
       setStep('CONFIRMATION');
-    } catch {
-      setError('Ocurrió un error al procesar tu solicitud.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch { alert('Error al procesar'); } finally { setIsSubmitting(false); }
   };
 
+  const diff = (Number(newProductPrice) * newProductQuantity) - Number(originalPrice);
+
   return (
-    <div className=" min-h-screen w-full flex flex-col justify-center items-center px-4 py-12">
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-black tracking-tight text-neutral-900 mb-2">
-          Portal de Devoluciones
-        </h1>
-        <p className="text-neutral-500 font-medium">Gestiona tus cambios y devoluciones de forma sencilla</p>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+      {/* Header Compacto */}
+      <header className="bg-white border-b px-4 py-3 flex justify-between items-center sticky top-0 z-20">
+        <div className="flex items-center gap-2">
+          <div className="bg-indigo-600 p-1.5 rounded-lg">
+            <ArrowLeftRight className="text-white w-5 h-5" />
+          </div>
+          <h1 className="font-bold text-sm md:text-base leading-tight">Gestión de Cambios</h1>
+        </div>
+        {currentSale && (
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400 font-bold uppercase">Ticket</p>
+            <p className="font-mono text-xs font-bold text-indigo-600">{currentSale.sale_code}</p>
+          </div>
+        )}
       </header>
 
-      <div className="bg-white rounded-3xl shadow-xl shadow-neutral-200/50 border border-neutral-100 p-8 md:p-10 w-full lg:max-w-4xl">
-        <StepIndicator currentStep={step} />
-        <div className="mt-8">
+      <main className="flex-1 p-2 md:p-4 pb-24">
+        <div className="max-w-5xl mx-auto">
           <AnimatePresence mode="wait">
+            {/* STEP 1: BUSCAR TICKET */}
             {step === 'SEARCH' && (
-              <motion.div
-                key="search"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                <div className="text-center space-y-2 mb-8">
-                  
-                  <h2 className="text-xl font-bold">Busca tu pedido</h2>
-                  <p className="text-neutral-500 text-sm">Ingresa el código de venta que aparece en tu comprobante</p>
-                </div>
-
-                <form onSubmit={handleSearch} className="space-y-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={saleCode}
-                      onChange={(e) => setSaleCode(e.target.value.toUpperCase())}
-                      placeholder="Ej: V00001"
-                      required
-                      className="w-full px-6 py-4 bg-neutral-50 border-2 border-neutral-100 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all outline-none font-mono text-lg tracking-wider"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? 'Buscando...' : 'Buscar Pedido'}
-                    {!isSubmitting && <ChevronRight className="w-5 h-5" />}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-10 max-w-sm mx-auto">
+                <form onSubmit={handleSearchSale} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                    <Search className="w-5 h-5 text-indigo-500" /> Buscar Venta
+                  </h2>
+                  <input
+                    autoFocus
+                    className="w-full text-center text-2xl font-mono py-3 bg-slate-100 rounded-xl border-2 border-transparent focus:border-indigo-500 outline-none transition-all uppercase"
+                    placeholder="V001-0000"
+                    value={saleCode}
+                    onChange={(e) => setSaleCode(e.target.value)}
+                  />
+                  <button type="submit" disabled={isSubmitting} className="w-full mt-4 bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-black transition-all">
+                    {isSubmitting ? 'Buscando...' : 'Continuar'}
                   </button>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center gap-2 text-red-500 text-sm font-medium justify-center"
-                    >
-                      <AlertCircle className="w-4 h-4" />
-                      {error}
-                    </motion.div>
-                  )}
                 </form>
               </motion.div>
             )}
 
-            {step === 'SELECTION' && currentSale && (
-              <motion.div
-                key="selection"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-8"
-              >
-                <div className="flex justify-between items-end mb-4">
-                  <div>
-                    <h2 className="text-xl font-bold">Selecciona productos</h2>
-                    <p className="text-neutral-500 text-sm">Elige los artículos que deseas gestionar</p>
+            {/* STEP 2: SELECCIÓN DE PRODUCTO ORIGINAL */}
+            {step === 'SELECTION' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <h2 className="text-lg font-bold italic underline decoration-indigo-500">¿Qué producto devuelve?</h2>
+                  <button onClick={() => setStep('SEARCH')} className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                    <ChevronLeft size={14} /> Cambiar Ticket
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {currentSale?.details.map((detail) => (
+                    <div
+                      key={detail.id}
+                      onClick={() => handleSelectOriginal(detail)}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all relative overflow-hidden ${selectedProduct?.id === detail.id ? 'border-indigo-600 bg-white shadow-md' : 'border-white bg-white/60'}`}
+                    >
+                      <div className="flex justify-between mb-1">
+                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tighter">{detail.product.article_code}</span>
+                        <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-md font-bold text-slate-500">Talla {detail.productSize.size}</span>
+                      </div>
+                      <p className="font-bold text-sm leading-tight mb-2 line-clamp-2">{detail.product.article_description}</p>
+                      <p className="text-lg font-black text-slate-800">S/ {detail.unit_price}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex justify-center z-10">
+                  <button
+                    disabled={!selectedProduct}
+                    onClick={() => setStep('DETAILS')}
+                    className="w-full max-w-md bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    Siguiente Paso <ArrowRight size={18} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 3: PROCESO DE CAMBIO/DEVOLUCIÓN (NUEVO DISEÑO) */}
+            {step === 'DETAILS' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                
+                {/* COLUMNA IZQUIERDA: LO QUE SALE */}
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <RotateCcw size={16} className="text-red-500" />
+                      <h3 className="font-bold text-sm uppercase tracking-wider text-slate-500">Producto de Salida</h3>
+                    </div>
+                    {/* INFO DEL PRODUCTO SELECCIONADO */}
+                    <div className="bg-slate-50 p-3 rounded-xl border border-dashed border-slate-300 mb-4">
+                      <p className="text-[10px] font-bold text-indigo-600">{selectedProduct?.product.article_code}</p>
+                      <p className="font-bold text-sm">{selectedProduct?.product.article_description}</p>
+                      <div className="flex gap-4 mt-1 text-xs">
+                        <span className="bg-white px-2 py-0.5 rounded border font-medium text-slate-600">Talla: {selectedProduct?.productSize.size}</span>
+                        <span className="bg-white px-2 py-0.5 rounded border font-medium text-slate-600">Precio Original: S/ {selectedProduct?.unit_price}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Precio a Reconocer</label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                          <input
+                            type="number"
+                            className="w-full pl-10 pr-4 py-2 bg-slate-100 rounded-lg font-bold text-lg outline-none focus:ring-2 ring-indigo-500"
+                            value={originalPrice}
+                            onChange={(e) => setOriginalPrice(parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setRequestType(RequestType.EXCHANGE)}
+                          className={`flex-1 py-2 px-3 rounded-lg border-2 font-bold text-xs flex items-center justify-center gap-2 transition-all ${requestType === RequestType.EXCHANGE ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'bg-white border-slate-100'}`}
+                        >
+                          <ArrowLeftRight size={14}/> Cambio
+                        </button>
+                        <button 
+                          onClick={() => setRequestType(RequestType.RETURN)}
+                          className={`flex-1 py-2 px-3 rounded-lg border-2 font-bold text-xs flex items-center justify-center gap-2 transition-all ${requestType === RequestType.RETURN ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'bg-white border-slate-100'}`}
+                        >
+                          <RotateCcw size={14}/> Devolución
+                        </button>
+                      </div>
+
+                      <textarea
+                        className="w-full p-3 bg-slate-50 rounded-lg text-xs border-none outline-none focus:ring-1 ring-slate-300 mt-2"
+                        placeholder="Motivo del cambio..."
+                        rows={2}
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <span className="text-xs font-bold bg-neutral-100 px-3 py-1 rounded-full text-neutral-600">
-                    Pedido: {currentSale.sale_code}
-                  </span>
                 </div>
 
-                <div className=" space-y-3">
-                  {currentSale.details.map((detail) => {
-                    const isSelected = selectedProductIds.includes(detail.product_id);
-                    return (
-                      <div
-                        key={detail.id}
-                        onClick={() => toggleProductSelection(detail.product_id)}
-                        className={`group relative flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${isSelected
-                          ? 'border-indigo-600 bg-indigo-50/30'
-                          : 'border-neutral-100 hover:border-neutral-200 bg-white'
-                          }`}
-                      >
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-neutral-300 group-hover:border-neutral-400'
-                          }`}>
-                          {isSelected && <Check className="w-4 h-4 text-white" />}
-                        </div>
+                {/* COLUMNA DERECHA: LO QUE ENTRA */}
+                <div className="space-y-4">
+                  {requestType === RequestType.EXCHANGE ? (
+                    <div className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm shadow-indigo-50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Package size={16} className="text-indigo-500" />
+                        <h3 className="font-bold text-sm uppercase tracking-wider text-slate-500">Producto de Entrada</h3>
+                      </div>
 
-                        <div className="flex-1">
-                          <h3 className="font-bold text-neutral-900">{detail.product.article_description}</h3>
-                          <div className="flex gap-4 mt-1">
-                            <span className="text-xs font-medium text-neutral-500">Talla: {detail.productSize.size}</span>
-                            <span className="text-xs font-medium text-neutral-500">Cant: {detail.quantity}</span>
+                      <div className="flex gap-2 mb-4">
+                        <div className="relative flex-1">
+                          <Scan className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                          <input
+                            className="w-full pl-10 pr-3 py-2 bg-slate-100 rounded-xl outline-none focus:ring-2 ring-indigo-500 font-bold text-sm"
+                            placeholder="Código de artículo..."
+                            value={searchNewCode}
+                            onChange={(e) => setSearchNewCode(e.target.value.toUpperCase())}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearchNewProduct()}
+                          />
+                        </div>
+                        <button onClick={handleSearchNewProduct} className="bg-indigo-600 text-white px-4 rounded-xl"><Search size={18}/></button>
+                      </div>
+
+                      {newProductData && (
+                        <div className="animate-in fade-in duration-300">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <p className="font-bold text-sm leading-tight">{newProductData.article_description}</p>
+                              <p className="text-[10px] font-mono text-indigo-500">{newProductData.article_code}</p>
+                            </div>
+                            <div className="text-right">
+                              <label className="text-[8px] font-bold text-slate-400 uppercase block">Precio Unit.</label>
+                              <input 
+                                type="number" 
+                                className="w-20 bg-indigo-50 text-indigo-600 font-black text-right rounded p-1 outline-none text-sm"
+                                value={newProductPrice}
+                                onChange={(e) => setNewProductPrice(Number(e.target.value))}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {newProductData.sizes.map((s: any) => (
+                                <button
+                                  key={s.id}
+                                  disabled={s.stock <= 0}
+                                  onClick={() => setSelectedNewSizeId(s.id)}
+                                  className={`py-2 rounded-lg border-2 text-[10px] font-black transition-all ${selectedNewSizeId === s.id ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-100 bg-slate-50'} ${s.stock <= 0 ? 'opacity-30 grayscale' : ''}`}
+                                >
+                                  {s.size}
+                                  <span className="block text-[7px] font-normal">S: {s.stock}</span>
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="flex items-center justify-between bg-slate-100 p-1.5 rounded-xl">
+                              <span className="text-[10px] font-bold text-slate-500 ml-2">CANTIDAD</span>
+                              <div className="flex items-center gap-4">
+                                <button onClick={() => setNewProductQuantity(Math.max(1, newProductQuantity - 1))} className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm"><Minus size={14}/></button>
+                                <span className="font-black text-lg">{newProductQuantity}</span>
+                                <button onClick={() => setNewProductQuantity(newProductQuantity + 1)} className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm"><Plus size={14}/></button>
+                              </div>
+                            </div>
                           </div>
                         </div>
-
-                        <div className="text-right">
-                          <span className="font-bold text-indigo-600">S/ {detail.unit_price}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-4 space-y-3">
-                  <button
-                    onClick={handleProcessDetails}
-                    disabled={selectedProductIds.length === 0 || isSubmitting}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? 'Procesando...' : 'Continuar'}
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setStep('SEARCH')}
-                    className="w-full text-neutral-400 hover:text-neutral-600 font-bold py-2 text-sm transition-colors"
-                  >
-                    Volver a buscar
-                  </button>
-                  {error && <p className="text-red-500 text-sm text-center font-medium">{error}</p>}
-                </div>
-              </motion.div>
-            )}
-
-            {step === 'DETAILS' && newProductInfo && (
-              <motion.div
-                key="details"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-8"
-              >
-                <div>
-                  <h2 className="text-xl font-bold">Configura tu solicitud</h2>
-                  <p className="text-neutral-500 text-sm">Indícanos qué deseas hacer con el producto</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setRequestType(RequestType.RETURN)}
-                    className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${requestType === RequestType.RETURN
-                      ? 'border-indigo-600 bg-indigo-50/50 text-indigo-600'
-                      : 'border-neutral-100 text-neutral-400 hover:border-neutral-200'
-                      }`}
-                  >
-                    <RotateCcw className="w-8 h-8" />
-                    <span className="font-bold text-sm">Devolución</span>
-                  </button>
-                  <button
-                    onClick={() => setRequestType(RequestType.EXCHANGE)}
-                    className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${requestType === RequestType.EXCHANGE
-                      ? 'border-indigo-600 bg-indigo-50/50 text-indigo-600'
-                      : 'border-neutral-100 text-neutral-400 hover:border-neutral-200'
-                      }`}
-                  >
-                    <ArrowLeftRight className="w-8 h-8" />
-                    <span className="font-bold text-sm">Cambio</span>
-                  </button>
-                </div>
-
-                <div className="space-y-6 bg-neutral-50 p-6 rounded-2xl">
-                  {requestType === RequestType.EXCHANGE && (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <label className="text-xs font-bold uppercase tracking-wider text-neutral-400">Talla deseada</label>
-                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">En Stock</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {newProductInfo.sizes.map((s: any) => (
-                          <button
-                            key={s.id}
-                            onClick={() => setNewProductSizeId(s.id)}
-                            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${newProductSizeId === s.size
-                              ? 'bg-indigo-600 text-white shadow-md'
-                              : 'bg-white border border-neutral-200 text-neutral-600 hover:border-indigo-300'
-                              }`}
-                          >
-                            {s.size}
-                          </button>
-                        ))}
-                      </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-100 h-full min-h-[200px] rounded-2xl flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200">
+                      <RotateCcw className="text-slate-300 mb-2" size={32} />
+                      <p className="text-sm font-bold text-slate-400 italic">Modo Devolución Directa</p>
                     </div>
                   )}
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-neutral-400">Motivo de la solicitud</label>
-                    <textarea
-                      placeholder="Cuéntanos brevemente el motivo..."
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      className="w-full p-4 bg-white border border-neutral-200 rounded-xl focus:border-indigo-500 outline-none min-h-[100px] text-sm transition-all"
-                    />
-                  </div>
                 </div>
 
-                <div className="pt-4 space-y-3">
-                  <button
-                    onClick={submitFinal}
-                    disabled={isSubmitting || (requestType === RequestType.EXCHANGE && !newProductSizeId)}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
-                  >
-                    {isSubmitting ? 'Procesando...' : 'Confirmar Solicitud'}
-                  </button>
-                  <button
-                    onClick={() => setStep('SELECTION')}
-                    className="w-full text-neutral-400 hover:text-neutral-600 font-bold py-2 text-sm transition-colors"
-                  >
-                    Volver a selección
-                  </button>
-                  {error && <p className="text-red-500 text-sm text-center font-medium">{error}</p>}
+                {/* RESUMEN FLOTANTE (BOTTOM BAR) */}
+                <div className="fixed bottom-0 left-0 right-0 bg-slate-900 p-4 flex items-center justify-between z-30 lg:rounded-t-[32px]">
+                   <div className="text-white">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Diferencia Total</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-black">S/ {Math.abs(diff).toFixed(2)}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${diff >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                          {diff > 0 ? 'Cobrar' : diff < 0 ? 'Saldo Favor' : 'Mano a mano'}
+                        </span>
+                      </div>
+                   </div>
+                   <div className="flex gap-2">
+                     <button onClick={() => setStep('SELECTION')} className="px-4 py-3 text-slate-400 font-bold text-sm">Atrás</button>
+                     <button 
+                      onClick={submitFinal}
+                      disabled={isSubmitting || (requestType === RequestType.EXCHANGE && !selectedNewSizeId)}
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black shadow-lg shadow-indigo-900/50 flex items-center gap-2 hover:bg-indigo-500 active:scale-95 transition-all text-sm"
+                     >
+                        {isSubmitting ? '...' : 'FINALIZAR'}
+                     </button>
+                   </div>
                 </div>
               </motion.div>
             )}
 
+            {/* STEP 4: CONFIRMACIÓN */}
             {step === 'CONFIRMATION' && (
-              <motion.div
-                key="confirmation"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-center space-y-8 py-4"
-              >
-                <div className="relative inline-block">
-                  <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-xs mx-auto text-center mt-20">
+                <div className="bg-white p-8 rounded-[40px] shadow-xl">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="text-emerald-500" size={32} />
                   </div>
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.3, type: 'spring' }}
-                    className="absolute -top-2 -right-2 bg-white p-1 rounded-full shadow-md"
-                  >
-                    <div className="bg-emerald-500 p-1 rounded-full">
-                      <Check className="w-4 h-4 text-white" />
-                    </div>
-                  </motion.div>
+                  <h2 className="text-2xl font-black mb-2 text-slate-800">¡Éxito!</h2>
+                  <p className="text-sm text-slate-500 mb-6 font-medium leading-relaxed">Operación registrada y stock actualizado correctamente.</p>
+                  <button onClick={() => window.location.reload()} className="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all">Nueva Operación</button>
                 </div>
-
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-black">¡Solicitud Procesada!</h2>
-                  <p className="text-neutral-500">Hemos recibido tu solicitud correctamente.</p>
-                </div>
-
-                <div className="bg-neutral-50 rounded-2xl p-6 text-left space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400">Resumen</h3>
-                  {selectedProductIds.map((id) => {
-                    const detail = currentSale?.details.find(d => d.product_id === id);
-                    return detail ? (
-                      <div key={id} className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-neutral-100">
-                          <Package className="w-5 h-5 text-neutral-400" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-neutral-800">{detail.product.article_description}</p>
-                          <p className="text-[10px] font-medium text-neutral-500">
-                            {requestType === RequestType.RETURN ? 'Devolución solicitada' : `Cambio por talla ${newProductSizeId}`}
-                          </p>
-                        </div>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-
-                <button
-                  onClick={() => {
-                    setStep('SEARCH');
-                    setSaleCode('');
-                    setSelectedProductIds([]);
-                    setReason('');
-                  }}
-                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-4 rounded-2xl transition-all"
-                >
-                  Finalizar y Salir
-                </button>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

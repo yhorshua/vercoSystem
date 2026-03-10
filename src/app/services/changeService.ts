@@ -5,7 +5,7 @@ function safeErrorMessage(text: string): string {
     const j = JSON.parse(text);
     if (typeof j?.message === 'string') return j.message;
     if (Array.isArray(j?.message)) return j.message.join('\n');
-  } catch {}
+  } catch { }
   return text || 'Error registrando venta';
 }
 
@@ -33,11 +33,13 @@ async function fetchJson<T>(url: string, token: string, options: RequestInit = {
 
 // Función para cambiar un producto
 interface ChangeProductParams {
-  sale_id: number;
-  product_id: number;
-  new_product_id: number;
-  quantity: number;
-  new_product_size_id: number;
+  sale_id: number
+  product_id: number
+  new_product_id: number
+  quantity: number
+  new_product_size_id: number
+  old_product_price: number
+  new_product_price: number
 }
 
 export async function changeProduct({
@@ -46,6 +48,8 @@ export async function changeProduct({
   new_product_id,
   quantity,
   new_product_size_id,
+  old_product_price,
+  new_product_price
 }: ChangeProductParams, token: string): Promise<any> {
   try {
     const response = await fetchJson('/sales/change-product', token, {
@@ -56,6 +60,8 @@ export async function changeProduct({
         new_product_id,
         quantity,
         new_product_size_id,
+        old_product_price,
+        new_product_price
       }),
     });
     return response; // Respuesta de éxito
@@ -67,15 +73,19 @@ export async function changeProduct({
 
 // Devolver un producto
 interface ReturnProductParams {
-  sale_id: number;
-  product_id: number;
-  quantity: number;
+  sale_id: number
+  product_id: number
+  quantity: number
+  price_at_return: number
+  reason?: string
 }
 
 export async function returnProduct({
   sale_id,
   product_id,
   quantity,
+  price_at_return,
+  reason
 }: ReturnProductParams, token: string): Promise<any> {
   try {
     const response = await fetchJson('/sales/return-product', token, {
@@ -84,6 +94,8 @@ export async function returnProduct({
         sale_id,
         product_id,
         quantity,
+        price_at_return,
+        reason
       }),
     });
     return response; // Respuesta de éxito
