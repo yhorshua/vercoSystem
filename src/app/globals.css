@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 html, body {
   margin: 0; /* Elimina márgenes por defecto */
   padding: 0; /* Elimina el padding por defecto */
