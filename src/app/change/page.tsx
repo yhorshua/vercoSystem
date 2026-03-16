@@ -169,6 +169,22 @@ const Change = () => {
 
   const diff = (Number(newProductPrice) * newProductQuantity) - Number(originalPrice);
 
+
+  const sizesWithStock = newProductData
+    ? newProductData.sizes
+      .map((size: any) => {
+        const stock = newProductData.stock.find(
+          (s: any) => s.product_size_id === size.id
+        );
+
+        return {
+          ...size,
+          quantity: stock ? stock.quantity : 0
+        };
+      })
+      .sort((a: any, b: any) => Number(a.size) - Number(b.size))
+    : [];
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-indigo-100">
       {/* Header Refinado */}
@@ -443,22 +459,27 @@ const Change = () => {
                           <div>
                             <label className="text-[10px] font-black uppercase text-slate-500 block mb-3 ml-1">Seleccionar Talla</label>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
-                              {newProductData.sizes.map((s: any) => (
-                                <button
-                                  key={s.id}
-                                  disabled={s.stock <= 0}
-                                  onClick={() => setSelectedNewSizeId(s.id)}
-                                  className={`group py-3 rounded-2xl border-2 transition-all flex flex-col items-center justify-center relative ${selectedNewSizeId === s.id
-                                    ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-200'
-                                    : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
-                                    } ${s.stock <= 0 ? 'opacity-25 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
-                                >
-                                  <span className="text-sm font-black">{s.size}</span>
-                                  <span className={`text-[8px] font-bold uppercase tracking-tighter ${selectedNewSizeId === s.id ? 'text-indigo-100' : 'text-slate-400'}`}>
-                                    Stk: {s.quantity}
-                                  </span>
-                                </button>
-                              ))}
+                              {sizesWithStock
+                                .filter((s: any) => s.quantity > 0)
+                                .map((s: any) => (
+                                  <button
+                                    key={s.id}
+                                    disabled={s.quantity <= 0}
+                                    onClick={() => setSelectedNewSizeId(s.id)}
+                                    className={`group py-3 rounded-2xl border-2 transition-all flex flex-col items-center justify-center relative ${selectedNewSizeId === s.id
+                                        ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg shadow-indigo-200'
+                                        : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
+                                      } ${s.quantity <= 0 ? 'opacity-25 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                  >
+                                    <span className="text-sm font-black">{s.size}</span>
+                                    <span
+                                      className={`text-[8px] font-bold uppercase tracking-tighter ${selectedNewSizeId === s.id ? 'text-indigo-100' : 'text-slate-400'
+                                        }`}
+                                    >
+                                      Stk: {s.quantity}
+                                    </span>
+                                  </button>
+                                ))}
                             </div>
                           </div>
 

@@ -7,7 +7,7 @@ import { useReactTable, getCoreRowModel, flexRender, ColumnDef } from '@tanstack
 
 import styles from './clientes.module.css';
 import { useUser } from '../context/UserContext';
-import { getUbigeoPeru } from './clientes/ubigeoData';
+import { getUbigeoPeru } from './ubigeoData';
 import { createClient, getMyClients, ClientRow, CreateClientPayload } from '../services/clientServices';
 // import { getDocumentTypes, DocumentTypeRow } from '../services/documentTypeServices';
 
