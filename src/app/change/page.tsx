@@ -36,7 +36,11 @@ const Change = () => {
     if (!saleCode.trim()) return;
     setIsSubmitting(true);
     try {
-      const sale = await getSaleByCode(saleCode, user?.token || '');
+      const sale = await getSaleByCode(
+        saleCode,
+        user?.warehouse_id!,
+        user?.token || ''
+      );
       if (sale) {
         setCurrentSale(sale);
         setStep('SELECTION');
@@ -95,43 +99,72 @@ const Change = () => {
   };
 
   const submitFinal = async () => {
-    if (requestType === RequestType.EXCHANGE && !selectedNewSizeId) return Swal.fire({
-      icon: 'warning',
-      title: 'Seleccione una talla',
-      text: 'Debe elegir una talla para continuar.',
-      confirmButtonColor: '#4f46e5'
-    });;
+
+    if (requestType === RequestType.EXCHANGE && !selectedNewSizeId) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Seleccione una talla',
+        text: 'Debe elegir una talla para continuar.',
+        confirmButtonColor: '#4f46e5'
+      });
+    }
+
     setIsSubmitting(true);
+
     try {
+
       if (requestType === RequestType.RETURN) {
+
         await returnProduct({
           sale_id: currentSale!.id,
           product_id: selectedProduct!.product_id,
           quantity: 1,
-          price_at_return: originalPrice
+          price_at_return: originalPrice,
+          warehouse_id: user?.warehouse_id!,
+          reason: reason || 'Devolución sin motivo'
         }, user?.token || '');
+
       } else {
+
         await changeProduct({
-          sale_id: currentSale!.id,
-          product_id: selectedProduct!.product_id,
-          new_product_id: newProductData.id,
-          new_product_size_id: selectedNewSizeId!,
-          quantity: newProductQuantity,
-          old_product_price: originalPrice,
-          new_product_price: newProductPrice,
+
+          sale_id: Number(currentSale!.id),
+
+          warehouse_id: Number(user?.warehouse_id),
+
+          product_id: Number(selectedProduct!.product_id),
+
+          old_product_size_id: Number(selectedProduct!.product_size_id),
+
+          new_product_id: Number(newProductData.product_id),
+
+          new_product_size_id: Number(selectedNewSizeId),
+
+          quantity: Number(newProductQuantity),
+
+          old_product_price: Number(originalPrice),
+
+          new_product_price: Number(newProductPrice)
+
         }, user?.token || '');
+
       }
+
       setStep('CONFIRMATION');
-    } catch {
+
+    } catch (error) {
+
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo completar la operación.',
+        text: 'No se pudo completar la operación',
         confirmButtonColor: '#ef4444'
       });
+
     } finally {
       setIsSubmitting(false);
     }
+
   };
 
   const diff = (Number(newProductPrice) * newProductQuantity) - Number(originalPrice);

@@ -9,7 +9,9 @@ export enum RequestType {
 
 export interface ChangeProductParams {
   sale_id: number;
+  warehouse_id: number;
   product_id: number;
+  old_product_size_id: number;
   new_product_id: number;
   new_product_size_id: number;
   quantity: number;

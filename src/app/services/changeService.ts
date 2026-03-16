@@ -33,9 +33,11 @@ async function fetchJson<T>(url: string, token: string, options: RequestInit = {
 
 // Función para cambiar un producto
 interface ChangeProductParams {
-  sale_id: number
+  sale_id: number,
+  warehouse_id: number,
   product_id: number
   new_product_id: number
+  old_product_size_id: number
   quantity: number
   new_product_size_id: number
   old_product_price: number
@@ -44,10 +46,12 @@ interface ChangeProductParams {
 
 export async function changeProduct({
   sale_id,
+  warehouse_id,
   product_id,
+  old_product_size_id,
   new_product_id,
-  quantity,
   new_product_size_id,
+  quantity,
   old_product_price,
   new_product_price
 }: ChangeProductParams, token: string): Promise<any> {
@@ -56,10 +60,12 @@ export async function changeProduct({
       method: 'POST',
       body: JSON.stringify({
         sale_id,
+        warehouse_id,
         product_id,
+        old_product_size_id,
         new_product_id,
-        quantity,
         new_product_size_id,
+        quantity,
         old_product_price,
         new_product_price
       }),
@@ -77,6 +83,7 @@ interface ReturnProductParams {
   product_id: number
   quantity: number
   price_at_return: number
+  warehouse_id: number
   reason?: string
 }
 
@@ -85,6 +92,7 @@ export async function returnProduct({
   product_id,
   quantity,
   price_at_return,
+  warehouse_id,
   reason
 }: ReturnProductParams, token: string): Promise<any> {
   try {
@@ -95,6 +103,7 @@ export async function returnProduct({
         product_id,
         quantity,
         price_at_return,
+        warehouse_id,
         reason
       }),
     });
@@ -123,9 +132,9 @@ export async function getProductsByCodeOrDescription(query: string, token: strin
 }
 
 // Buscar venta por código
-export async function getSaleByCode(saleCode: string, token: string): Promise<any> {
+export async function getSaleByCode(saleCode: string, warehouse: number, token: string): Promise<any> {
   try {
-    const response = await fetchJson(`/sales/${saleCode}`, token, {
+    const response = await fetchJson(`/sales/${saleCode}/${warehouse}`, token, {
       method: 'GET',
     });
     return response; // Devuelve la venta encontrada

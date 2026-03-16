@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
-import { 
-  BarChart3, 
-  Search, 
-  Download, 
-  RefreshCw, 
-  Calendar, 
-  User, 
-  Filter, 
-  DollarSign, 
-  ShoppingBag, 
-  Store 
+import {
+    BarChart3,
+    Search,
+    Download,
+    RefreshCw,
+    Calendar,
+    User,
+    Filter,
+    DollarSign,
+    ShoppingBag,
+    Store
 } from 'lucide-react';
 
 import { useUser } from '../context/UserContext';
@@ -23,13 +23,16 @@ import {
     getInventoryIngressReport,
     getCashClosureReport,
     SalesReportRowDTO,
-    SalesPaymentDTO
+    SalesPaymentDTO,
+    getSellerSalesDetailReport
 } from '../services/reportServices';
 import { getSellersByWarehouse, SellerOption } from '../services/userServices';
 
 import styles from './reporteVentas.module.css';
 import { buildSalesReportPdfBlob } from '../utils/salesReportPdf';
 import { buildWeeklyProfitReportPdfBlob } from '../utils/weeklyReportPdf';
+import { buildWeeklyProfitExcel } from '../utils/weeklyReportExcel';
+import * as XLSX from 'xlsx';
 
 function todayISO() {
     const d = new Date();
@@ -72,46 +75,46 @@ export default function ReporteVentasPage() {
         }
     };
 
-   async function handleDownloadPdf() {
-    if (!report) {
-        Swal.fire({ icon: 'warning', title: 'Reporte', text: 'Primero consulta un reporte.' });
-        return;
-    }
-
-    try {
-        let pdfBlob;
-        if (reportType === 'WEEKLY_PROFIT') {
-            pdfBlob = await buildWeeklyProfitReportPdfBlob(report, {
-                periodLabel: `Del ${from} al ${to}`, // Puedes ajustar esto si prefieres un periodo diferente
-            });
-        } else {
-            // Aquí llamas a tu función de PDF de ventas (o la que esté configurada)
-            pdfBlob = await buildSalesReportPdfBlob(report, {
-                periodLabel:
-                    reportType === 'DAY'
-                        ? `Día ${date}`
-                        : `Del ${from} al ${to}`,
-            });
+    async function handleDownloadPdf() {
+        if (!report) {
+            Swal.fire({ icon: 'warning', title: 'Reporte', text: 'Primero consulta un reporte.' });
+            return;
         }
 
-        const fileName =
-            reportType === 'DAY'
-                ? `reporte_ventas_${warehouseName}_${date}.pdf`
-                : `reporte_ventas_${warehouseName}_${from}_al_${to}.pdf`;
+        try {
+            let pdfBlob;
+            if (reportType === 'WEEKLY_PROFIT') {
+                pdfBlob = await buildWeeklyProfitReportPdfBlob(report, {
+                    periodLabel: `Del ${from} al ${to}`, // Puedes ajustar esto si prefieres un periodo diferente
+                });
+            } else {
+                // Aquí llamas a tu función de PDF de ventas (o la que esté configurada)
+                pdfBlob = await buildSalesReportPdfBlob(report, {
+                    periodLabel:
+                        reportType === 'DAY'
+                            ? `Día ${date}`
+                            : `Del ${from} al ${to}`,
+                });
+            }
 
-        const url = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+            const fileName =
+                reportType === 'DAY'
+                    ? `reporte_ventas_${warehouseName}_${date}.pdf`
+                    : `reporte_ventas_${warehouseName}_${from}_al_${to}.pdf`;
 
-    } catch (e: any) {
-        Swal.fire({ icon: 'error', title: 'PDF', text: e?.message || 'No se pudo generar el PDF' });
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+        } catch (e: any) {
+            Swal.fire({ icon: 'error', title: 'PDF', text: e?.message || 'No se pudo generar el PDF' });
+        }
     }
-}
 
     useEffect(() => {
         void loadSellers();
@@ -154,7 +157,7 @@ export default function ReporteVentasPage() {
             } else if (reportType === 'WEEKLY_PROFIT') {
                 r = await getWeeklyProfitReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
             } else if (reportType === 'SELLER_COMMISSION') {
-                r = await getSellerCommissionReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
+                r = await getSellerSalesDetailReport({ warehouseId, type: 'RANGE', from, to, userId }, token);
             }
             setReport(r);
         } catch (e: any) {
@@ -164,6 +167,57 @@ export default function ReporteVentasPage() {
             setLoading(false);
         }
     };
+
+    function handleDownloadExcel() {
+
+        if (!report) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Reporte',
+                text: 'Primero consulta un reporte.'
+            });
+            return;
+        }
+
+        try {
+
+            let workbook;
+
+            if (reportType === 'WEEKLY_PROFIT') {
+
+                workbook = buildWeeklyProfitExcel(report);
+
+            } else if (reportType === 'SELLER_COMMISSION') {
+
+                workbook = buildWeeklyProfitExcel(report);
+
+            } else {
+
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Excel',
+                    text: 'Este reporte aún no tiene Excel.'
+                });
+
+                return;
+            }
+
+            XLSX.writeFile(
+                workbook,
+                `reporte_${warehouseName}_${from}_${to}.xlsx`
+            );
+
+        } catch (e: any) {
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Excel',
+                text: e?.message || 'No se pudo generar Excel'
+            });
+
+        }
+
+    }
 
     return (
         <div className={styles.container}>
@@ -183,13 +237,13 @@ export default function ReporteVentasPage() {
                 <h2 className={styles.cardTitle}>
                     <Filter size={18} /> Filtros de Búsqueda
                 </h2>
-                
+
                 <div className={styles.filterGrid}>
                     {/* Tipo */}
                     <div className={styles.field}>
                         <label className={styles.label}>Tipo de Reporte</label>
                         <div style={{ position: 'relative' }}>
-                             <select
+                            <select
                                 value={reportType}
                                 onChange={(e) => setReportType(e.target.value)}
                                 className={styles.control}
@@ -278,6 +332,14 @@ export default function ReporteVentasPage() {
 
                     <button onClick={handleDownloadPdf} disabled={!report} className={styles.btnSecondary} title="Descargar PDF">
                         <Download size={18} /> PDF
+                    </button>
+
+                    <button
+                        onClick={handleDownloadExcel}
+                        disabled={!report}
+                        className={styles.btnSecondary}
+                    >
+                        <Download size={18} /> Excel
                     </button>
                 </div>
             </div>

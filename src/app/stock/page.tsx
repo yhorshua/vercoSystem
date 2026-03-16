@@ -32,7 +32,7 @@ export default function StockPage() {
   const { user } = useUser();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number>(3); 
+  const [selectedCategory, setSelectedCategory] = useState<number>(1); 
   const [search, setSearch] = useState('');
   const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]);
   const [selectedSerie, setSelectedSerie] = useState<string>('');

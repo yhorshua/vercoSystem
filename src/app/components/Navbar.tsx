@@ -93,7 +93,9 @@ const Navbar = () => {
           <Link href="/production" className={style.navbarLink} onClick={handleLinkClick}>
             Producción
           </Link>
-          
+          <Link href="/listproducts" className={style.navbarLink} onClick={handleLinkClick}>
+            Productos
+          </Link>
           {/* Dropdown de Reportes */}
           <div className={style.reportDropdown}>
             <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
@@ -163,6 +165,15 @@ const Navbar = () => {
           </Link>
           <Link href="/change" className={style.navbarLink} onClick={handleLinkClick}>
             Cambio o Devolución
+          </Link>
+          
+        </>
+      )}
+
+      {role === 'Emprendedor' && (
+        <>
+         <Link href="/pedidos" className={style.navbarLink} onClick={handleLinkClick}>
+            Pedidos
           </Link>
         </>
       )}
