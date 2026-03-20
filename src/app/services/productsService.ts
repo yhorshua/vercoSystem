@@ -138,3 +138,20 @@ export async function getProductsByCodeOrDescription(query: string, token: strin
 
   return res.json(); // Devuelve los datos del producto encontrado
 }
+
+export const getProductoByCodigo = async (codigo: string) => {
+  try {
+    const res = await fetch(`/api/products/search?query=${codigo}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!res.ok) throw new Error("No encontrado");
+
+    return await res.json();
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};

@@ -40,7 +40,7 @@ const Footer = () => {
 
         {/* Parte Inferior: Copyright y Redes */}
         <div className={style.bottomSection}>
-          <p>© {currentYear} Code IA. Todos los derechos reservados.</p>
+          <p>© {currentYear} Nieva Tech Solutions. Todos los derechos reservados.</p>
           {/*}
           <div className={style.socials}>
             <a href="#" className={style.socialIcon} aria-label="Facebook">

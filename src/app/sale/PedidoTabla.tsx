@@ -60,7 +60,7 @@ export default function PedidoTabla({
   const totalPrecio = items.reduce((sum, item) => sum + item.total * item.precio, 0);
 
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // ====== EFECTIVO ======
   const [efectivoEntregado, setEfectivoEntregado] = useState<string>('');
 
@@ -78,7 +78,7 @@ export default function PedidoTabla({
   const efectivoInvalido = useMemo(() => {
     if (metodoPago !== 'efectivo') return false;
     if (efectivoEntregado.trim() === '') return true;
-    return efectivoEntregadoNum < totalPrecio;
+    return Number(efectivoEntregadoNum.toFixed(2)) < Number(totalPrecio.toFixed(2));
   }, [metodoPago, efectivoEntregado, efectivoEntregadoNum, totalPrecio]);
 
   // ====== OPERACIONES (Yape/Plin/Tarjeta) ======
@@ -161,15 +161,15 @@ export default function PedidoTabla({
   const columns: ColumnDef<ItemUI>[] = [
     { accessorKey: 'codigo', header: 'Cod.', cell: (info) => info.getValue() },
     { accessorKey: 'descripcion', header: 'Desc.', cell: (info) => info.getValue() },
-    { 
-        id: 'tallas',
-        header: 'Tallas',
-        cell: (info) => {
-            const item = info.row.original;
-            return Object.entries(item.cantidades)
-                .map(([t, q]) => `[${t}]: ${q}`)
-                .join(', ');
-        }
+    {
+      id: 'tallas',
+      header: 'Tallas',
+      cell: (info) => {
+        const item = info.row.original;
+        return Object.entries(item.cantidades)
+          .map(([t, q]) => `[${t}]: ${q}`)
+          .join(', ');
+      }
     },
     { accessorKey: 'total', header: 'Cant.', cell: (info) => info.getValue() },
     {
@@ -204,6 +204,7 @@ export default function PedidoTabla({
   });
 
   const handleRegistrarVentaBD = async () => {
+    if (isSubmitting) return;
     if (!user?.token || !user?.warehouseId || !user?.userId) {
       Swal.fire({ icon: 'warning', text: 'Sesión no válida.' });
       return;
@@ -213,16 +214,18 @@ export default function PedidoTabla({
       return;
     }
 
+    setIsSubmitting(true); 
+
     const payloadItems: CreateSalePayload['items'] = [];
     for (const it of items) {
       for (const [talla, qty] of Object.entries(it.cantidades)) {
         if (Number(qty) <= 0) continue;
-        const product_size_id = it.sizeIdBySizeNumber[Number(talla) || talla]; 
+        const product_size_id = it.sizeIdBySizeNumber[Number(talla) || talla];
         // Nota: asumiendo que sizeIdBySizeNumber mapea talla -> id
-        
+
         if (!product_size_id) {
-            Swal.fire({ icon: 'error', text: `Error de ID talla ${talla}` });
-            return;
+          Swal.fire({ icon: 'error', text: `Error de ID talla ${talla}` });
+          return;
         }
 
         payloadItems.push({
@@ -286,10 +289,13 @@ export default function PedidoTabla({
     } catch (e: any) {
       Swal.fire({ icon: 'error', text: e?.message || 'Error al registrar' });
     }
+    finally {
+    setIsSubmitting(false); // 🔓 desbloquea
+  }
   };
 
   if (items.length === 0) {
-      return <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>El carrito está vacío.</div>;
+    return <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>El carrito está vacío.</div>;
   }
 
   return (
@@ -323,116 +329,116 @@ export default function PedidoTabla({
 
       <div className={styles.paymentSection}>
         <div className={styles.paymentHeader}>
-            <div>
-                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Total Productos: {totalUnidades}</span>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.9rem', color: '#64748b', display: 'block' }}>Total a Pagar</span>
-                <span className={styles.totalBig}>S/ {totalPrecio.toFixed(2)}</span>
-            </div>
+          <div>
+            <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Total Productos: {totalUnidades}</span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '0.9rem', color: '#64748b', display: 'block' }}>Total a Pagar</span>
+            <span className={styles.totalBig}>S/ {totalPrecio.toFixed(2)}</span>
+          </div>
         </div>
 
         <div className={styles.paymentMethodGrid}>
-             <div className={styles.paymentTitle}>
-                <CreditCard size={18} /> Método de Pago
-             </div>
-             
-             <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
-                <select
-                    className={styles.select}
-                    value={metodoPago}
-                    onChange={(e) => {
-                        setMetodoPago(e.target.value as PaymentMethod);
-                        resetPagoStates();
-                    }}
-                >
-                    <option value="efectivo">💵 Efectivo</option>
-                    <option value="yape">📱 Yape</option>
-                    <option value="plin">📱 Plin</option>
-                    <option value="tarjetaDebito">💳 Tarjeta Débito</option>
-                    <option value="tarjetaCredito">💳 Tarjeta Crédito</option>
-                    <option value="yapeEfectivo">🔀 Mixto (Yape + Efectivo)</option>
-                    <option value="obsequio">🎁 Obsequio</option>
-                </select>
+          <div className={styles.paymentTitle}>
+            <CreditCard size={18} /> Método de Pago
+          </div>
+
+          <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+            <select
+              className={styles.select}
+              value={metodoPago}
+              onChange={(e) => {
+                setMetodoPago(e.target.value as PaymentMethod);
+                resetPagoStates();
+              }}
+            >
+              <option value="efectivo">💵 Efectivo</option>
+              <option value="yape">📱 Yape</option>
+              <option value="plin">📱 Plin</option>
+              <option value="tarjetaDebito">💳 Tarjeta Débito</option>
+              <option value="tarjetaCredito">💳 Tarjeta Crédito</option>
+              <option value="yapeEfectivo">🔀 Mixto (Yape + Efectivo)</option>
+              <option value="obsequio">🎁 Obsequio</option>
+            </select>
+          </div>
+
+          {/* CAMPOS DINAMICOS SEGUN PAGO */}
+          {metodoPago === 'efectivo' && (
+            <>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Paga con</label>
+                <input
+                  type="number"
+                  className={styles.input}
+                  value={efectivoEntregado}
+                  onChange={e => setEfectivoEntregado(e.target.value)}
+                  placeholder="S/ 0.00"
+                />
+              </div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Vuelto</label>
+                <input className={`${styles.input} ${styles.inputReadOnly}`} value={`S/ ${vueltoEfectivo.toFixed(2)}`} readOnly />
+              </div>
+            </>
+          )}
+
+          {requiereOperacion && (
+            <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+              <label className={styles.label}>N° Operación / Voucher</label>
+              <input
+                className={styles.input}
+                value={numeroOperacion}
+                onChange={e => setNumeroOperacion(e.target.value)}
+                placeholder="Ej: 123456"
+              />
             </div>
+          )}
 
-            {/* CAMPOS DINAMICOS SEGUN PAGO */}
-            {metodoPago === 'efectivo' && (
-                <>
-                   <div className={styles.inputGroup}>
-                      <label className={styles.label}>Paga con</label>
-                      <input 
-                        type="number" 
-                        className={styles.input} 
-                        value={efectivoEntregado} 
-                        onChange={e => setEfectivoEntregado(e.target.value)} 
-                        placeholder="S/ 0.00"
-                      />
-                   </div>
-                   <div className={styles.inputGroup}>
-                      <label className={styles.label}>Vuelto</label>
-                      <input className={`${styles.input} ${styles.inputReadOnly}`} value={`S/ ${vueltoEfectivo.toFixed(2)}`} readOnly />
-                   </div>
-                </>
-            )}
+          {metodoPago === 'yapeEfectivo' && (
+            <>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Monto Yape</label>
+                <input type="number" className={styles.input} value={montoYape} onChange={e => setMontoYape(e.target.value)} />
+              </div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Operación Yape</label>
+                <input className={styles.input} value={operacionYape} onChange={e => setOperacionYape(e.target.value)} />
+              </div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Restante Efectivo</label>
+                <input className={`${styles.input} ${styles.inputReadOnly}`} value={montoEfectivoMixto.toFixed(2)} readOnly />
+              </div>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Paga Efectivo</label>
+                <input type="number" className={styles.input} value={efectivoEntregadoMixto} onChange={e => setEfectivoEntregadoMixto(e.target.value)} />
+              </div>
+              <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                <label className={styles.label}>Vuelto</label>
+                <input className={`${styles.input} ${styles.inputReadOnly}`} value={vueltoMixto.toFixed(2)} readOnly />
+              </div>
+            </>
+          )}
 
-            {requiereOperacion && (
-                <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
-                     <label className={styles.label}>N° Operación / Voucher</label>
-                     <input 
-                        className={styles.input} 
-                        value={numeroOperacion} 
-                        onChange={e => setNumeroOperacion(e.target.value)} 
-                        placeholder="Ej: 123456"
-                      />
-                </div>
-            )}
-
-            {metodoPago === 'yapeEfectivo' && (
-                <>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>Monto Yape</label>
-                        <input type="number" className={styles.input} value={montoYape} onChange={e => setMontoYape(e.target.value)} />
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>Operación Yape</label>
-                        <input className={styles.input} value={operacionYape} onChange={e => setOperacionYape(e.target.value)} />
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>Restante Efectivo</label>
-                        <input className={`${styles.input} ${styles.inputReadOnly}`} value={montoEfectivoMixto.toFixed(2)} readOnly />
-                    </div>
-                    <div className={styles.inputGroup}>
-                        <label className={styles.label}>Paga Efectivo</label>
-                        <input type="number" className={styles.input} value={efectivoEntregadoMixto} onChange={e => setEfectivoEntregadoMixto(e.target.value)} />
-                    </div>
-                    <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
-                        <label className={styles.label}>Vuelto</label>
-                        <input className={`${styles.input} ${styles.inputReadOnly}`} value={vueltoMixto.toFixed(2)} readOnly />
-                    </div>
-                </>
-            )}
-
-            {metodoPago === 'obsequio' && (
-                 <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
-                     <label className={styles.label}>Motivo</label>
-                     <input 
-                        className={styles.input} 
-                        value={motivoObsequio} 
-                        onChange={e => setMotivoObsequio(e.target.value)} 
-                        placeholder="Justificación..."
-                      />
-                </div>
-            )}
+          {metodoPago === 'obsequio' && (
+            <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+              <label className={styles.label}>Motivo</label>
+              <input
+                className={styles.input}
+                value={motivoObsequio}
+                onChange={e => setMotivoObsequio(e.target.value)}
+                placeholder="Justificación..."
+              />
+            </div>
+          )}
         </div>
 
-        <button 
-            className={styles.registerButton} 
-            onClick={handleRegistrarVentaBD}
-            disabled={!isPagoValido}
+        <button
+          className={styles.registerButton}
+          onClick={handleRegistrarVentaBD}
+          disabled={!isPagoValido || isSubmitting}
         >
-            <CheckCircle size={20} style={{ display: 'inline', marginRight: 8 }}/> 
-            Confirmar Venta
+          <CheckCircle size={20} style={{ display: 'inline', marginRight: 8 }} />
+          {isSubmitting ? 'Procesando...' : 'Confirmar Venta'}
         </button>
         {!isPagoValido && <p className={styles.errorText} style={{ textAlign: 'center' }}>* Revisa los montos de pago</p>}
       </div>

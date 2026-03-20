@@ -73,6 +73,9 @@ const Navbar = () => {
           <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
+          <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+            <Users size={18} /> Nota de Pedido
+          </Link>
         </>
       )}
 
@@ -166,14 +169,25 @@ const Navbar = () => {
           <Link href="/change" className={style.navbarLink} onClick={handleLinkClick}>
             Cambio o Devolución
           </Link>
-          
+           <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+            <Users size={18} /> Nota de Pedido
+          </Link>
         </>
       )}
 
       {role === 'Emprendedor' && (
         <>
          <Link href="/pedidos" className={style.navbarLink} onClick={handleLinkClick}>
-            Pedidos
+            Registrar Pedidos
+          </Link>
+          <Link href="/dashboardPedido" className={style.navbarLink} onClick={handleLinkClick}>
+            Dashboard
+          </Link>
+          <Link href="/detailPedido" className={style.navbarLink} onClick={handleLinkClick}>
+            Detalle de pedido
+          </Link>
+          <Link href="/listPedidos" className={style.navbarLink} onClick={handleLinkClick}>
+            Lista de Pedidos
           </Link>
         </>
       )}

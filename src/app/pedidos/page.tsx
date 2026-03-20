@@ -34,6 +34,7 @@ export default function SistemaPedidosPremium() {
     const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
     const [selectedTiendaId, setSelectedTiendaId] = useState<string>('T1');
     const [pedido, setPedido] = useState<any[]>([]);
+    const [step, setStep] = useState(1); // 1: Seleccion, 2: Datos Envío
 
     // Datos de ejemplo con 5 tiendas
     const tiendasDisponibles = [
@@ -237,6 +238,36 @@ export default function SistemaPedidosPremium() {
                             </div>
                         </div>
                     </div>
+
+                    {step === 2 && (
+                        <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-200">
+                            <h2 className="text-xl font-black text-slate-800 mb-8 uppercase tracking-tight">Datos para la Entrega</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Información del Cliente</h4>
+                                    <input type="text" placeholder="Nombre completo" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
+                                    <input type="text" placeholder="Teléfono de contacto" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Dirección de Envío</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <select className="p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none">
+                                            <option>Lima</option>
+                                        </select>
+                                        <select className="p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none">
+                                            <option>Miraflores</option>
+                                        </select>
+                                    </div>
+                                    <input type="text" placeholder="Dirección exacta" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
+                                    <input type="text" placeholder="Referencia" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
+                                </div>
+                            </div>
+                            <div className="mt-8 flex gap-4">
+                                <button onClick={() => setStep(1)} className="flex-1 py-4 font-black text-slate-400">VOLVER</button>
+                                <button className="flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-indigo-100 uppercase tracking-widest text-xs">FINALIZAR PEDIDO</button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* COLUMNA DERECHA: RESUMEN */}
                     <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
