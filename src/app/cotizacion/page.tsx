@@ -216,14 +216,16 @@ const distritos = useMemo(() => {
 
         // Crear degradado: Negro -> Azul -> Rojo
         const gradient = ctx.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(1, '#2a2a2a');     // Negro profundo
-        gradient.addColorStop(0.5, '#27428c');   // Azul corporativo
-        gradient.addColorStop(0, '#d54949');     // Rojo intenso
+        gradient.addColorStop(1, '#000000');     // Negro profundo
+        gradient.addColorStop(0.5, '#000000');   // Azul corporativo
+        gradient.addColorStop(0, '#000000');     // Rojo intenso
 
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, width, height);
         return canvas.toDataURL('image/jpeg', 1.0);
     };
+
+    
 
     // --- GENERACIÓN DE PDF PROFESIONAL ---
     const generarPDF = () => {
@@ -240,8 +242,8 @@ const distritos = useMemo(() => {
 
         // 2. Logo (Alineado a la izquierda)
         // Ajustamos el logo para que esté centrado verticalmente dentro de los 40px
-        const logoWidth = 65;
-        const logoHeight = 40;
+        const logoWidth = 50;
+        const logoHeight = 20;
         const logoY = (headerHeight - logoHeight) / 2; // Centrado vertical
         doc.addImage(base64Img, 'PNG', 7, logoY, logoWidth, logoHeight);
 

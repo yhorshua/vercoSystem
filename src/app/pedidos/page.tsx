@@ -1,22 +1,19 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Search, ShoppingCart, Trophy, Trash2, X, Plus, Minus,
     CheckCircle2, Star, Sparkles, TrendingUp, ChevronRight,
     Package, MapPin, Store, Info
 } from 'lucide-react';
+import { getProductStockByWarehouseAndCode } from '../services/stockServices';
+import { getWarehouses } from '../services/warehouseServices';
+import { useUser } from '../context/UserContext';
 
-// --- TIPOS ---
-interface StockPorTienda {
-    tiendaId: string;
-    nombre: string;
-    stock: number;
-}
 
 interface SizeStock {
     talla: string;
-    cantidad: number;
-    tiendas: StockPorTienda[];
+    stock: number;      // lo que viene del backend
+    selected: number;   // lo que el usuario elige
 }
 
 interface Producto {
@@ -32,71 +29,149 @@ interface Producto {
 export default function SistemaPedidosPremium() {
     const [showModal, setShowModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
-    const [selectedTiendaId, setSelectedTiendaId] = useState<string>('T1');
+    const DEFAULT_WAREHOUSE_ID = 4;
+    const [selectedTiendaId, setSelectedTiendaId] = useState<string>(
+        String(DEFAULT_WAREHOUSE_ID)
+    );
     const [pedido, setPedido] = useState<any[]>([]);
     const [step, setStep] = useState(1); // 1: Seleccion, 2: Datos Envío
 
-    // Datos de ejemplo con 5 tiendas
-    const tiendasDisponibles = [
-        { id: 'T1', nombre: 'Sede Central' },
-        { id: 'T2', nombre: 'Mall del Sur' },
-        { id: 'T3', nombre: 'Plaza Norte' },
-        { id: 'T4', nombre: 'Miraflores' },
-        { id: 'T5', nombre: 'Trujillo' },
-    ];
+    const [tiendasDisponibles, setTiendasDisponibles] = useState<any[]>([]);
+    const { user } = useUser();
+    const [sinStock, setSinStock] = useState(false);
 
-    const mockProduct: Producto = {
-        id: '1',
-        codigo: 'NK-COURT-W',
-        nombre: 'Nike Court Vision White',
-        marca: 'Nike',
-        precio: 289.00,
-        imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400',
-        tallas: [
-            {
-                talla: '37', cantidad: 0,
-                tiendas: [
-                    { tiendaId: 'T1', nombre: 'Sede Central', stock: 5 },
-                    { tiendaId: 'T2', nombre: 'Mall del Sur', stock: 2 },
-                    { tiendaId: 'T3', nombre: 'Plaza Norte', stock: 0 },
-                    { tiendaId: 'T4', nombre: 'Miraflores', stock: 8 },
-                    { tiendaId: 'T5', nombre: 'Trujillo', stock: 3 },
-                ]
-            },
-            {
-                talla: '38', cantidad: 0,
-                tiendas: [
-                    { tiendaId: 'T1', nombre: 'Sede Central', stock: 0 },
-                    { tiendaId: 'T2', nombre: 'Mall del Sur', stock: 10 },
-                    { tiendaId: 'T3', nombre: 'Plaza Norte', stock: 4 },
-                    { tiendaId: 'T4', nombre: 'Miraflores', stock: 1 },
-                    { tiendaId: 'T5', nombre: 'Trujillo', stock: 0 },
-                ]
+    // Datos de ejemplo con 5 tiendas
+    useEffect(() => {
+        if (!selectedProduct || !selectedTiendaId || !user?.token) return;
+
+        const fetchStock = async () => {
+            try {
+                const data = await getProductStockByWarehouseAndCode(
+                    Number(selectedTiendaId),
+                    selectedProduct.codigo,
+                    user.token
+                );
+
+                const mapped = mapApiToProducto(data);
+
+                setSelectedProduct(mapped);
+                setSinStock(false); // ✅ hay stock
+
+            } catch (err: any) {
+                console.error(err);
+
+                if (err?.response?.status === 404) {
+                    setSinStock(true);
+
+                    setSelectedProduct(null);
+                    setTimeout(() => {
+                        setSelectedProduct(prev => ({
+                            ...prev!,
+                            tallas: []
+                        }));
+                    }, 0);
+
+                    return; // 🚨 IMPORTANTE: corta ejecución
+                }
             }
-        ]
-    };
+        };
+
+        fetchStock();
+    }, [selectedTiendaId, selectedProduct?.codigo]);
+
+
+    useEffect(() => {
+        const loadWarehouses = async () => {
+            if (!user?.token) return;
+
+            const data = await getWarehouses(user.token);
+
+            const tiendas = data
+                .filter(w => w.type === 'tienda' && w.status)
+                .map(w => ({
+                    id: String(w.id),
+                    nombre: w.warehouse_name
+                }));
+
+            setTiendasDisponibles(tiendas);
+        };
+
+        loadWarehouses();
+    }, [user]);
 
     const handleOpenModal = (prod: Producto) => {
         setSelectedProduct(JSON.parse(JSON.stringify(prod)));
         setShowModal(true);
     };
 
+    const mapApiToProducto = (data: any): Producto => {
+        const tallasMap: Record<string, SizeStock> = {};
+
+        data.stock.forEach((s: any) => {
+            const talla = s.size || 'UNICO';
+
+            if (!tallasMap[talla]) {
+                tallasMap[talla] = {
+                    talla,
+                    stock: 0,
+                    selected: 0
+                };
+            }
+
+            tallasMap[talla].stock += s.quantity;
+        });
+
+        return {
+            id: String(data.product_id),
+            codigo: data.article_code,
+            nombre: data.article_description,
+            marca: data.brand_name,
+            precio: Number(data.unit_price),
+            imagen: data.product_image || 'https://via.placeholder.com/400',
+            tallas: Object.values(tallasMap)
+        };
+    };
+
+    const handleSearch = async (code: string) => {
+        try {
+
+            if (!user?.token) throw new Error('No token');
+
+            const data = await getProductStockByWarehouseAndCode(
+                DEFAULT_WAREHOUSE_ID,
+                code,
+                user.token
+            );
+
+            const mappedProduct = mapApiToProducto(data);
+
+            handleOpenModal(mappedProduct);
+        } catch (error: any) {
+            console.error(error);
+            alert(error.message);
+        }
+    };
+
     const updateQty = (index: number, val: number) => {
         if (!selectedProduct) return;
-        const newTallas = [...selectedProduct.tallas];
-        // Obtener stock disponible de la tienda seleccionada
-        const currentStock = newTallas[index].tiendas.find(t => t.tiendaId === selectedTiendaId)?.stock || 0;
 
-        newTallas[index].cantidad = Math.max(0, Math.min(currentStock, newTallas[index].cantidad + val));
+        const newTallas = [...selectedProduct.tallas];
+        const item = newTallas[index];
+
+        item.selected = Math.max(
+            0,
+            Math.min(item.stock, item.selected + val)
+        );
+
         setSelectedProduct({ ...selectedProduct, tallas: newTallas });
     };
 
     const agregarAlPedido = () => {
         if (!selectedProduct) return;
-        const elegidas = selectedProduct.tallas.filter(t => t.cantidad > 0);
+        const elegidas = selectedProduct.tallas.filter(t => t.selected > 0);
         if (elegidas.length === 0) return;
 
-        const totalPares = elegidas.reduce((a, b) => a + b.cantidad, 0);
+        const totalPares = elegidas.reduce((a, b) => a + b.selected, 0);
         const tiendaNombre = tiendasDisponibles.find(t => t.id === selectedTiendaId)?.nombre;
 
         setPedido([...pedido, {
@@ -164,7 +239,11 @@ export default function SistemaPedidosPremium() {
                                     type="text"
                                     placeholder="Código de calzado..."
                                     className="w-full py-2 bg-transparent outline-none font-semibold text-slate-700"
-                                    onKeyDown={(e) => e.key === 'Enter' && handleOpenModal(mockProduct)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSearch((e.target as HTMLInputElement).value);
+                                        }
+                                    }}
                                 />
                             </div>
                         </div>
@@ -314,8 +393,7 @@ export default function SistemaPedidosPremium() {
             {/* MODAL RESPONSIVE CON MULTI-STOCK */}
             {showModal && selectedProduct && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-4xl h-[90vh] sm:h-auto sm:rounded-[2.5rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10">
-
+                    <div className="bg-white w-full max-w-4xl h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col">
                         <div className="flex flex-col lg:flex-row h-full">
                             {/* Imagen y Info (Lado Izq) */}
                             <div className="lg:w-2/5 bg-slate-50 p-6 lg:p-10 flex flex-col">
@@ -362,9 +440,18 @@ export default function SistemaPedidosPremium() {
                                 </div>
 
                                 {/* LISTA DE TALLAS ADAPTADA AL STOCK DE LA TIENDA SELECCIONADA */}
-                                <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-                                    {selectedProduct.tallas.map((t, i) => {
-                                        const stockEnTienda = t.tiendas.find(st => st.tiendaId === selectedTiendaId)?.stock || 0;
+                                <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                                    {sinStock ? (
+                                        <div className="text-center py-10 text-slate-400 font-bold">
+                                            Sin stock en esta tienda
+                                        </div>
+                                    ) : selectedProduct.tallas.length === 0 ? (
+                                        <div className="text-center py-10 text-slate-300">
+                                            No hay tallas disponibles
+                                        </div>
+                                    ) : (selectedProduct.tallas.map((t, i) => {
+                                        const stockEnTienda = t.stock;
+                                        const selectedQty = t.selected;
                                         const isAvailable = stockEnTienda > 0;
 
                                         return (
@@ -381,19 +468,20 @@ export default function SistemaPedidosPremium() {
 
                                                 <div className={`flex items-center bg-slate-100 rounded-xl p-1 ${!isAvailable && 'pointer-events-none opacity-20'}`}>
                                                     <button onClick={() => updateQty(i, -1)} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-white rounded-lg transition-colors"><Minus size={14} /></button>
-                                                    <input type="number" readOnly className="w-8 text-center font-black text-indigo-600 bg-transparent text-sm" value={t.cantidad} />
+                                                    <input type="number" readOnly className="w-8 text-center font-black text-indigo-600 bg-transparent text-sm" value={selectedQty} />
                                                     <button onClick={() => updateQty(i, 1)} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-white rounded-lg transition-colors"><Plus size={14} /></button>
                                                 </div>
                                             </div>
                                         )
-                                    })}
+                                    })
+                                    )}
                                 </div>
 
                                 <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
                                     <div>
                                         <p className="text-[10px] font-black text-slate-400 uppercase">Pares totales</p>
                                         <p className="text-3xl font-black text-slate-800 tracking-tighter">
-                                            {selectedProduct.tallas.reduce((a, b) => a + b.cantidad, 0)}
+                                            {selectedProduct.tallas.reduce((a, b) => a + b.selected, 0)}
                                         </p>
                                     </div>
                                     <button

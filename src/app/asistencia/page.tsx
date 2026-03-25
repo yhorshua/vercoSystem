@@ -33,7 +33,7 @@ const MarkAttendance = () => {
             icon: 'error',
             title: 'Ubicación requerida',
             text: 'Para marcar asistencia, necesitamos acceso a tu ubicación.',
-            confirmButtonColor: '#2563EB',
+            confirmButtonColor: '#33f0f0',
           });
         }
       );
