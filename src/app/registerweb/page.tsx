@@ -1,12 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Search, ShoppingCart, Trash2, X, Plus, Minus,
     CheckCircle2, Package, MapPin, CreditCard, MessageSquare,
     ChevronRight, Info, User, Phone, Wallet
 } from 'lucide-react';
 import Swal from 'sweetalert2'; // Integrado para alertas profesionales
-import { useMemo } from 'react';
 import rawUbigeo from '../utils/ubigeo-peru-optimizado.json';
 import type { Ubigeo } from '../utils/types/ubigeo';
 import { getProductsByCodeOrDescription } from '../services/productsService';
