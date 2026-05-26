@@ -16,8 +16,6 @@ import {
 
 import styles from './registerPedido.module.css';
 import PedidoTabla from './PedidoTabla';
-import { Cliente } from '../register-requested/mockClientes';
-
 import { useUser } from '../context/UserContext';
 import { getProductStockByWarehouseAndCode } from '../services/stockServices';
 
@@ -63,7 +61,6 @@ export default function RegisterSalePage() {
   const [apellidos, setApellidos] = useState('');
   const [correo, setCorreo] = useState('');
   const [celular, setCelular] = useState('');
-  const [cliente, setCliente] = useState<Cliente | null>(null);
   const [tipoDocumento, setTipoDocumento] = useState<string>('');
   const [numeroDocumento, setNumeroDocumento] = useState<string>('');
 
@@ -341,7 +338,7 @@ export default function RegisterSalePage() {
   const agregarItem = () => {
 
     if (addingItem) return; // evita doble click
-  setAddingItem(true);
+    setAddingItem(true);
     // 1. Filtrar solo cantidades mayores a 0 para agregar al carrito
     const cantidadesFiltradas: Record<string, number> = {};
     let total = 0;
@@ -406,8 +403,9 @@ export default function RegisterSalePage() {
         <ShoppingCart size={32} />
         <h1>Punto de Venta</h1>
       </div>
-      {/*
-      {/* SECCIÓN 1: DATOS DEL CLIENTE 
+
+      {/* SECCIÓN 1: DATOS DEL CLIENTE*/ }
+      { false && (
       <section className={styles.cardSection}>
         <h2 className={styles.cardTitle}>
             <User size={20} /> Datos del Cliente
@@ -433,7 +431,7 @@ export default function RegisterSalePage() {
                 <input
                     className={styles.inputDocument}
                     value={numeroDocumento}
-                    onChange={(e) => setNumeroDocumento(e.target.value)}
+                    onChange={(e)   => setNumeroDocumento(e.target.value)}
                     placeholder="Ingrese número..."
                 />
                  {loadingDoc && <small>Buscando...</small>}
@@ -479,7 +477,7 @@ export default function RegisterSalePage() {
                 />
             </div>
              
-             {/* Tipo de Comprobante para Venta *
+             {/* Tipo de Comprobante para Venta */}
             <div className={styles.inputGroup}>
                 <label className={styles.label}>Comprobante a emitir</label>
                 <select 
@@ -493,7 +491,7 @@ export default function RegisterSalePage() {
             </div>
         </div>
       </section>
-*/}
+      )}
       {/* SECCIÓN 2: AGREGAR PRODUCTO */}
       <section className={styles.cardSection}>
         <h2 className={styles.cardTitle}>
@@ -602,7 +600,20 @@ export default function RegisterSalePage() {
         <PedidoTabla
           items={items}
           onDelete={handleDeleteItem}
-          cliente={cliente}
+          cliente={{
+            tipoDocumento,
+            numeroDocumento,
+            codigo: '',
+            razonSocial: nombres,
+            ruc: numeroDocumento,
+            direccion: '',
+            direccion2: '',
+            telefono: celular,
+            correo,
+            departamento: '',
+            provincia: '',
+            distrito: '',
+          }}
           user={
             user?.token && user?.warehouse_id && user?.id
               ? { token: user.token, warehouseId: user.warehouse_id, userId: user.id }

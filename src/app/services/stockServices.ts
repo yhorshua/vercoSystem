@@ -50,3 +50,59 @@ export async function registerStockForMultipleItems(
 
   return res.json();  // Retorna la respuesta de la API (mensaje de éxito o los productos registrados)
 }
+
+export async function getInventoryByWarehouseAndCategory(
+  warehouseId: number,
+  category: number,
+  token: string
+) {
+  const res = await fetch(
+    `${API_URL}/stock/inventory/${warehouseId}/category/${encodeURIComponent(category)}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Error al obtener inventario');
+  }
+
+  return res.json();
+}
+
+export async function adjustInventory(
+  warehouseId: number,
+  userId: number,
+  items: {
+    product_id: number;
+    product_size_id: number;
+    new_quantity: number;
+  }[],
+  token: string
+) {
+  const res = await fetch(`${API_URL}/stock/inventory/adjust`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      warehouseId,
+      userId,
+      items,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Error al ajustar inventario');
+  }
+
+  return res.json();
+}

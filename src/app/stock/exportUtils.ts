@@ -14,6 +14,7 @@ interface StockItem {
   saldo: number;
   origin: string;
   precioventa: string;
+  preciocompra: string;
 }
 
 export const exportToExcel = (data: StockItem[]) => {
@@ -25,7 +26,8 @@ export const exportToExcel = (data: StockItem[]) => {
       Descripción: item.descripcion,
       Saldo: item.saldo,
       Origen: item.origin,
-      PrecioVenta: item.precioventa
+      PrecioVenta: item.precioventa,
+      PrecioUnitario: item.preciocompra,
     };
 
     // Agregar las tallas dinámicas después de los campos estáticos

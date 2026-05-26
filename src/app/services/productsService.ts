@@ -155,3 +155,18 @@ export const getProductoByCodigo = async (codigo: string) => {
     return null;
   }
 };
+
+export async function updateProduct(
+  id: number,
+  data: Partial<CreateProductDto>,
+  token: string
+) {
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(([_, v]) => v !== null && v !== undefined)
+  );
+
+  return fetchJson(`/products/${id}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify(cleanData),
+  });
+}

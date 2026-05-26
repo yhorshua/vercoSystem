@@ -74,37 +74,37 @@ export default function CotizadorPage() {
 
     const descuento = 0; // luego lo haces dinámico
     const [tempDiscount, setTempDiscount] = useState<number>(0);
-const ubigeo = rawUbigeo as Ubigeo;
+    const ubigeo = rawUbigeo as Ubigeo;
     const [depId, setDepId] = useState<keyof Ubigeo | ''>('');
-const [provId, setProvId] = useState<string>('');
-const [distId, setDistId] = useState<string>('');;
+    const [provId, setProvId] = useState<string>('');
+    const [distId, setDistId] = useState<string>('');;
 
     const departamentos = useMemo(() => {
-  return Object.entries(ubigeo).map(([id, dep]: any) => ({
-    id,
-    nombre: dep.nombre
-  }));
-}, []);
+        return Object.entries(ubigeo).map(([id, dep]: any) => ({
+            id,
+            nombre: dep.nombre
+        }));
+    }, []);
 
-const provincias = useMemo(() => {
-  if (!depId) return [];
+    const provincias = useMemo(() => {
+        if (!depId) return [];
 
-  return Object.entries(ubigeo[depId].provincias).map(([id, prov]: any) => ({
-    id,
-    nombre: prov.nombre
-  }));
-}, [depId]);
+        return Object.entries(ubigeo[depId].provincias).map(([id, prov]: any) => ({
+            id,
+            nombre: prov.nombre
+        }));
+    }, [depId]);
 
-const distritos = useMemo(() => {
-  if (!depId || !provId) return [];
+    const distritos = useMemo(() => {
+        if (!depId || !provId) return [];
 
-  return Object.entries(
-    ubigeo[depId].provincias[provId].distritos
-  ).map(([id, nombre]) => ({
-    id,
-    nombre
-  }));
-}, [depId, provId]);
+        return Object.entries(
+            ubigeo[depId].provincias[provId].distritos
+        ).map(([id, nombre]) => ({
+            id,
+            nombre
+        }));
+    }, [depId, provId]);
 
     // Búsqueda filtrada
     const buscarProducto = async () => {
@@ -154,7 +154,7 @@ const distritos = useMemo(() => {
         }));
     };
 
-    
+
 
     const agregarItem = () => {
         if (!selectedProduct) return;
@@ -225,8 +225,6 @@ const distritos = useMemo(() => {
         return canvas.toDataURL('image/jpeg', 1.0);
     };
 
-    
-
     // --- GENERACIÓN DE PDF PROFESIONAL ---
     const generarPDF = () => {
         const doc = new jsPDF({
@@ -284,7 +282,7 @@ const distritos = useMemo(() => {
         doc.text(`Teléfono: ${cliente.telefono || '---'}`, 14, 78);
 
         // Columna 2
-        
+
         doc.text(`Departamento: ${cliente.departamento || '-'}`, 110, 66);
         doc.text(`Provincia: ${cliente.provincia || '-'}`, 110, 72);
         doc.text(`Distrito: ${cliente.distrito || '-'}`, 110, 78);
@@ -473,25 +471,25 @@ const distritos = useMemo(() => {
                                     <label className="text-[10px] font-black text-slate-400 uppercase ml-2">
                                         Departamento
                                     </label>
-                                   <SelectTailwind
-  value={depId as string}
-  options={departamentos.map(dep => ({
-    value: dep.id,
-    label: dep.nombre
-  }))}
-  onChange={(value) => {
-    setDepId(value as keyof Ubigeo);
-    setProvId('');
-    setDistId('');
+                                    <SelectTailwind
+                                        value={depId as string}
+                                        options={departamentos.map(dep => ({
+                                            value: dep.id,
+                                            label: dep.nombre
+                                        }))}
+                                        onChange={(value) => {
+                                            setDepId(value as keyof Ubigeo);
+                                            setProvId('');
+                                            setDistId('');
 
-    setCliente({
-      ...cliente,
-      departamento: ubigeo[value].nombre,
-      provincia: '',
-      distrito: ''
-    });
-  }}
-/>
+                                            setCliente({
+                                                ...cliente,
+                                                departamento: ubigeo[value].nombre,
+                                                provincia: '',
+                                                distrito: ''
+                                            });
+                                        }}
+                                    />
                                 </div>
 
                                 {/* PROVINCIA */}
@@ -499,24 +497,24 @@ const distritos = useMemo(() => {
                                     <label className="text-[10px] font-black text-slate-400 uppercase ml-2">
                                         Provincia
                                     </label>
-                                 <SelectTailwind
-  value={provId}
-  disabled={!depId}
-  options={provincias.map(prov => ({
-    value: prov.id,
-    label: prov.nombre
-  }))}
-  onChange={(value) => {
-    setProvId(value);
-    setDistId('');
+                                    <SelectTailwind
+                                        value={provId}
+                                        disabled={!depId}
+                                        options={provincias.map(prov => ({
+                                            value: prov.id,
+                                            label: prov.nombre
+                                        }))}
+                                        onChange={(value) => {
+                                            setProvId(value);
+                                            setDistId('');
 
-    setCliente({
-      ...cliente,
-      provincia: ubigeo[depId].provincias[value].nombre,
-      distrito: ''
-    });
-  }}
-/>
+                                            setCliente({
+                                                ...cliente,
+                                                provincia: ubigeo[depId].provincias[value].nombre,
+                                                distrito: ''
+                                            });
+                                        }}
+                                    />
                                 </div>
 
                                 {/* DISTRITO */}
@@ -524,22 +522,22 @@ const distritos = useMemo(() => {
                                     <label className="text-[10px] font-black text-slate-400 uppercase ml-2">
                                         Distrito
                                     </label>
-<SelectTailwind
-  value={distId}
-  disabled={!provId}
-  options={distritos.map(dist => ({
-    value: dist.id,
-    label: dist.nombre
-  }))}
-  onChange={(value) => {
-    setDistId(value);
+                                    <SelectTailwind
+                                        value={distId}
+                                        disabled={!provId}
+                                        options={distritos.map(dist => ({
+                                            value: dist.id,
+                                            label: dist.nombre
+                                        }))}
+                                        onChange={(value) => {
+                                            setDistId(value);
 
-    setCliente({
-      ...cliente,
-      distrito: ubigeo[depId].provincias[provId].distritos[value]
-    });
-  }}
-/>
+                                            setCliente({
+                                                ...cliente,
+                                                distrito: ubigeo[depId].provincias[provId].distritos[value]
+                                            });
+                                        }}
+                                    />
                                 </div>
 
                                 {/* DIRECCIÓN */}
@@ -739,7 +737,7 @@ const distritos = useMemo(() => {
                                         <div key={item.id} className="group bg-slate-50 p-4 rounded-2xl border border-slate-100 relative">
                                             <button
                                                 onClick={() => eliminarItem(item.id)}
-                                                className="absolute -top-2 -right-2 bg-white text-slate-300 hover:text-red-500 p-2 rounded-xl shadow-sm border border-slate-100 transition-all opacity-0 group-hover:opacity-100"
+                                                className="absolute -top-2 -right-2 bg-white text-slate-300 hover:text-red-500 p-2 rounded-xl shadow-sm border border-slate-100 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                             >
                                                 <Trash2 size={16} />
                                             </button>

@@ -65,3 +65,19 @@ export async function getScanStatus(orderId: number, token: string) {
 }
 
 
+export async function startPacking(orderId: number, token: string) {
+  const res = await fetch(`${API_URL}/packing/start/${orderId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null);
+    throw new Error(error?.message || 'Error al iniciar el alistamiento');
+  }
+
+  return res.json();
+}

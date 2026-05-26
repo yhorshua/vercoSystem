@@ -16,6 +16,8 @@ import { CreditCard, DollarSign, CheckCircle, Trash2 } from 'lucide-react';
 
 
 interface Cliente {
+  tipoDocumento: string;
+  numeroDocumento: string;
   codigo: string;
   razonSocial: string;
   ruc: string;
@@ -220,7 +222,8 @@ export default function PedidoTabla({
     for (const it of items) {
       for (const [talla, qty] of Object.entries(it.cantidades)) {
         if (Number(qty) <= 0) continue;
-        const product_size_id = it.sizeIdBySizeNumber[Number(talla) || talla];
+        const tallaNum = Number(talla) || talla;
+        const product_size_id = it.sizeIdBySizeNumber[tallaNum as number];
         // Nota: asumiendo que sizeIdBySizeNumber mapea talla -> id
 
         if (!product_size_id) {

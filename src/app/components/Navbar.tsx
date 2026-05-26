@@ -70,11 +70,37 @@ const Navbar = () => {
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} /> Stock
           </Link>
-          <Link href="/client" className={style.navbarLink} onClick={handleLinkClick}>
+          <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
           <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Nota de Pedido
+          </Link>
+            <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Package size={18} />Registro de stock
+          </Link>
+        </>
+      )}
+
+      {role === 'Jefe Ventas' && (
+        <>
+          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
+            <ClipboardList size={18} /> Registrar Pedido
+          </Link>
+          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+            <LayoutDashboard size={18} /> Lista de Pedidos
+          </Link>
+          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Package size={18} /> Stock
+          </Link>
+          <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
+            <Users size={18} /> Clientes
+          </Link>
+          <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+            <Users size={18} /> Nota de Pedido
+          </Link>
+            <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Package size={18} />Registro de stock
           </Link>
         </>
       )}
@@ -95,6 +121,9 @@ const Navbar = () => {
           </Link>
           <Link href="/production" className={style.navbarLink} onClick={handleLinkClick}>
             Producción
+          </Link>
+          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+            <LayoutDashboard size={18} /> Lista de Pedidos
           </Link>
           <Link href="/listproducts" className={style.navbarLink} onClick={handleLinkClick}>
             Productos
@@ -130,6 +159,9 @@ const Navbar = () => {
           </Link>
           <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
             Registro de Producto
+          </Link>
+          <Link href="/inventorySystem" className={style.navbarLink} onClick={handleLinkClick}>
+            Inventario 
           </Link>
         </>
       )}
@@ -188,6 +220,9 @@ const Navbar = () => {
           </Link>
           <Link href="/listPedidos" className={style.navbarLink} onClick={handleLinkClick}>
             Lista de Pedidos
+          </Link>
+          <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
+            Venta por Redes
           </Link>
         </>
       )}

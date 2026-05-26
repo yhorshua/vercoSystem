@@ -127,6 +127,30 @@ export type SellerSalesDetailResponse = {
   sellers: SellerSalesDetailReport[];
 };
 
+export type SneakersGoalResponse = {
+  meta: {
+    warehouse_id: number;
+    warehouse_name: string;
+    start: string;
+    end: string;
+  };
+  progress: {
+    pairs_sold: number;
+    pairs_goal: number;
+    pairs_remaining: number;
+    pairs_percentage: number;
+
+    revenue: number;
+    revenue_goal: number;
+    revenue_remaining: number;
+    revenue_percentage: number;
+
+    profit: number;
+    cost: number;
+    margin: number;
+  };
+};
+
 // Función para manejar errores de forma segura
 function safeErrorMessage(text: string) {
   try {
@@ -434,6 +458,41 @@ export async function getSellerSalesDetailReport(
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || 'Error consultando reporte de ventas por vendedor');
+  }
+
+  return res.json();
+}
+
+export async function getSneakersGoal(
+  params: GetSalesReportParams,
+  token: string
+): Promise<SneakersGoalResponse> {
+
+  const q = new URLSearchParams();
+  q.set('warehouseId', String(params.warehouseId));
+  q.set('type', params.type);
+
+  if (params.type === 'DAY') {
+    if (!params.date) throw new Error('date requerido');
+    q.set('date', params.date);
+  } else {
+    if (!params.from || !params.to) throw new Error('from/to requerido');
+    q.set('from', params.from);
+    q.set('to', params.to);
+  }
+
+  const res = await fetch(`${API_URL}/reports/sneakers-goal?${q.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('ERROR RESPONSE:', text); // 🔥 clave para debug
+    throw new Error(safeErrorMessage(text));
   }
 
   return res.json();

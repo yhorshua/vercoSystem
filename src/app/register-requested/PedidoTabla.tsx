@@ -9,7 +9,7 @@ import {
 import Swal from 'sweetalert2';
 import styles from './registerPedido.module.css';
 import type { ItemUI } from '../components/types';
-import { createOrder } from '../services/ordersService';
+import { createOrder, CreateOrderPayload } from '../services/ordersService';
 
 interface ClienteUI {
   id: number;
@@ -113,19 +113,25 @@ export default function PedidoTabla({
       return;
     }
 
-    const payload = {
+    const payload: CreateOrderPayload = {
       user_id: user.id,
       client_id: cliente.id,
       warehouse_id: user.warehouseId,
-      items: items.flatMap((item) =>
-        Object.entries(item.cantidades).map(([talla, cantidad]) => ({
-          product_id: item.product_id,
-          product_size_id: item.sizeIdBySizeNumber[Number(talla)],
-          size: String(talla),
-          quantity: cantidad,
-          unit_price: item.precio,
-        }))
-      ),
+      order_type: 'NORMAL',
+
+      items: items.flatMap((item: ItemUI) => {
+        const entries = Object.entries(item.cantidades) as [string, number][];
+
+        return entries
+          .filter(([, cantidad]) => cantidad > 0)
+          .map(([talla, cantidad]) => ({
+            product_id: item.product_id,
+            product_size_id: item.sizeIdBySizeNumber[Number(talla)],
+            size: String(talla),
+            quantity: cantidad,
+            unit_price: item.precio,
+          }));
+      }),
     };
 
     const confirm = await Swal.fire({

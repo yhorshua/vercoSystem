@@ -21,6 +21,7 @@ interface StockItem {
   saldo: number;
   origin: string;
   precioventa: string;
+  preciocompra: string;
 }
 
 type Category = {
@@ -83,6 +84,7 @@ export default function StockPage() {
             saldo,
             origin: p.type_origin,
             precioventa: p.manufacturing_cost,
+            preciocompra: p.unit_price,
           };
         });
 

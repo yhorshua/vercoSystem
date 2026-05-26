@@ -8,6 +8,8 @@ import {
 import { getProductStockByWarehouseAndCode } from '../services/stockServices';
 import { getWarehouses } from '../services/warehouseServices';
 import { useUser } from '../context/UserContext';
+import { createGuiaFromOrder } from '../services/guiaService';
+import { createOrder, CreateOrderPayload } from '../services/ordersService';
 
 
 interface SizeStock {
@@ -21,7 +23,8 @@ interface Producto {
     codigo: string;
     nombre: string;
     marca: string;
-    precio: number;
+    precio: number;        // venta
+    precio_compra: number; // 👈 nuevo
     imagen: string;
     tallas: SizeStock[];
 }
@@ -29,7 +32,7 @@ interface Producto {
 export default function SistemaPedidosPremium() {
     const [showModal, setShowModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
-    const DEFAULT_WAREHOUSE_ID = 4;
+    const DEFAULT_WAREHOUSE_ID = 6;
     const [selectedTiendaId, setSelectedTiendaId] = useState<string>(
         String(DEFAULT_WAREHOUSE_ID)
     );
@@ -39,45 +42,45 @@ export default function SistemaPedidosPremium() {
     const [tiendasDisponibles, setTiendasDisponibles] = useState<any[]>([]);
     const { user } = useUser();
     const [sinStock, setSinStock] = useState(false);
+    const [customerData, setCustomerData] = useState({
+        customer_name: '',
+        customer_phone: '',
+        customer_address: '',
+        customer_reference: '',
+        payment_reference: '',
+    });
 
     // Datos de ejemplo con 5 tiendas
     useEffect(() => {
-        if (!selectedProduct || !selectedTiendaId || !user?.token) return;
+        if (!selectedProduct || !user?.token) return;
 
         const fetchStock = async () => {
             try {
+                // Siempre consulta el warehouse principal (6)
                 const data = await getProductStockByWarehouseAndCode(
-                    Number(selectedTiendaId),
+                    DEFAULT_WAREHOUSE_ID,
                     selectedProduct.codigo,
                     user.token
                 );
 
                 const mapped = mapApiToProducto(data);
-
                 setSelectedProduct(mapped);
                 setSinStock(false); // ✅ hay stock
-
             } catch (err: any) {
                 console.error(err);
-
                 if (err?.response?.status === 404) {
                     setSinStock(true);
-
                     setSelectedProduct(null);
                     setTimeout(() => {
-                        setSelectedProduct(prev => ({
-                            ...prev!,
-                            tallas: []
-                        }));
+                        setSelectedProduct(prev => ({ ...prev!, tallas: [] }));
                     }, 0);
-
-                    return; // 🚨 IMPORTANTE: corta ejecución
+                    return;
                 }
             }
         };
 
         fetchStock();
-    }, [selectedTiendaId, selectedProduct?.codigo]);
+    }, [selectedProduct?.codigo, user?.token]);
 
 
     useEffect(() => {
@@ -126,7 +129,8 @@ export default function SistemaPedidosPremium() {
             codigo: data.article_code,
             nombre: data.article_description,
             marca: data.brand_name,
-            precio: Number(data.unit_price),
+            precio: Number(data.unit_price), // venta
+            precio_compra: Number(data.manufacturing_cost || 0), // 👈 asegúrate que exista en tu API
             imagen: data.product_image || 'https://via.placeholder.com/400',
             tallas: Object.values(tallasMap)
         };
@@ -179,9 +183,81 @@ export default function SistemaPedidosPremium() {
             tiendaOrigen: tiendaNombre,
             tallasElegidas: elegidas,
             totalPares,
-            subtotal: totalPares * selectedProduct.precio
+            subtotal: totalPares * selectedProduct.precio,
+            ganancia: totalPares * (selectedProduct.precio_compra - selectedProduct.precio)
         }]);
         setShowModal(false);
+    };
+
+    const generarOrdenDropshipping = async () => {
+        if (!user) return;
+
+        if (pedido.length === 0) {
+            alert('No hay productos seleccionados');
+            return;
+        }
+
+        if (!customerData.customer_name.trim()) {
+            alert('Debe ingresar el nombre del cliente');
+            return;
+        }
+
+        if (!customerData.customer_phone.trim()) {
+            alert('Debe ingresar el teléfono');
+            return;
+        }
+        if (!customerData.customer_address.trim()) {
+            alert('Debe ingresar la dirección');
+            return;
+        }
+
+        try {
+            const payload: CreateOrderPayload = {
+                client_id: 0,
+                user_id: user.id,
+                warehouse_id: Number(selectedTiendaId),
+
+                order_type: 'DROPSHIPPING',
+                payment_reference: customerData.payment_reference || null,
+
+                customer_name: customerData.customer_name,
+                customer_phone: customerData.customer_phone,
+                customer_address: customerData.customer_address,
+                customer_reference: customerData.customer_reference,
+
+                items: pedido.flatMap(item =>
+                    item.tallasElegidas.map((t: any) => ({
+                        product_id: Number(item.id),
+                        size: t.talla,
+                        quantity: t.selected,
+                        unit_price: item.precio,
+                    }))
+                ),
+            };
+
+            const result = await createOrder(payload, user.token);
+
+            alert(`Orden DROPSHIPPING creada con ID: ${result.order.id}`);
+
+            setPedido([]);
+
+            setCustomerData({
+                customer_name: '',
+                customer_phone: '',
+                customer_address: '',
+                customer_reference: '',
+                payment_reference: '',
+            });
+            setStep(1);
+        } catch (err: any) {
+            console.error(err);
+            alert(err.message);
+        }
+    };
+
+    const eliminarProducto = (index: number) => {
+        const nuevaLista = pedido.filter((_, i) => i !== index);
+        setPedido(nuevaLista);
     };
 
     return (
@@ -260,19 +336,21 @@ export default function SistemaPedidosPremium() {
                                 <table className="w-full text-left border-collapse">
                                     <thead className="hidden md:table-header-group bg-slate-50/50 border-b border-slate-100">
                                         <tr>
-                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Producto</th>
-                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tienda</th>
-                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tallas</th>
-                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</th>
+                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase">Producto</th>
+                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase text-center">Tallas</th>
+                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase text-center">P. Venta</th>
+                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase text-center">P. Compra</th>
+                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase text-center">M. Utilidad</th>
+                                            <th className="p-4 text-[10px] font-black text-slate-400 uppercase text-right">Total</th>
                                             <th className="p-4"></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {pedido.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} className="py-20 text-center">
+                                                <td colSpan={6} className="py-26 text-center">
                                                     <div className="flex flex-col items-center text-slate-300">
-                                                        <ShoppingCart size={48} className="mb-4 stroke-[1.5]" />
+                                                        <ShoppingCart size={48} className="mb64 stroke-[1.5]" />
                                                         <p className="text-sm font-bold italic">No hay productos en el pedido</p>
                                                     </div>
                                                 </td>
@@ -289,24 +367,38 @@ export default function SistemaPedidosPremium() {
                                                     </div>
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md font-bold uppercase tracking-tighter italic">
-                                                        {item.tiendaOrigen}
-                                                    </span>
-                                                </td>
-                                                <td className="p-4 text-center">
                                                     <div className="flex flex-wrap justify-center gap-1">
                                                         {item.tallasElegidas.map((t: any) => (
                                                             <span key={t.talla} className="text-[10px] font-black bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100">
-                                                                T{t.talla}: {t.cantidad}
+                                                                T{t.talla}: {t.selected}
                                                             </span>
                                                         ))}
                                                     </div>
                                                 </td>
+                                                {/* PRECIO VENTA */}
+                                                <td className="p-4 text-center font-bold text-green-600">
+                                                    S/ {item.precio_compra.toFixed(2)}
+                                                </td>
+
+                                                {/* PRECIO COMPRA */}
+                                                <td className="p-4 text-center font-bold text-orange-600">
+                                                    S/ {item.precio.toFixed(2)}
+                                                </td>
+
+                                                {/* Margen de utilidad */}
+                                                <td className="p-4 text-center font-bold text-red-600">
+                                                    S/ {item.ganancia.toFixed(2)}
+                                                </td>
+
+
+                                                {/* TOTAL */}
                                                 <td className="p-4 text-right">
-                                                    <p className="font-black text-slate-800 tracking-tighter">S/ {item.subtotal.toFixed(2)}</p>
+                                                    <p className="font-black text-slate-800">
+                                                        S/ {item.subtotal.toFixed(2)}
+                                                    </p>
                                                 </td>
                                                 <td className="p-4 text-right">
-                                                    <button className="text-slate-300 hover:text-red-500 p-2 transition-colors">
+                                                    <button onClick={() => eliminarProducto(idx)} className="text-slate-300 hover:text-red-500 p-2 transition-colors">
                                                         <Trash2 size={18} />
                                                     </button>
                                                 </td>
@@ -323,27 +415,87 @@ export default function SistemaPedidosPremium() {
                             <h2 className="text-xl font-black text-slate-800 mb-8 uppercase tracking-tight">Datos para la Entrega</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Información del Cliente</h4>
-                                    <input type="text" placeholder="Nombre completo" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
-                                    <input type="text" placeholder="Teléfono de contacto" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
+                                    <input
+                                        type="text"
+                                        placeholder="Nombre completo"
+                                        value={customerData.customer_name}
+                                        onChange={(e) =>
+                                            setCustomerData({
+                                                ...customerData,
+                                                customer_name: e.target.value,
+                                            })
+                                        }
+                                        className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold"
+                                    />
                                 </div>
                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Dirección de Envío</h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <select className="p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none">
-                                            <option>Lima</option>
-                                        </select>
-                                        <select className="p-4 rounded-2xl bg-slate-50 border border-slate-100 font-bold outline-none">
-                                            <option>Miraflores</option>
-                                        </select>
-                                    </div>
-                                    <input type="text" placeholder="Dirección exacta" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
-                                    <input type="text" placeholder="Referencia" className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold" />
+                                    <input
+                                        type="text"
+                                        placeholder="Teléfono de contacto"
+                                        value={customerData.customer_phone}
+                                        onChange={(e) =>
+                                            setCustomerData({
+                                                ...customerData,
+                                                customer_phone: e.target.value,
+                                            })
+                                        }
+                                        className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Dirección exacta"
+                                        value={customerData.customer_address}
+                                        onChange={(e) =>
+                                            setCustomerData({
+                                                ...customerData,
+                                                customer_address: e.target.value,
+                                            })
+                                        }
+                                        className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Referencia"
+                                        value={customerData.customer_reference}
+                                        onChange={(e) =>
+                                            setCustomerData({
+                                                ...customerData,
+                                                customer_reference: e.target.value,
+                                            })
+                                        }
+                                        className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Referencia de pago / Yape / Operación"
+                                        value={customerData.payment_reference}
+                                        onChange={(e) =>
+                                            setCustomerData({
+                                                ...customerData,
+                                                payment_reference: e.target.value,
+                                            })
+                                        }
+                                        className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 ring-indigo-500/20 font-bold"
+                                    />
                                 </div>
                             </div>
                             <div className="mt-8 flex gap-4">
                                 <button onClick={() => setStep(1)} className="flex-1 py-4 font-black text-slate-400">VOLVER</button>
                                 <button className="flex-[2] bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-indigo-100 uppercase tracking-widest text-xs">FINALIZAR PEDIDO</button>
+                                <button
+                                    onClick={() => {
+                                        if (pedido.length === 0) {
+                                            alert('Debe agregar productos');
+                                            return;
+                                        }
+
+                                        setStep(2);
+                                    }}
+                                    className="w-full group bg-slate-900 hover:bg-indigo-600 text-white py-5 rounded-2xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3"
+                                >
+                                    FINALIZAR VENTA
+                                    <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                </button>
                             </div>
                         </div>
                     )}
@@ -358,13 +510,7 @@ export default function SistemaPedidosPremium() {
                                     <span className="text-sm text-slate-500 font-medium">Total Pares</span>
                                     <span className="font-black text-slate-800">{pedido.reduce((a, b) => a + b.totalPares, 0)}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-emerald-600 bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-                                    <div className="flex items-center gap-2">
-                                        <TrendingUp size={16} />
-                                        <span className="text-sm font-bold italic">Tu comisión (20%)</span>
-                                    </div>
-                                    <span className="font-black">S/ {(pedido.reduce((a, b) => a + b.subtotal, 0) * 0.2).toFixed(2)}</span>
-                                </div>
+
                                 <div className="pt-6 border-t-2 border-dashed border-slate-100 flex flex-col">
                                     <p className="text-4xl font-black text-slate-900 tracking-tighter">
                                         S/ {pedido.reduce((a, b) => a + b.subtotal, 0).toFixed(2)}
@@ -373,7 +519,17 @@ export default function SistemaPedidosPremium() {
                                 </div>
                             </div>
 
-                            <button className="w-full group bg-slate-900 hover:bg-indigo-600 text-white py-5 rounded-2xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3">
+                            <button
+                                onClick={() => {
+                                    if (pedido.length === 0) {
+                                        alert('Debe agregar productos');
+                                        return;
+                                    }
+
+                                    setStep(2);
+                                }}
+                                className="w-full group bg-slate-900 hover:bg-indigo-600 text-white py-5 rounded-2xl font-black transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3"
+                            >
                                 FINALIZAR VENTA
                                 <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </button>
@@ -392,7 +548,7 @@ export default function SistemaPedidosPremium() {
 
             {/* MODAL RESPONSIVE CON MULTI-STOCK */}
             {showModal && selectedProduct && (
-                <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="fixed top-[70px] left-0 right-0 bottom-0 z-[999]  flex justify-center bg-slate-900/80 backdrop-blur">
                     <div className="bg-white w-full max-w-4xl h-[90vh] rounded-[2.5rem] overflow-hidden flex flex-col">
                         <div className="flex flex-col lg:flex-row h-full">
                             {/* Imagen y Info (Lado Izq) */}
@@ -422,22 +578,7 @@ export default function SistemaPedidosPremium() {
                                 </div>
 
                                 {/* SELECTOR DE TIENDA DENTRO DEL MODAL */}
-                                <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                                        <MapPin size={12} /> Tienda para consultar stock
-                                    </p>
-                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                                        {tiendasDisponibles.map(tienda => (
-                                            <button
-                                                key={tienda.id}
-                                                onClick={() => setSelectedTiendaId(tienda.id)}
-                                                className={`text-[10px] font-bold py-2 px-1 rounded-lg border transition-all ${selectedTiendaId === tienda.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500'}`}
-                                            >
-                                                {tienda.nombre}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+
 
                                 {/* LISTA DE TALLAS ADAPTADA AL STOCK DE LA TIENDA SELECCIONADA */}
                                 <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3 custom-scrollbar">

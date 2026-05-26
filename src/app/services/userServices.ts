@@ -56,3 +56,4 @@ export async function getUsers(token: string) {
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }
+

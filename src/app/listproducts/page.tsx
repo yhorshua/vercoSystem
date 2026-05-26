@@ -14,12 +14,13 @@ interface ProductSize {
 }
 
 interface ProductItem {
+    id: number; // 🔥 nuevo
     codigo: string;
     serie: string;
     descripcion: string;
     tallas: Record<string, number>;
     origin: string;
-    precio: string;
+    precio: number;
 }
 
 interface Category {
@@ -67,12 +68,13 @@ export default function ProductList() {
                     });
 
                     return {
+                        id: p.product_id, // 🔥 IMPORTANTE
                         codigo: p.article_code,
                         serie: p.series.code,
                         descripcion: p.article_description,
                         tallas,
                         origin: p.type_origin,
-                        precio: '0',
+                        precio: p.unit_price, // 🔥 usa precio real
                     };
                 });
 
@@ -160,11 +162,11 @@ export default function ProductList() {
                     </div>
 
                     <button
-  onClick={exportToExcel}
-  className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700"
->
-  Exportar Excel
-</button>
+                        onClick={exportToExcel}
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700"
+                    >
+                        Exportar Excel
+                    </button>
                 </div>
             </div>
 

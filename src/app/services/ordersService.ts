@@ -7,17 +7,27 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export type CreateOrderItemPayload = {
   product_id: number;
   product_size_id?: number | null;
+  size?: string;
   quantity: number;
   unit_price: number;
+  
 };
 
 export type CreateOrderPayload = {
   client_id: number;
-  user_id: number; // ⚠️ recomendado quitar a futuro
+  user_id: number;
   warehouse_id: number;
+
+  order_type?: 'NORMAL' | 'DROPSHIPPING'; // 👈 NUEVO
+  payment_reference?: string | null;            // 👈 NUEVO
+
+  customer_name?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  customer_reference?: string;
+
   items: CreateOrderItemPayload[];
 };
-
 /* ===============================
    CREATE ORDER
 ================================ */
