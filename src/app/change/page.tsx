@@ -5,7 +5,7 @@ import { useUser } from '../context/UserContext';
 import { changeProduct, returnProduct, getSaleByCode } from '../services/changeService';
 import { AppStep, RequestType, Sale, SaleDetail } from './sale';
 import { getProductStockByWarehouseAndCode } from '../services/stockServices';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, CheckCircle2, Package, ArrowLeftRight,
   RotateCcw, Scan, Plus, Minus, DollarSign, ChevronLeft, ArrowRight

@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Facebook, Instagram, Twitter, Linkedin, Youtube, ShoppingBag } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -16,17 +15,13 @@ const Footer = () => {
           {/* Columna 1: Branding */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-white">
-              <ShoppingBag className="w-8 h-8 text-orange-500" />
               <span className="text-2xl font-black tracking-tighter italic">VERCO</span>
             </div>
             <p className="text-sm leading-relaxed">
               Elevando tu rendimiento y estilo desde cada paso. Las mejores zapatillas y ropa deportiva para atletas de élite y entusiastas del fitness.
             </p>
             <div className="flex gap-4 pt-2">
-              <a href="#" className="hover:text-orange-500 transition-colors"><Instagram size={20} /></a>
-              <a href="#" className="hover:text-orange-500 transition-colors"><Facebook size={20} /></a>
-              <a href="#" className="hover:text-orange-500 transition-colors"><Twitter size={20} /></a>
-              <a href="#" className="hover:text-orange-500 transition-colors"><Youtube size={20} /></a>
+          
             </div>
           </div>
 

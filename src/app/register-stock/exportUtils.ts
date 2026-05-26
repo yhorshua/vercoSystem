@@ -1,4 +1,7 @@
 import * as XLSX from 'xlsx';
+
+// Declare module to satisfy TypeScript when @types/file-saver is not installed
+declare module 'file-saver';
 import { saveAs } from 'file-saver';
 
 // Definimos las interfaces para los datos
