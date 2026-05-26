@@ -1,25 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
   images: { unoptimized: true },
-  reactStrictMode: true, // Activar el modo estricto de React para detectar problemas en el desarrollo
+  reactStrictMode: true,
 
   eslint: {
-    // Configuración de ESLint: desactivar advertencias durante la construcción
     ignoreDuringBuilds: true,
   },
+
   webpack(config) {
-    // Modificar la configuración de Webpack si es necesario
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
+
     return config;
   },
-
-  
-  /* Puedes agregar más opciones de configuración de Next.js aquí */
 };
 
 export default nextConfig;
