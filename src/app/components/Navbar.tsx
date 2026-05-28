@@ -5,20 +5,20 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '../context/UserContext';
-import { 
-  Menu, 
-  X, 
-  LogOut, 
-  User, 
-  ChevronDown, 
-  ChevronUp, 
-  LayoutDashboard, 
-  ClipboardList, 
-  Package, 
-  Users, 
-  BarChart3, 
-  Tags, 
-  Box, 
+import {
+  Menu,
+  X,
+  LogOut,
+  User,
+  ChevronDown,
+  ChevronUp,
+  LayoutDashboard,
+  ClipboardList,
+  Package,
+  Users,
+  BarChart3,
+  Tags,
+  Box,
   ClipboardPen
 } from 'lucide-react';
 import style from './page.module.css';
@@ -76,7 +76,7 @@ const Navbar = () => {
           <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Nota de Pedido
           </Link>
-            <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} />Registro de stock
           </Link>
         </>
@@ -99,7 +99,7 @@ const Navbar = () => {
           <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Nota de Pedido
           </Link>
-            <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} />Registro de stock
           </Link>
         </>
@@ -131,7 +131,7 @@ const Navbar = () => {
           {/* Dropdown de Reportes */}
           <div className={style.reportDropdown}>
             <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
-              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {isReportOpen && (
               <div className={style.dropdownMenu}>
@@ -161,7 +161,7 @@ const Navbar = () => {
             Registro de Producto
           </Link>
           <Link href="/inventorySystem" className={style.navbarLink} onClick={handleLinkClick}>
-            Inventario 
+            Inventario
           </Link>
         </>
       )}
@@ -177,10 +177,10 @@ const Navbar = () => {
           <Link href="/caja" className={style.navbarLink} onClick={handleLinkClick}>
             Caja
           </Link>
-          
+
           <div className={style.reportDropdown}>
-             <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
-              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+            <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
+              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {isReportOpen && (
               <div className={style.dropdownMenu}>
@@ -201,7 +201,7 @@ const Navbar = () => {
           <Link href="/change" className={style.navbarLink} onClick={handleLinkClick}>
             Cambio o Devolución
           </Link>
-           <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+          <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Nota de Pedido
           </Link>
         </>
@@ -209,7 +209,7 @@ const Navbar = () => {
 
       {role === 'Emprendedor' && (
         <>
-         <Link href="/pedidos" className={style.navbarLink} onClick={handleLinkClick}>
+          <Link href="/pedidos" className={style.navbarLink} onClick={handleLinkClick}>
             Registrar Pedidos
           </Link>
           <Link href="/dashboardPedido" className={style.navbarLink} onClick={handleLinkClick}>
@@ -226,8 +226,20 @@ const Navbar = () => {
           </Link>
         </>
       )}
+      {role === 'Vendedor Web' && (
+        <>
+          <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
+            Venta por Redes
+          </Link>
+          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
+            Lista de Pedidos
+          </Link>
+        </>
+      )}
+
     </>
   );
+
 
   return (
     <>
@@ -235,7 +247,7 @@ const Navbar = () => {
         {/* LOGO */}
         <div className={style.navbarLogo}>
           <Link href="/home">
-             <Image src="/img/verco_logo.png" alt="Logo Empresa" width={50} height={30} style={{ objectFit: 'contain' }} />
+            <Image src="/img/verco_logo.png" alt="Logo Empresa" width={50} height={30} style={{ objectFit: 'contain' }} />
           </Link>
         </div>
 
@@ -282,13 +294,13 @@ const Navbar = () => {
 
         {/* INFO USUARIO EN MOVIL */}
         <div className={style.mobileUserInfo}>
-           <div className={style.userAvatar}>
-              <User size={20} />
-            </div>
-            <div className={style.mobileUserText}>
-              <span className={style.username}>{user.full_name}</span>
-              <span className={style.userArea}>{warehouse_name}</span>
-            </div>
+          <div className={style.userAvatar}>
+            <User size={20} />
+          </div>
+          <div className={style.mobileUserText}>
+            <span className={style.username}>{user.full_name}</span>
+            <span className={style.userArea}>{warehouse_name}</span>
+          </div>
         </div>
 
         {/* ENLACES MOVIL */}
@@ -298,7 +310,7 @@ const Navbar = () => {
 
         {/* LOGOUT MOVIL */}
         <button onClick={handleLogout} className={`${style.logoutButton} ${style.logoutButtonMobile}`}>
-            <LogOut size={18} /> Cerrar Sesión
+          <LogOut size={18} /> Cerrar Sesión
         </button>
       </div>
     </>

@@ -1,18 +1,20 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Search, ShoppingCart, Trash2, X, Plus, Minus,
     CheckCircle2, Package, MapPin, CreditCard, MessageSquare,
-    ChevronRight, Info, User, Phone, Wallet
+    ChevronRight, Info, User, Phone
 } from 'lucide-react';
 import Swal from 'sweetalert2'; // Integrado para alertas profesionales
 import rawUbigeo from '../utils/ubigeo-peru-optimizado.json';
 import type { Ubigeo } from '../utils/types/ubigeo';
 import { getProductsByCodeOrDescription } from '../services/productsService';
 import { useUser } from '../context/UserContext';
+import { createWebSale } from '../services/webSaleService';
 
 // Tipado para el vendedor
 interface SizeStock {
+    id: number;
     talla: string;
     stock: number;
     selected: number;
@@ -39,6 +41,13 @@ export default function PantallaVentaWeb() {
 
     const ubigeo = rawUbigeo as Ubigeo;
 
+    if (!user?.token) {
+    return (
+        <div className="h-screen flex items-center justify-center">
+            Cargando sesión...
+        </div>
+    );
+}
     // Datos del Cliente y Venta
     const [customerData, setCustomerData] = useState({
         name: '',
@@ -182,7 +191,8 @@ export default function PantallaVentaWeb() {
         });
     };
 
-    const finalizarVentaCompleta = () => {
+    const finalizarVentaCompleta = async () => {
+
         if (
             !customerData.name ||
             !customerData.phone ||
@@ -192,25 +202,74 @@ export default function PantallaVentaWeb() {
             !customerData.province ||
             !customerData.district
         ) {
-            Swal.fire('Error', 'Completa los datos de envío obligatorios', 'error');
+            Swal.fire(
+                'Error',
+                'Completa los datos obligatorios',
+                'error'
+            );
             return;
         }
 
-        Swal.fire({
-            title: '¿Confirmar Pedido?',
-            text: `Se registrará la venta por S/ ${totalVenta.toFixed(2)} vía ${customerData.paymentMethod}`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, enviar a almacén',
-            confirmButtonColor: '#4f46e5'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire('¡Éxito!', 'Pedido enviado correctamente.', 'success');
-                setPedido([]);
-                setStep(1);
-                // Aquí llamarías a tu servicio: createOrder(payload)
-            }
-        });
+        try {
+
+            const payload = {
+                customer_name: customerData.name,
+                customer_dni: customerData.dni,
+                customer_phone: customerData.phone,
+                customer_address: customerData.address,
+
+                department: customerData.department,
+                province: customerData.province,
+                district: customerData.district,
+
+                reference: customerData.reference,
+
+                payment_method: customerData.paymentMethod,
+
+                observations: customerData.observations,
+
+                total_amount: totalVenta,
+
+                user_id: user.id,
+
+                details: pedido.flatMap((item) =>
+                    item.tallasElegidas.map((t: any) => ({
+                        product_id: item.id,
+                        product_size_id: t.id,
+                        size: t.talla,
+                        quantity: t.selected,
+                        sale_price: item.precio,
+                        subtotal: t.selected * item.precio
+                    }))
+                )
+            };
+
+            const result = await createWebSale(
+                payload,
+                token
+            );
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Pedido registrado',
+                html: `
+                <b>Ticket:</b> #${result.sale_id}<br/>
+                Venta registrada correctamente
+            `
+            });
+
+            setPedido([]);
+
+            setStep(1);
+
+        } catch (error: any) {
+
+            Swal.fire(
+                'Error',
+                error.message || 'No se pudo registrar la venta',
+                'error'
+            );
+        }
     };
 
     const totalVenta = pedido.reduce((a, b) => a + b.subtotal, 0);

@@ -61,10 +61,8 @@ export default function LoginPage() {
       }
 
       setUser(userData);
-
-      startTransition(() => {
-        router.replace('/home');
-      });
+      setLoading(false);
+      router.replace('/home');
     } catch (error: any) {
       Swal.fire({
         icon: 'error',
@@ -132,7 +130,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={busy}
-                  className="block w-full pl-12 pr-4 h-10 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm mb-6" 
+                  className="block w-full pl-12 pr-4 h-10 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm mb-6"
                   placeholder="usuario@verco.com.pe"
                 />
               </div>
@@ -167,7 +165,7 @@ export default function LoginPage() {
                     ? 'bg-slate-700 cursor-not-allowed opacity-80'
                     : 'bg-blue-600 hover:bg-blue-500 hover:shadow-blue-500/20 hover:-translate-y-0.5'
                   }
-              mt-8`} 
+              mt-8`}
               >
                 {busy ? (
                   <>

@@ -13,7 +13,7 @@ export default function Dashboard() {
   const [data, setData] = useState<any>({ goals: null, trend: [] });
 
   const fetchData = async () => {
-    if (!user?.warehouse_id || !user?.token) return;
+    if (user?.warehouse_id == null || !user?.token) return;
     setLoading(true);
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -51,8 +51,13 @@ export default function Dashboard() {
     }]
   }), [data.trend]);
 
-  if (loading) return <div className="h-screen flex items-center justify-center text-slate-400 font-bold animate-pulse">Sincronizando datos maestros...</div>;
-
+  if (loading || !data.goals) {
+    return (
+      <div className="h-screen flex items-center justify-center text-slate-400 font-bold animate-pulse">
+        Sincronizando datos maestros...
+      </div>
+    );
+  }
   const { progress, meta } = data.goals;
 
   return (

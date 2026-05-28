@@ -6,8 +6,12 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useUser(); // ✅ ahora tomamos 'user'
+  const { user, loading } = useUser();
   const pathname = usePathname();
+
+  if (loading) {
+  return null;
+}
 
   // ✅ mostramos navbar solo si hay usuario logueado
   const showNavbar = pathname !== '/login' && !!user;

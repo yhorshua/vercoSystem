@@ -1,9 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect
+} from 'react';
+
 import { useRouter } from 'next/navigation';
 
-// Interfaz de Role, Warehouse, StateUser, User
 export interface Role {
   id: number;
   name_role: string;
@@ -19,7 +24,10 @@ export interface Warehouse {
   warehouse_name: string;
   type: string;
   location: string;
-  status: { type: string; data: number[] };
+  status: {
+    type: string;
+    data: number[];
+  };
 }
 
 export interface User {
@@ -32,66 +40,103 @@ export interface User {
   rol_id: number;
   role: Role;
   date_register: string;
-  state_user: string;
+  state_user: any;
   warehouse_id: number;
-  warehouse: Warehouse | null;  // Asegúrate de que puede ser null mientras se carga
+  warehouse: Warehouse | null;
   token: string;
 }
 
 interface UserContextType {
   user: User | null;
+  loading: boolean;
   setUser: (user: User | null) => void;
   logout: () => void;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const UserContext = createContext<UserContextType | undefined>(
+  undefined
+);
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const UserProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+
   const [user, setUser] = useState<User | null>(null);
-  const [isClientSide, setIsClientSide] = useState(false); // Controlar la ejecución en el cliente
+
+  const [loading, setLoading] = useState(true);
+
   const router = useRouter();
 
-  // Recuperar datos del usuario desde el localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsClientSide(true); // Solo se ejecuta en el cliente
+
+    if (typeof window === 'undefined') return;
+
+    try {
 
       const token = localStorage.getItem('access_token');
+
       const savedUser = localStorage.getItem('user_data');
 
       if (token && savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          setUser(parsed);
-        } catch (error) {
-          console.error('Error al parsear los datos del usuario:', error);
-        }
-      } else {
-        router.push('/login');
+
+        const parsedUser = JSON.parse(savedUser);
+
+        setUser(parsedUser);
       }
+
+    } catch (error) {
+
+      console.error(
+        'Error cargando usuario',
+        error
+      );
+
+    } finally {
+
+      setLoading(false);
     }
-  }, [router]);
+
+  }, []);
 
   const logout = () => {
+
     localStorage.removeItem('access_token');
+
     localStorage.removeItem('user_data');
+
+    document.cookie =
+      'access_token=; path=/; max-age=0';
+
     setUser(null);
+
     router.push('/login');
   };
 
-  if (!isClientSide) {
-    return null; // No renderizar nada en el servidor
-  }
-
   return (
-    <UserContext.Provider value={{ user, setUser, logout }}>
+    <UserContext.Provider
+      value={{
+        user,
+        loading,
+        setUser,
+        logout
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
 };
 
-export const useUser = (): UserContextType => {
+export const useUser = () => {
+
   const context = useContext(UserContext);
-  if (!context) throw new Error('useUser debe usarse dentro de UserProvider');
+
+  if (!context) {
+    throw new Error(
+      'useUser debe usarse dentro de UserProvider'
+    );
+  }
+
   return context;
 };
