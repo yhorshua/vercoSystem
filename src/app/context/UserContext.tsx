@@ -101,18 +101,12 @@ export const UserProvider = ({
   }, []);
 
   const logout = () => {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('user_data');
+  document.cookie = 'access_token=; path=/; max-age=0';
 
-    localStorage.removeItem('access_token');
-
-    localStorage.removeItem('user_data');
-
-    document.cookie =
-      'access_token=; path=/; max-age=0';
-
-    setUser(null);
-
-    router.push('/login');
-  };
+  setUser(null);
+};
 
   return (
     <UserContext.Provider
