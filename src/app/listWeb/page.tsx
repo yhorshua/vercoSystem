@@ -24,7 +24,7 @@ import { PedidoStatusBadge } from '../components/badge';
 import {
     getWebSales,
     updateWebSaleStatus,
-    WebSaleResponse
+    WebSaleResponse, deliverSaleRequest
 } from '../services/webSaleService';
 import Swal from 'sweetalert2';
 
@@ -38,7 +38,9 @@ export default function ListaPedidosPage() {
 
     const [search, setSearch] = useState('');
     const { user } = useUser();
-
+    const [detailStatusMap, setDetailStatusMap] = useState<
+        Record<number, string>
+    >({});
     const token = user?.token;
 
     const [selectedSale, setSelectedSale] =
@@ -174,40 +176,47 @@ export default function ListaPedidosPage() {
     };
 
 
-    const handleDelivered = async (
-        sale: WebSaleResponse
-    ) => {
+    const handleDelivered = async (sale: WebSaleResponse) => {
+        if (!token) return;
 
         if (
             sale.is_agency_delivery &&
             !shippingCodeInput.trim()
         ) {
-
-            Swal.fire(
-                'Error',
-                'Debe ingresar el código de envío',
-                'error'
-            );
-
+            Swal.fire('Error', 'Debe ingresar el código de envío', 'error');
             return;
         }
 
-        await updateWebSaleStatus(
-            sale.id,
-            'ENTREGADO',
-            token,
-            shippingCodeInput
-        );
+        try {
+            // 1. actualizar detalles
+            await deliverSaleRequest(
+                sale.id,
+                {
+                    details: sale.details.map((d: any) => ({
+                        detail_id: d.id,
+                        status: detailStatusMap[d.id] || 'VENDIDO'
+                    }))
+                },
+                token
+            );
 
-        Swal.fire(
-            'Correcto',
-            'Pedido entregado',
-            'success'
-        );
+            // 2. actualizar estado general
+            await updateWebSaleStatus(
+                sale.id,
+                'ENTREGADO',
+                token,
+                shippingCodeInput
+            );
 
-        loadSales();
+            Swal.fire('Correcto', 'Pedido entregado', 'success');
 
-        handleCloseModal();
+            loadSales();
+            handleCloseModal();
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'No se pudo completar la entrega', 'error');
+        }
     };
 
     const filteredSales = useMemo(() => {
@@ -297,8 +306,16 @@ export default function ListaPedidosPage() {
     ).length;
 
 
+    const updateDetailStatus = (
+        detailId: number,
+        status: string
+    ) => {
+        setDetailStatusMap(prev => ({
+            ...prev,
+            [detailId]: status
+        }));
+    };
 
-    
     return (
 
         <div className="min-h-screen bg-slate-50 p-4 lg:p-8">
@@ -787,6 +804,7 @@ export default function ListaPedidosPage() {
                                                 <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase">Talla</th>
                                                 <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase">Cant.</th>
                                                 <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase">Precio</th>
+                                                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase">Estado Entrega</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -801,6 +819,19 @@ export default function ListaPedidosPage() {
                                                     </td>
                                                     <td className="px-6 py-4 text-center font-bold text-slate-600">{item.quantity}</td>
                                                     <td className="px-6 py-4 text-right font-black text-slate-800">S/ {Number(item.sale_price).toFixed(2)}</td>
+                                                    <td>
+                                                        {role === 'Delivery' && (
+                                                            <select
+                                                                value={detailStatusMap[item.id] || ''}
+                                                                onChange={(e) =>
+                                                                    updateDetailStatus(item.id, e.target.value)
+                                                                }
+                                                            >
+                                                                <option value="VENDIDO">VENDIDO</option>
+                                                                <option value="DEVUELTO">DEVUELTO</option>
+                                                            </select>
+                                                        )}
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>

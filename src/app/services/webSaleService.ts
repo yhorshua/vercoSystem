@@ -165,3 +165,34 @@ export async function updateWebSaleStatus(
 
   return res.json();
 }
+
+export interface DeliverSaleDetailDto {
+  detail_id: number;
+  status: string;
+}
+
+export interface DeliverSaleDto {
+  details: DeliverSaleDetailDto[];
+}
+
+export async function deliverSaleRequest(
+  id: number,
+  data: DeliverSaleDto,
+  token: string
+) {
+  const res = await fetch(`${API_URL}/websales/${id}/deliver`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Error al registrar entrega');
+  }
+
+  return res.json();
+}
