@@ -15,10 +15,9 @@ import {
     CreditCard,
     Package,
     Printer,
-    Route
+    Route,
+    RefreshCw
 } from 'lucide-react';
-
-import Link from 'next/link';
 import { useUser } from '../context/UserContext';
 import { PedidoStatusBadge } from '../components/badge';
 
@@ -124,6 +123,18 @@ export default function ListaPedidosPage() {
     };
 
     if (!token) return;
+
+    useEffect(() => {
+
+        if (!token) return;
+
+        const interval = setInterval(() => {
+            loadSales();
+        }, 100000);
+
+        return () => clearInterval(interval);
+
+    }, [token, filter]);
 
     useEffect(() => {
 
@@ -277,6 +288,17 @@ export default function ListaPedidosPage() {
 
         window.open(routeUrl, '_blank');
     };
+
+
+    const pendingDeliveries = sales.filter(
+        sale =>
+            sale.status === 'DESPACHADO' &&
+            !sale.is_agency_delivery
+    ).length;
+
+
+
+    
     return (
 
         <div className="min-h-screen bg-slate-50 p-4 lg:p-8">
@@ -302,10 +324,12 @@ export default function ListaPedidosPage() {
                     <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
 
                         {[
-                            'todos',
-                            'pendiente',
-                            'despachado',
-                            'entregado'
+                            'TODOS',
+                            'PENDIENTE',
+                            'APROBADO',
+                            'DESPACHADO',
+                            'ENTREGADO',
+                            'CANCELADO'
                         ].map((f) => (
 
                             <button
@@ -313,12 +337,28 @@ export default function ListaPedidosPage() {
                                 onClick={() => setFilter(f)}
                                 className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all ${filter === f
                                     ? 'bg-slate-900 text-white shadow-lg'
-                                    : 'bg-white text-slate-500 hover:bg-slate-100'
+                                    : 'bg-white text-slate-500 hover:bg-green-200'
                                     }`}
                             >
-                                {f}
+                                {f.toLowerCase()}
                             </button>
                         ))}
+
+                        <button
+                            onClick={loadSales}
+                            className="
+            flex items-center gap-2
+            px-4 py-2
+            bg-blue-600
+            hover:bg-blue-700
+            text-white
+            rounded-xl
+            text-xs
+            font-bold
+        "
+                        >
+                            <RefreshCw size={14} />
+                        </button>
                     </div>
                 </div>
 
@@ -340,26 +380,41 @@ export default function ListaPedidosPage() {
                             className="w-full outline-none font-medium text-slate-600"
                         />
                     </div>
+
+
                     {/* Botón Ruta */}
                     {isDelivery && (
-                        <button
-                            onClick={generateRoute}
-                            className="
-                flex items-center justify-center gap-2
-                px-6 py-4
-                bg-orange-600
-                hover:bg-orange-700
-                text-white
-                rounded-[2rem]
-                font-bold
-                shadow-sm
-                whitespace-nowrap
-                transition-all
-            "
-                        >
-                            <Route size={18} />
-                            Generar Ruta
-                        </button>
+                        <>
+                            <span
+                                className="
+                                    px-2 py-2
+                                    bg-orange-100
+                                    text-orange-700
+                                    rounded-xl
+                                    font-bold
+                                "
+                            >
+                                {pendingDeliveries} entregas
+                            </span>
+                            <button
+                                onClick={generateRoute}
+                                className="
+                                    flex items-center justify-center gap-2
+                                    px-6 py-4
+                                    bg-orange-600
+                                    hover:bg-orange-700
+                                    text-white
+                                    rounded-[2rem]
+                                    font-bold
+                                    shadow-sm
+                                    whitespace-nowrap
+                                    transition-all
+                                "
+                            >
+                                <Route size={18} />
+                                Generar Ruta
+                            </button>
+                        </>
                     )}
 
                 </div>
@@ -773,12 +828,30 @@ export default function ListaPedidosPage() {
                             {
                                 isSalesManager &&
                                 selectedSale.status === 'PENDIENTE' && (
-                                    <button
-                                        className=" px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black shadow-lg transition-all"
-                                        onClick={() => changeStatus('APROBADO')}
-                                    >
-                                        Aprobar Pedido
-                                    </button>
+                                    <>
+                                        <button
+                                            className=" px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black shadow-lg transition-all"
+                                            onClick={() => changeStatus('APROBADO')}
+                                        >
+                                            Aprobar Pedido
+                                        </button>
+
+                                        <button
+                                            onClick={() => changeStatus('CANCELADO')}
+                                            className="
+                px-6 py-3
+                bg-gray-700
+                hover:bg-gray-800
+                text-white
+                rounded-2xl
+                font-black
+                shadow-lg
+                transition-all
+            "
+                                        >
+                                            Cancelar Pedido
+                                        </button>
+                                    </>
                                 )
                             }
 
@@ -797,15 +870,16 @@ export default function ListaPedidosPage() {
                             {
                                 role === 'Delivery' &&
                                 selectedSale.status === 'DESPACHADO' && (
-                                    <button
-                                        onClick={() =>
-                                            handleDelivered(selectedSale)
-                                        }
-                                        disabled={
-                                            selectedSale.is_agency_delivery &&
-                                            !shippingCodeInput.trim()
-                                        }
-                                        className={`
+                                    <>
+                                        <button
+                                            onClick={() =>
+                                                handleDelivered(selectedSale)
+                                            }
+                                            disabled={
+                                                selectedSale.is_agency_delivery &&
+                                                !shippingCodeInput.trim()
+                                            }
+                                            className={`
                 px-6
                 py-3
                 rounded-2xl
@@ -813,16 +887,35 @@ export default function ListaPedidosPage() {
                 shadow-lg
                 text-white
                 ${selectedSale.is_agency_delivery &&
-                                                !shippingCodeInput.trim()
-                                                ? 'bg-gray-400 cursor-not-allowed'
-                                                : 'bg-green-600 hover:bg-green-700'
-                                            }
+                                                    !shippingCodeInput.trim()
+                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                    : 'bg-green-600 hover:bg-green-700'
+                                                }
             `}
-                                    >
-                                        Entregado
-                                    </button>
+                                        >
+                                            Entregado
+                                        </button>
+                                        <button
+                                            onClick={() => changeStatus('CANCELADO')}
+                                            className="
+                px-6 py-3
+                bg-gray-700
+                hover:bg-gray-800
+                text-white
+                rounded-2xl
+                font-black
+                shadow-lg
+                transition-all
+            "
+                                        >
+                                            Cancelar Pedido
+                                        </button>
+
+                                    </>
                                 )
                             }
+
+
                             <div className="flex items-center gap-6">
                                 <div className="text-right">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total del Pedido</p>
