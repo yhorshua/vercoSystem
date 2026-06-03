@@ -340,7 +340,6 @@ export default function ListaPedidosPage() {
                             className="w-full outline-none font-medium text-slate-600"
                         />
                     </div>
-
                     {/* Botón Ruta */}
                     {isDelivery && (
                         <button
