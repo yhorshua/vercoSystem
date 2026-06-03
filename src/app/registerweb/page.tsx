@@ -35,19 +35,20 @@ export default function PantallaVentaWeb() {
     const [selectedProduct, setSelectedProduct] = useState<ProductoVendedor | null>(null);
     const [pedido, setPedido] = useState<any[]>([]);
     const [step, setStep] = useState(1); // 1: Carrito, 2: Datos Cliente y Pago
-
+    const [isAgencyDelivery, setIsAgencyDelivery] =
+        useState(false);
     const { user } = useUser();
     const token = user?.token ?? '';
 
     const ubigeo = rawUbigeo as Ubigeo;
 
     if (!user?.token) {
-    return (
-        <div className="h-screen flex items-center justify-center">
-            Cargando sesión...
-        </div>
-    );
-}
+        return (
+            <div className="h-screen flex items-center justify-center">
+                Cargando sesión...
+            </div>
+        );
+    }
     // Datos del Cliente y Venta
     const [customerData, setCustomerData] = useState({
         name: '',
@@ -60,6 +61,7 @@ export default function PantallaVentaWeb() {
         reference: '',
         paymentMethod: 'Yape',
         observations: '',
+        agencyName: '',
     });
 
 
@@ -231,6 +233,12 @@ export default function PantallaVentaWeb() {
                 total_amount: totalVenta,
 
                 user_id: user.id,
+                is_agency_delivery: isAgencyDelivery,
+                agency_name:
+                    isAgencyDelivery
+                        ? customerData.agencyName
+                        : null,
+
 
                 details: pedido.flatMap((item) =>
                     item.tallasElegidas.map((t: any) => ({
@@ -241,7 +249,11 @@ export default function PantallaVentaWeb() {
                         sale_price: item.precio,
                         subtotal: t.selected * item.precio
                     }))
-                )
+                ),
+
+
+
+
             };
 
             const result = await createWebSale(
@@ -271,6 +283,8 @@ export default function PantallaVentaWeb() {
             );
         }
     };
+
+
 
     const totalVenta = pedido.reduce((a, b) => a + b.subtotal, 0);
 
@@ -501,6 +515,7 @@ export default function PantallaVentaWeb() {
                                             </select>
                                         </div>
 
+
                                         <div className="relative">
                                             <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
                                             <textarea
@@ -509,6 +524,37 @@ export default function PantallaVentaWeb() {
                                                 onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
                                             />
                                         </div>
+
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={isAgencyDelivery}
+                                                onChange={(e) =>
+                                                    setIsAgencyDelivery(e.target.checked)
+                                                }
+                                            />
+
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                                                Envío por Agencia
+                                            </label>
+                                        </div>
+                                        {
+                                            isAgencyDelivery && (
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nombre de la agencia"
+                                                    className="w-full p-4 rounded-2xl bg-slate-50 border"
+                                                    onChange={(e) =>
+                                                        setCustomerData({
+                                                            ...customerData,
+                                                            agencyName: e.target.value
+                                                        })
+                                                    }
+                                                />
+                                            )
+                                        }
+
+
 
                                         <div className="pt-4 border-t border-slate-100">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">Método de Pago</label>

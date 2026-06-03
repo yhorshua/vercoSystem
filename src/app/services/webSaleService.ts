@@ -50,6 +50,12 @@ export interface WebSaleResponse {
 
   status: string;
 
+  is_agency_delivery: boolean;
+
+  agency_name?: string;
+
+  shipping_code?: string;
+
   created_at: string;
 
   seller: {
@@ -61,17 +67,7 @@ export interface WebSaleResponse {
 
   total_products: number;
 
-  details: {
-    id: number;
-    product_id: number;
-    product_name: string;
-    article_code: string;
-    image: string;
-    size: string;
-    quantity: number;
-    sale_price: number;
-    subtotal: number;
-  }[];
+  details: any[];
 }
 
 export interface FilterSalesParams {
@@ -134,6 +130,37 @@ export async function getWebSales(
 
   if (!res.ok) {
     throw new Error('Error al obtener ventas');
+  }
+
+  return res.json();
+}
+
+export async function updateWebSaleStatus(
+   id: number,
+  status: string,
+  token: string,
+  shipping_code?: string
+) {
+  const res = await fetch(
+    `${API_URL}/websales/${id}/status`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        status,
+        shipping_code
+      })
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(
+      text || 'Error al actualizar estado'
+    );
   }
 
   return res.json();

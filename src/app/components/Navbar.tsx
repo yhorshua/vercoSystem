@@ -87,20 +87,27 @@ const Navbar = () => {
           <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
             <ClipboardList size={18} /> Registrar Pedido
           </Link>
+          {/* 
           <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista de Pedidos
+          <LayoutDashboard size={18} /> Lista de Pedidos
           </Link>
+          
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} /> Stock
           </Link>
           <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
+          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Package size={18} />Registro de stock
+          </Link>
+          */}
           <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Nota de Pedido
           </Link>
-          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} />Registro de stock
+          
+          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
+            Lista de Pedidos Web
           </Link>
         </>
       )}
@@ -236,6 +243,15 @@ const Navbar = () => {
           </Link>
         </>
       )}
+
+      {role === 'Delivery' && (
+        <>
+          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
+            Lista de Pedidos
+          </Link>
+        </>
+      )}
+
 
     </>
   );
