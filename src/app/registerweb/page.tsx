@@ -11,6 +11,7 @@ import type { Ubigeo } from '../utils/types/ubigeo';
 import { getProductsByCodeOrDescription } from '../services/productsService';
 import { useUser } from '../context/UserContext';
 import { createWebSale } from '../services/webSaleService';
+import { getProductImage } from '../utils/images';
 
 // Tipado para el vendedor
 interface SizeStock {
@@ -39,7 +40,6 @@ export default function PantallaVentaWeb() {
         useState(false);
     const { user } = useUser();
     const token = user?.token ?? '';
-
     const ubigeo = rawUbigeo as Ubigeo;
 
     if (!user?.token) {
@@ -97,10 +97,7 @@ export default function PantallaVentaWeb() {
 
                 precio: Number(product.price || 0),
 
-                imagen:
-                    product.product_image && product.product_image !== ''
-                        ? product.product_image
-                        : '/img/no-image.png',
+                imagen: getProductImage(product.product_image),
 
                 tallas:
                     product.sizes?.map((s: any) => ({
