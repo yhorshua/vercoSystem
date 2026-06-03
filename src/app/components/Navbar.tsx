@@ -35,9 +35,9 @@ const Navbar = () => {
   const warehouse_name = user?.warehouse?.warehouse_name;
 
   const handleLogout = () => {
-    logout();
-    router.push('/login');
     setIsMenuOpen(false);
+    logout();
+    router.replace('/login');
   };
 
   const toggleMenu = () => {
