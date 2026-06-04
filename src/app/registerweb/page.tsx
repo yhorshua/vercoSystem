@@ -405,7 +405,7 @@ export default function PantallaVentaWeb() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                            <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar min-h-[110px]">
                                 <div className="grid grid-cols-2 gap-3">
                                     {selectedProduct.tallas.map((t, i) => (
                                         <div
