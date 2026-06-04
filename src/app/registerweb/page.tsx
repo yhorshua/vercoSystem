@@ -383,7 +383,7 @@ export default function PantallaVentaWeb() {
 
                         <div
                             className="
-    h-40
+    h-50
     md:h-auto
     md:w-1/2
     bg-slate-100
