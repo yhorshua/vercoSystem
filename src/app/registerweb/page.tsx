@@ -381,7 +381,17 @@ export default function PantallaVentaWeb() {
                     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setShowModal(false)} />
                     <div className="relative bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row max-h-[95vh] animate-in zoom-in-95 duration-300">
 
-                        <div className="md:w-1/2 bg-slate-100 relative group">
+                        <div
+                            className="
+    h-40
+    md:h-auto
+    md:w-1/2
+    bg-slate-100
+    relative
+    group
+    shrink-0
+  "
+                        >
                             <img src={selectedProduct.imagen} className="w-full h-full object-cover" alt={selectedProduct.nombre} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
                             <div className="absolute bottom-8 left-8 text-white">
@@ -405,7 +415,7 @@ export default function PantallaVentaWeb() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar min-h-[110px]">
+                            <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
                                 <div className="grid grid-cols-2 gap-3">
                                     {selectedProduct.tallas.map((t, i) => (
                                         <div
