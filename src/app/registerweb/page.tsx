@@ -38,7 +38,7 @@ export default function PantallaVentaWeb() {
     const [pedido, setPedido] = useState<any[]>([]);
     const [step, setStep] = useState(1); // 1: Carrito, 2: Datos
     const [isAgencyDelivery, setIsAgencyDelivery] = useState(false);
-    
+
     const { user } = useUser();
     const token = user?.token ?? '';
     const ubigeo = rawUbigeo as Ubigeo;
@@ -194,7 +194,7 @@ export default function PantallaVentaWeb() {
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-10 font-sans text-slate-900">
             <div className="max-w-7xl mx-auto p-4 lg:p-8">
-                
+
                 {/* HEADER */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
@@ -213,10 +213,10 @@ export default function PantallaVentaWeb() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
+
                     {/* COLUMNA IZQUIERDA */}
                     <div className="lg:col-span-7 space-y-6">
-                        
+
                         {/* BUSCADOR */}
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
@@ -280,14 +280,14 @@ export default function PantallaVentaWeb() {
                     {/* COLUMNA DERECHA */}
                     <div className="lg:col-span-5">
                         <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200 border border-slate-200 sticky top-8">
-                            
+
                             {step === 1 ? (
                                 <div className="space-y-8 animate-in fade-in duration-300">
                                     <div className="text-center">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Resumen Total</p>
                                         <h2 className="text-5xl font-black text-slate-900 tracking-tighter">S/ {totalVenta.toFixed(2)}</h2>
                                     </div>
-                                    
+
                                     <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl flex gap-4">
                                         <div className="bg-indigo-500 h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-lg shadow-indigo-200">
                                             <Info size={20} />
@@ -314,11 +314,11 @@ export default function PantallaVentaWeb() {
 
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <CustomInput icon={<User size={18}/>} placeholder="Nombre Cliente" value={customerData.name} onChange={(v) => setCustomerData({ ...customerData, name: v })} />
-                                            <CustomInput icon={<CreditCard size={18}/>} placeholder="DNI" value={customerData.dni} maxLength={8} onChange={(v) => setCustomerData({ ...customerData, dni: v.replace(/\D/g, '') })} />
+                                            <CustomInput icon={<User size={18} />} placeholder="Nombre Cliente" value={customerData.name} onChange={(v) => setCustomerData({ ...customerData, name: v })} />
+                                            <CustomInput icon={<CreditCard size={18} />} placeholder="DNI" value={customerData.dni} maxLength={8} onChange={(v) => setCustomerData({ ...customerData, dni: v.replace(/\D/g, '') })} />
                                         </div>
 
-                                        <CustomInput icon={<Phone size={18}/>} placeholder="Celular" value={customerData.phone} onChange={(v) => setCustomerData({ ...customerData, phone: v })} />
+                                        <CustomInput icon={<Phone size={18} />} placeholder="Celular" value={customerData.phone} onChange={(v) => setCustomerData({ ...customerData, phone: v })} />
 
                                         <div className="grid grid-cols-3 gap-3">
                                             <select className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 font-bold text-xs outline-none focus:ring-2 ring-indigo-500/20" value={depId} onChange={(e) => { const v = e.target.value as keyof Ubigeo; setDepId(v); setProvId(''); setDistId(''); setCustomerData({ ...customerData, department: ubigeo[v].nombre, province: '', district: '' }); }}>
@@ -349,7 +349,7 @@ export default function PantallaVentaWeb() {
                                         </div>
 
                                         <div className="space-y-3">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CreditCard size={12}/> Método de Pago</label>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CreditCard size={12} /> Método de Pago</label>
                                             <div className="grid grid-cols-4 gap-2">
                                                 {['Efectivo', 'Yape', 'Plin', 'Tarjeta'].map((m) => (
                                                     <button key={m} onClick={() => setCustomerData({ ...customerData, paymentMethod: m })} className={`p-2 rounded-xl border-2 font-black text-[10px] transition-all uppercase ${customerData.paymentMethod === m ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-300 bg-white'}`}>
@@ -379,8 +379,8 @@ export default function PantallaVentaWeb() {
             {showModal && selectedProduct && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
                     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setShowModal(false)} />
-                    <div className="relative bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row max-h-[90vh] animate-in zoom-in-95 duration-300">
-                        
+                    <div className="relative bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row max-h-[95vh] animate-in zoom-in-95 duration-300">
+
                         <div className="md:w-1/2 bg-slate-100 relative group">
                             <img src={selectedProduct.imagen} className="w-full h-full object-cover" alt={selectedProduct.nombre} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
@@ -393,7 +393,7 @@ export default function PantallaVentaWeb() {
 
                         <div className="md:w-1/2 p-8 flex flex-col min-h-0">
                             <div className="flex justify-between items-center mb-8">
-                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Configuración de Item</h3>
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Tag size={14} /> Configuración de Item</h3>
                                 <button onClick={() => setShowModal(false)} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-all"><X size={24} /></button>
                             </div>
 
@@ -406,26 +406,50 @@ export default function PantallaVentaWeb() {
                             </div>
 
                             <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-                                {selectedProduct.tallas.map((t, i) => (
-                                    <div key={t.talla} className={`flex items-center justify-between p-4 rounded-[1.5rem] border-2 transition-all ${t.selected > 0 ? 'border-indigo-600 bg-indigo-50 shadow-lg shadow-indigo-100' : 'border-slate-50 bg-white hover:border-slate-200'}`}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black italic transition-all ${t.selected > 0 ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}>
-                                                {t.talla}
-                                            </div>
-                                         
-                                            <div>
-                                                <p className="text-[10px] font-black text-slate-300 uppercase leading-none mb-1">TALLA</p>
-                                            </div>
-                                           
-                                        </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {selectedProduct.tallas.map((t, i) => (
+                                        <div
+                                            key={t.talla}
+                                            className={`
+        p-4 rounded-2xl border-2
+        ${t.selected > 0
+                                                    ? 'border-indigo-600 bg-indigo-50'
+                                                    : 'border-slate-200'
+                                                }
+      `}
+                                        >
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-black text-lg">
+                                                    {t.talla}
+                                                </span>
 
-                                        <div className="flex items-center gap-4 bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
-                                            <button onClick={() => updateQty(i, -1)} className="w-10 h-10 flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl transition-all"><Minus size={18} /></button>
-                                            <span className="w-8 text-center font-black text-indigo-600 text-lg">{t.selected}</span>
-                                            <button onClick={() => updateQty(i, 1)} className="w-10 h-10 flex items-center justify-center hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-xl transition-all"><Plus size={18} /></button>
+                                                <span className="text-xs text-slate-400">
+                                                    Stock: {t.stock}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center justify-center gap-3 mt-3">
+                                                <button
+                                                    onClick={() => updateQty(i, -1)}
+                                                    className="w-8 h-8 rounded-lg bg-slate-100"
+                                                >
+                                                    -
+                                                </button>
+
+                                                <span className="font-black text-xl">
+                                                    {t.selected}
+                                                </span>
+
+                                                <button
+                                                    onClick={() => updateQty(i, 1)}
+                                                    className="w-8 h-8 rounded-lg bg-indigo-600 text-white"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
 
                             <button onClick={agregarAlPedido} className="w-full bg-slate-900 text-white py-6 rounded-3xl font-black mt-8 shadow-xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-3 active:scale-95 uppercase tracking-widest">
