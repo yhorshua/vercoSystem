@@ -535,7 +535,7 @@ export default function ListaPedidosPage() {
 
             {/* Fila botones logísticos */}
             <div className="flex flex-wrap items-center gap-2">
-              
+              {isSalesManager && (
               <button
                 onClick={() => {
                   const approvedSales = sales.filter(s => s.status === 'APROBADO');
@@ -546,7 +546,7 @@ export default function ListaPedidosPage() {
                 <Printer size={13} />
                 <span>Imprimir Etiquetas ({sales.filter(s => s.status === 'APROBADO').length})</span>
               </button>
-
+              )}
               {/* Botón generar ruta visible solo para transportistas (Delivery) */}
               {isDelivery && (
                 <div className="flex items-center gap-2">
