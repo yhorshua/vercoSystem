@@ -38,6 +38,7 @@ export interface WebSaleResponse {
   customer_name: string;
   customer_phone: string;
   customer_address: string;
+  customer_dni: string;
 
   department: string;
   province: string;
