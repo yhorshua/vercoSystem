@@ -27,6 +27,7 @@ import {
     WebSaleResponse, deliverSaleRequest
 } from '../services/webSaleService';
 import Swal from 'sweetalert2';
+import { printLabels } from '../utils/printTickets';
 
 export default function ListaPedidosPage() {
 
@@ -397,6 +398,29 @@ export default function ListaPedidosPage() {
                             className="w-full outline-none font-medium text-slate-600"
                         />
                     </div>
+
+                    <button
+    onClick={() => {
+        const approvedSales = sales.filter(
+            s => s.status === 'APROBADO'
+        );
+
+        printLabels(approvedSales);
+    }}
+    className="
+        flex items-center gap-2
+        px-4 py-2
+        bg-green-600
+        hover:bg-green-700
+        text-white
+        rounded-xl
+        text-xs
+        font-bold
+    "
+>
+    <Printer size={14} />
+    Imprimir Etiquetas
+</button>
 
 
                     {/* Botón Ruta */}
@@ -847,7 +871,7 @@ export default function ListaPedidosPage() {
                                 selectedSale.status === 'APROBADO' && (
 
                                     <button
-                                        onClick={handlePrintAction}
+                                        onClick={ () => printLabels([selectedSale])}
                                         className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 transition-all shadow-sm active:scale-95"
                                     >
                                         <Printer size={18} /> Imprimir Ticket
