@@ -5,7 +5,8 @@ import Swal from 'sweetalert2';
 import {
   Search, Calendar, User as UserIcon, Package, Eye, XCircle,
   RefreshCw, CheckCircle2, Truck, FileText, Receipt, MapPinned,
-  SlidersHorizontal, ChevronRight, AlertCircle, Sparkles, Filter
+  SlidersHorizontal, ChevronRight, AlertCircle, Sparkles, Filter,
+  FileDown
 } from 'lucide-react';
 
 import PedidoDetalleModal from './PedidoDetalleModal';
@@ -15,7 +16,8 @@ import { getOrdersByRole, approveOrder, rejectOrder } from '../services/ordersSe
 import { Pedido } from '../utils/types/pedidos';
 import { createGuiaFromOrder } from '../services/guiaService';
 import { getSellersByWarehouse, SellerOption } from '../services/userServices';
-import { buildPedidoPdfBlobFormal } from '../utils/guiainterna';
+import { buildPedidoHtmlFormal, buildPedidoPdfBlobFormal } from '../utils/guiainterna';
+import html2pdf from 'html2pdf.js';
 
 const JEFEVEN = 'Jefe Ventas';
 const VENDEDO = 'Vendedor';
@@ -99,9 +101,12 @@ export default function OrderListPage() {
       const mapped: Pedido[] = data.map((o: any) => ({
         id: String(o.id),
         cliente: {
+          codigo: o.cliente?.codigo,
           nombre: o.cliente?.nombre ?? 'Sin nombre',
           telefono: o.cliente?.telefono ?? '-',
-          email: o.cliente?.email
+          email: o.cliente?.email,
+          ruc: o.cliente?.ruc,
+          direccion: o.cliente?.direccion
         },
         vendedor: o.vendedor ?? 'No asignado',
         fechaRegistro: o.fechaRegistro ? (o.fechaRegistro.includes('T') ? o.fechaRegistro.split('T')[0] : o.fechaRegistro) : '-',
@@ -216,7 +221,9 @@ export default function OrderListPage() {
 
   const handleGenerarGuia = async (pedido: Pedido) => {
     if (!token) return;
+
     setLoadingGuia(pedido.id);
+
     try {
       const result = await Swal.fire({
         title: '¿Generar Guía de Remisión?',
@@ -227,35 +234,38 @@ export default function OrderListPage() {
         cancelButtonColor: '#64748b',
         confirmButtonText: 'Sí, emitir despacho'
       });
+
       if (!result.isConfirmed) {
         setLoadingGuia(null);
         return;
       }
+
       const response = await createGuiaFromOrder(
         { order_id: Number(pedido.id), usuario_id: user?.id || 1 },
         token
       );
+
       Swal.fire({
         icon: response.ok ? 'success' : 'info',
         title: response.ok ? 'Operación Exitosa' : 'Información',
         text: response.message,
         confirmButtonColor: '#4f46e5'
       });
+
       const guia = response.guia;
       if (!guia) throw new Error('No se obtuvo información de la guía de remisión');
 
       const jefeVentas = user?.full_name || 'Jefe de Ventas';
       const pdfBlob = await buildPedidoPdfBlobFormal(pedido, jefeVentas);
 
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-
       const isReimpresion = response.message.toLowerCase().includes('ya generada') || response.message.toLowerCase().includes('re-despacho');
       const filename = isReimpresion
         ? `GUIA_REIMPRESION_DOC_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`
         : `GUIA_DESPACHO_DOC_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`;
 
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
@@ -263,6 +273,7 @@ export default function OrderListPage() {
       URL.revokeObjectURL(url);
 
       fetchPedidos();
+
     } catch (error: any) {
       Swal.fire({
         icon: 'error',
@@ -272,6 +283,33 @@ export default function OrderListPage() {
       });
     } finally {
       setLoadingGuia(null);
+    }
+  };
+
+  const handleVerPdf = async (pedido: Pedido) => {
+    try {
+      const jefeVentas = user?.full_name || 'Jefe de Ventas';
+      const pdfBlob = await buildPedidoPdfBlobFormal(pedido, jefeVentas);
+
+      const filename = `GUIA_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`;
+
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo generar el PDF',
+        confirmButtonColor: '#ef4444'
+      });
     }
   };
 
@@ -523,15 +561,44 @@ export default function OrderListPage() {
                       </button>
                     )}
 
-                    {(rolUsuario === JEFEVEN || rolUsuario === ADMIN) && estadosPermitidos.includes(pedido.estado) && (
+                    {(rolUsuario === JEFEVEN || rolUsuario === ADMIN) &&
+                      (pedido.estado === 'Alistado' ||
+                        pedido.estado === 'Despachado' ||
+                        pedido.estado === 'Facturado') && (
+                        <div className="flex items-center gap-1 flex-row">
+                          <button
+                            onClick={() => handleGenerarGuia(pedido)}
+                            disabled={loadingGuia === pedido.id}
+                            className="p-1.5 text-blue-600 bg-blue-50 border border-blue-100 rounded-lg text-xs"
+                          >
+                            Guía
+                          </button>
+                        </div>
+                      )}
+
+                    {pedido.estado === 'Alistado' && (
                       <button
                         onClick={() => handleGenerarGuia(pedido)}
                         disabled={loadingGuia === pedido.id}
-                        className="p-1.5 text-blue-600 bg-blue-50 border border-blue-100 rounded-lg text-xs"
+                        className="p-1.5 text-slate-500 bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-150 rounded-lg transition-all active:scale-98 cursor-pointer shadow-3xs"
+                        title="Generar Guía"
                       >
-                        Guía
+                        {loadingGuia === pedido.id
+                          ? '...'
+                          : <FileText size={13} />}
                       </button>
                     )}
+
+                    {(pedido.estado === 'Despachado' ||
+                      pedido.estado === 'Facturado') && (
+                        <button
+                          onClick={() => handleVerPdf(pedido)}
+                          className="p-1.5 text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 rounded-lg transition-all active:scale-98 cursor-pointer shadow-3xs"
+                          title="Ver PDF"
+                        >
+                          <FileDown size={13} />
+                        </button>
+                      )}
 
                     {(rolUsuario === VENDEDO || rolUsuario === VENDEDO_WEB || rolUsuario === JEFEVEN || rolUsuario === ADMIN) &&
                       pedido.estado !== 'Aprobado' && pedido.estado !== 'Rechazado' && (
@@ -548,7 +615,7 @@ export default function OrderListPage() {
             </div>
 
             {/* VISTA DESKTOP TABLA */}
-            <div className="hidden md:block bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+            < div className="hidden md:block bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs" >
               <div className="overflow-x-auto font-sans">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-[#FAFBFD] border-b border-slate-200/60 font-black tracking-wider uppercase text-[9px] text-slate-400">
@@ -629,24 +696,39 @@ export default function OrderListPage() {
                               </button>
                             )}
 
-                            {(rolUsuario === JEFEVEN || rolUsuario === ADMIN) && estadosPermitidos.includes(pedido.estado) && (
-                              <div className="flex items-center gap-1 flex-row">
-                                <button
-                                  onClick={() => handleGenerarGuia(pedido)}
-                                  disabled={loadingGuia === pedido.id}
-                                  className="p-1.5 text-slate-500 bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-150 rounded-lg transition-all active:scale-98 cursor-pointer shadow-3xs"
-                                  title="Emitir Guía"
-                                >
-                                  {loadingGuia === pedido.id ? '...' : <FileText size={13} />}
-                                </button>
-                                <button className="p-1.5 text-slate-400 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-800 rounded-lg transition-all shadow-3xs" title="Factura Comercial">
-                                  <Receipt size={13} />
-                                </button>
-                                <button className="p-1.5 text-slate-400 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-800 rounded-lg transition-all shadow-3xs" title="Remisión Olva/Cargo">
-                                  <MapPinned size={13} />
-                                </button>
-                              </div>
-                            )}
+                            {(rolUsuario === JEFEVEN || rolUsuario === ADMIN) &&
+                              estadosPermitidos.includes(pedido.estado) && (
+                                <div className="flex items-center gap-1 flex-row">
+
+                                  <button
+                                    onClick={() => handleGenerarGuia(pedido)}
+                                    disabled={loadingGuia === pedido.id}
+                                    className="p-1.5 text-slate-500 bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-150 rounded-lg transition-all active:scale-98 cursor-pointer shadow-3xs"
+                                    title="Emitir Guía"
+                                  >
+                                    {loadingGuia === pedido.id
+                                      ? '...'
+                                      : <FileText size={13} />}
+                                  </button>
+
+                                  {(pedido.estado === 'Despachado' ||
+                                    pedido.estado === 'Facturado') && (
+                                      <button
+                                        onClick={() => handleVerPdf(pedido)}
+                                        className="p-1.5 text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 rounded-lg transition-all active:scale-98 cursor-pointer shadow-3xs"
+                                        title="Ver PDF"
+                                      >
+                                        <FileDown size={13} />
+                                      </button>
+                                    )}
+                                  <button className="p-1.5 text-slate-400 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-800 rounded-lg transition-all shadow-3xs" title="Factura Comercial">
+                                    <Receipt size={13} />
+                                  </button>
+                                  <button className="p-1.5 text-slate-400 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-800 rounded-lg transition-all shadow-3xs" title="Remisión Olva/Cargo">
+                                    <MapPinned size={13} />
+                                  </button>
+                                </div>
+                              )}
 
                             {(rolUsuario === VENDEDO || rolUsuario === VENDEDO_WEB || rolUsuario === JEFEVEN || rolUsuario === ADMIN) &&
                               pedido.estado !== 'Aprobado' && pedido.estado !== 'Rechazado' && (
