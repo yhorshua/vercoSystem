@@ -87,17 +87,17 @@ const Navbar = () => {
           <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
             <ClipboardList size={18} /> Registrar Pedido
           </Link>
-          {/* 
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-          <LayoutDashboard size={18} /> Lista de Pedidos
-          </Link>
-          
-          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} /> Stock
-          </Link>
           <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
+          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+            <LayoutDashboard size={18} /> Lista de Pedidos
+          </Link>
+          {/*
+          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Package size={18} /> Stock
+          </Link>
+          
           <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} />Registro de stock
           </Link>
@@ -105,7 +105,7 @@ const Navbar = () => {
           <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Nota de Pedido
           </Link>
-          
+
           <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
             Lista de Pedidos Web
           </Link>
@@ -235,12 +235,25 @@ const Navbar = () => {
       )}
       {role === 'Vendedor Web' && (
         <>
+          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Package size={18} /> Stock
+          </Link>
+          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
+            <ClipboardList size={18} /> Pedido x Mayor
+          </Link>
+          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+            <LayoutDashboard size={18} /> Lista Pedidos x Mayor
+          </Link>
+          <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
+            <Users size={18} /> Clientes
+          </Link>
           <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
-            Venta por Redes
+            <ClipboardList size={18} /> Pedido Web
           </Link>
           <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-            Lista de Pedidos
+            <LayoutDashboard size={18} /> Lista Pedidos Web
           </Link>
+
         </>
       )}
 
