@@ -1072,7 +1072,7 @@ export function buildPedidoPdfMakeDefinition(pedido: Pedido, jefeVentas: string)
               { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 220, y2: 0, lineWidth: 1, lineColor: '#64748b', dash: { length: 4 } }] },
               { text: 'OPERACIONES DE VENTAS / DISTRIBUIDOR', fontSize: 7, bold: true, color: '#64748b', margin: [0, 6, 0, 0] },
               { text: pedido.vendedor.toUpperCase(), fontSize: 9.5, bold: true, color: '#0f172a', margin: [0, 2, 0, 0] },
-              { text: 'Cargo: Gestor comercial / Despachador de Envíos', fontSize: 7.2, color: '#475569', margin: [0, 1, 0, 0] }
+              { text: 'Cargo: Asesor de Ventas', fontSize: 7.2, color: '#475569', margin: [0, 1, 0, 0] }
             ]
           },
           { width: 30, text: '' },
@@ -1081,9 +1081,9 @@ export function buildPedidoPdfMakeDefinition(pedido: Pedido, jefeVentas: string)
             alignment: 'center',
             stack: [
               { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 220, y2: 0, lineWidth: 1, lineColor: '#64748b', dash: { length: 4 } }] },
-              { text: 'APROBADOR DE ALMACÉN / CAJA GENERAL', fontSize: 7, bold: true, color: '#64748b', margin: [0, 6, 0, 0] },
+              { text: 'APROBADOR DE ALMACÉN', fontSize: 7, bold: true, color: '#64748b', margin: [0, 6, 0, 0] },
               { text: jefeVentas.toUpperCase(), fontSize: 9.5, bold: true, color: '#0f172a', margin: [0, 2, 0, 0] },
-              { text: 'Director de Logística de Operaciones', fontSize: 7.2, color: '#475569', margin: [0, 1, 0, 0] }
+              { text: 'Logística de Operaciones', fontSize: 7.2, color: '#475569', margin: [0, 1, 0, 0] }
             ]
           }
         ],
@@ -1096,7 +1096,7 @@ export function buildPedidoPdfMakeDefinition(pedido: Pedido, jefeVentas: string)
           { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 525, y2: 0, lineWidth: 1, lineColor: '#cbd5e1' }], margin: [0, 0, 0, 4] },
           {
             columns: [
-              { text: `IMPRESO CON SISTEMA CENTRAL VERCO LOGÍSTICA. ID DE RASTREO: WEB-${pedido.id}`, fontSize: 6.5, bold: true, color: '#94a3b8' },
+              { text: `IMPRESO CON SISTEMA CENTRAL VERCO LOGÍSTICA. ID DE RASTREO: GI-${pedido.id}`, fontSize: 6.5, bold: true, color: '#94a3b8' },
               { text: `EMISIÓN: ${formattedDate}`, fontSize: 6.5, bold: true, color: '#94a3b8', alignment: 'right' }
             ]
           }
