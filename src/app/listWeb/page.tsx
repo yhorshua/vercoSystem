@@ -47,12 +47,12 @@ export default function ListaPedidosPage() {
   const [sales, setSales] = useState<WebSaleResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { user } = useUser();
   const [detailStatusMap, setDetailStatusMap] = useState<
     Record<number, string>
   >({});
-  
+
   const token = user?.token;
 
   const [selectedSale, setSelectedSale] = useState<WebSaleResponse | null>(null);
@@ -79,6 +79,17 @@ export default function ListaPedidosPage() {
       CANCELADO: sales.filter(s => s.status === 'CANCELADO').length,
     };
   }, [sales]);
+
+  const runAction = async (key: string, callback: () => Promise<void>) => {
+    if (actionLoading) return; // bloquea spam general
+
+    try {
+      setActionLoading(key);
+      await callback();
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
 
   // Status Change handler using SweetAlert2 with bespoke enterprise theme
@@ -319,7 +330,7 @@ export default function ListaPedidosPage() {
     const totalSalesAmount = sales
       .filter(s => s.status !== 'CANCELADO')
       .reduce((sum, s) => sum + Number(s.total_amount), 0);
-    
+
     const countPendientes = sales.filter(s => s.status === 'PENDIENTE').length;
     const countAprobados = sales.filter(s => s.status === 'APROBADO').length;
     const countDespachados = sales.filter(s => s.status === 'DESPACHADO').length;
@@ -396,7 +407,7 @@ export default function ListaPedidosPage() {
 
         {/* 5-STATE KPI DASHBOARD */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
-          
+
           {/* 1. PENDIENTES */}
           <div className="bg-white border border-slate-200/50 p-4 rounded-xl shadow-3xs hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center">
@@ -471,14 +482,14 @@ export default function ListaPedidosPage() {
 
         {/* CONTROLES PRINCIPALES: FILTROS & BUSCADOR */}
         <div className="bg-white border border-slate-200/60 rounded-2xl p-4 lg:p-5 shadow-2xs space-y-4">
-          
+
           {/* TABS DE ESTADOS RE-DISEÑADOS */}
           <div className="border-b border-slate-100 pb-3 flex flex-col gap-2">
             <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[11px] uppercase tracking-wider">
               <SlidersHorizontal size={13} className="text-slate-450" />
               <span>Etapas de Despacho:</span>
             </div>
-            
+
             <div className="flex gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar scroll-smooth">
               {[
                 { ID: 'todos', label: '📁 Ver Todos', count: stateCounts.todos },
@@ -491,18 +502,16 @@ export default function ListaPedidosPage() {
                 <button
                   key={tab.ID}
                   onClick={() => setFilter(tab.ID)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold tracking-tight transition-all duration-150 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
-                    filter === tab.ID
-                      ? 'bg-indigo-650 text-white shadow-xs'
-                      : 'bg-slate-55 bg-slate-50 text-slate-605 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold tracking-tight transition-all duration-150 whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${filter === tab.ID
+                    ? 'bg-indigo-650 text-white shadow-xs'
+                    : 'bg-slate-55 bg-slate-50 text-slate-605 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
                 >
                   <span>{tab.label}</span>
-                  <span className={`px-1.5 py-0.2 text-[9px] font-black rounded-full leading-none ${
-                    filter === tab.ID 
-                      ? 'bg-white/20 text-white' 
-                      : 'bg-slate-200/80 text-slate-600'
-                  }`}>
+                  <span className={`px-1.5 py-0.2 text-[9px] font-black rounded-full leading-none ${filter === tab.ID
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-200/80 text-slate-600'
+                    }`}>
                     {tab.count}
                   </span>
                 </button>
@@ -512,7 +521,7 @@ export default function ListaPedidosPage() {
 
           {/* BUSCADOR Y ACCIONES MASIVO */}
           <div className="flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
-            
+
             {/* Buscador Modernizado */}
             <div className="flex-1 min-w-0 flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 hover:border-slate-300 focus-within:border-indigo-550 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
               <Search className="text-slate-410 text-slate-400 shrink-0" size={16} />
@@ -524,7 +533,7 @@ export default function ListaPedidosPage() {
                 className="w-full bg-transparent outline-none font-medium text-slate-700 text-xs placeholder-slate-400"
               />
               {search && (
-                <button 
+                <button
                   onClick={() => setSearch('')}
                   className="p-1 hover:bg-slate-200 text-slate-400 rounded-full transition-colors"
                 >
@@ -536,22 +545,22 @@ export default function ListaPedidosPage() {
             {/* Fila botones logísticos */}
             <div className="flex flex-wrap items-center gap-2">
               {isSalesManager && (
-              <button
-                onClick={() => {
-                  const approvedSales = sales.filter(s => s.status === 'APROBADO');
-                  printLabels(approvedSales);
-                }}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
-              >
-                <Printer size={13} />
-                <span>Imprimir Etiquetas ({sales.filter(s => s.status === 'APROBADO').length})</span>
-              </button>
+                <button
+                  onClick={() => {
+                    const approvedSales = sales.filter(s => s.status === 'APROBADO');
+                    printLabels(approvedSales);
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                >
+                  <Printer size={13} />
+                  <span>Imprimir Etiquetas ({sales.filter(s => s.status === 'APROBADO').length})</span>
+                </button>
               )}
               {/* Botón generar ruta visible solo para transportistas (Delivery) */}
               {isDelivery && (
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
-                  
+
                   <div className="px-3 py-1.5 bg-orange-50 border border-orange-100 text-orange-700 rounded-lg text-[10px] font-extrabold flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
                     <span>{pendingDeliveries} Directos</span>
@@ -619,7 +628,7 @@ export default function ListaPedidosPage() {
               No se han encontrado registros de {filter === 'todos' ? 'ventas generales' : `estado "${filter}"`} que coincidan con la búsqueda.
             </p>
             {search && (
-              <button 
+              <button
                 onClick={() => setSearch('')}
                 className="mt-4 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
               >
@@ -632,7 +641,7 @@ export default function ListaPedidosPage() {
             {/* MOBILE LAYOUT (< 768px): Card Lists */}
             <div className="md:hidden space-y-3">
               {filteredSales.map((sale) => (
-                <div 
+                <div
                   key={sale.id}
                   onClick={() => {
                     setSelectedSale(sale);
@@ -659,8 +668,8 @@ export default function ListaPedidosPage() {
                       <User size={12} className="text-slate-400" />
                       {sale.customer_name}
                     </p>
-                    <a 
-                      href={`tel:${sale.customer_phone}`} 
+                    <a
+                      href={`tel:${sale.customer_phone}`}
                       className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 hover:text-indigo-650"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -731,7 +740,7 @@ export default function ListaPedidosPage() {
                           <p className="font-semibold text-slate-850 text-xs text-slate-800 tracking-tight">
                             {sale.customer_name}
                           </p>
-                          <a 
+                          <a
                             href={`tel:${sale.customer_phone}`}
                             className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-1 hover:text-indigo-600 transition-colors"
                           >
@@ -785,7 +794,7 @@ export default function ListaPedidosPage() {
       {/* LINEAR/STRIPE INSPIRED REDESIGNED HIGH-DENSITY DRAWER MODAL */}
       {showModal && selectedSale && (
         <div className="fixed top-[70px]  inset-0 z-50 flex items-center justify-center p-3 md:p-6">
-          
+
           {/* Backdrop with elegant glassmorphism blur */}
           <div
             className="absolute inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300"
@@ -823,7 +832,7 @@ export default function ListaPedidosPage() {
 
             {/* MODAL WORKSPACE BODY (Scrollable content) */}
             <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar bg-slate-55/40 bg-slate-50/20">
-              
+
               {/* Informative Banner */}
               <div className="bg-gradient-to-r from-indigo-500/5 to-indigo-600/0 border border-indigo-100/50 p-3 rounded-xl flex items-center gap-2.5">
                 <Info size={14} className="text-indigo-600 shrink-0" />
@@ -834,7 +843,7 @@ export default function ListaPedidosPage() {
 
               {/* Grid 2 Columnas de Ficha Técnica */}
               <div className="grid md:grid-cols-2 gap-4">
-                
+
                 {/* 1. FICHA CLIENTE CARD */}
                 <div className="bg-white border border-slate-200/50 rounded-xl p-4 space-y-3.5 shadow-3xs">
                   <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -996,7 +1005,7 @@ export default function ListaPedidosPage() {
                             </td>
                             <td className="px-4 py-3 text-center font-bold text-slate-500 font-mono">{item.quantity}</td>
                             <td className="px-4 py-3 text-right font-bold text-slate-700 font-mono">S/ {Number(item.sale_price).toFixed(2)}</td>
-                            
+
                             {/* Personal Delivery driver single item return action */}
                             {role === 'Delivery' && (
                               <td className="px-4 py-3">
@@ -1022,14 +1031,19 @@ export default function ListaPedidosPage() {
 
             {/* FIXED/STICKY LOGISTIC FOOTER (Drawer bottom layout) */}
             <div className="px-5 py-4 bg-[#FAFBFD] border-t border-slate-150 flex flex-col md:flex-row justify-between items-center gap-4">
-              
+
               {/* Dynamic Action controls per context-specific logged permissions */}
               <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-                
+
                 {/* Jefe Ventas Print capability */}
                 {isSalesManager && selectedSale.status === 'APROBADO' && (
                   <button
-                    onClick={() => printLabels([selectedSale])}
+                    onClick={() =>
+                      runAction('print', async () => {
+                        printLabels([selectedSale]);
+                      })
+                    }
+                    disabled={actionLoading === 'print'}
                     className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all shadow-3xs active:scale-97 cursor-pointer"
                   >
                     <Printer size={13} />
@@ -1041,13 +1055,23 @@ export default function ListaPedidosPage() {
                 {isSalesManager && selectedSale.status === 'PENDIENTE' && (
                   <>
                     <button
-                      onClick={() => changeStatus('APROBADO')}
+                      onClick={() =>
+                        runAction('approve', async () => {
+                          await changeStatus('APROBADO');
+                        })
+                      }
+                      disabled={actionLoading === 'approve'}
                       className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 hover:shadow-xs hover:shadow-emerald-100 text-white rounded-xl text-xs font-bold transition-all active:scale-97 cursor-pointer"
                     >
                       Aprobar Venta
                     </button>
                     <button
-                      onClick={() => changeStatus('CANCELADO')}
+                      onClick={() =>
+                        runAction('cancel', async () => {
+                          await changeStatus('CANCELADO');
+                        })
+                      }
+                      disabled={actionLoading === 'cancel'}
                       className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-all active:scale-97 cursor-pointer"
                     >
                       Anular Venta
@@ -1058,7 +1082,12 @@ export default function ListaPedidosPage() {
                 {/* Jefe Ventas Dispatch capability when APPROVED */}
                 {isSalesManager && selectedSale.status === 'APROBADO' && (
                   <button
-                    onClick={() => changeStatus('DESPACHADO')}
+                    onClick={() =>
+                      runAction('dispatch', async () => {
+                        await changeStatus('DESPACHADO');
+                      })
+                    }
+                    disabled={actionLoading === 'dispatch'}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 hover:shadow-xs hover:shadow-indigo-100 text-white rounded-xl text-xs font-bold transition-all active:scale-97 cursor-pointer"
                   >
                     Despachar Envíos
@@ -1069,18 +1098,25 @@ export default function ListaPedidosPage() {
                 {role === 'Delivery' && selectedSale.status === 'DESPACHADO' && (
                   <>
                     <button
-                      onClick={() => handleDelivered(selectedSale)}
+                      onClick={() =>
+                        runAction('deliver', async () => {
+                          await handleDelivered(selectedSale);
+                        })
+                      }
                       disabled={selectedSale.is_agency_delivery && !shippingCodeInput.trim()}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold shadow-2xs transition-all active:scale-97 cursor-pointer text-white ${
-                        selectedSale.is_agency_delivery && !shippingCodeInput.trim()
-                          ? 'bg-slate-300 border-slate-300 cursor-not-allowed text-slate-500'
-                          : 'bg-emerald-650 bg-emerald-600 hover:bg-emerald-700'
-                      }`}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold shadow-2xs transition-all active:scale-97 cursor-pointer text-white ${selectedSale.is_agency_delivery && !shippingCodeInput.trim()
+                        ? 'bg-slate-300 border-slate-300 cursor-not-allowed text-slate-500'
+                        : 'bg-emerald-650 bg-emerald-600 hover:bg-emerald-700'
+                        }`}
                     >
                       Marcar Entregado (OK)
                     </button>
                     <button
-                      onClick={() => changeStatus('CANCELADO')}
+                      onClick={() =>
+                        runAction('cancel', async () => {
+                          await changeStatus('CANCELADO');
+                        })
+                      }
                       className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-all active:scale-97 cursor-pointer"
                     >
                       Rechazar Venta

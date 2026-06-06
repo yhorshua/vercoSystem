@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,15 +8,15 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import Swal from 'sweetalert2';
-import { 
-  ShoppingBag, 
-  Trash2, 
-  Layers, 
-  DollarSign, 
-  FileCheck, 
-  AlertTriangle, 
-  Activity, 
-  Boxes 
+import {
+  ShoppingBag,
+  Trash2,
+  Layers,
+  DollarSign,
+  FileCheck,
+  AlertTriangle,
+  Activity,
+  Boxes
 } from 'lucide-react';
 import type { ItemUI } from '../components/types';
 import { createOrder, CreateOrderPayload } from '../services/ordersService';
@@ -50,7 +50,7 @@ export default function PedidoTabla({
      TOTALES
   ====================== */
   const totalPares = items.reduce((sum, item) => sum + item.total, 0);
-
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const totalCompra = items.reduce((sum, item) => {
     const totalItem = Object.entries(item.cantidades)
       .reduce((s, [, qty]) => s + qty * item.precio, 0);
@@ -61,8 +61,8 @@ export default function PedidoTabla({
      COLUMNAS TABLA (WITH TAILWIND DESIGN)
   ====================== */
   const columns: ColumnDef<ItemUI>[] = [
-    { 
-      accessorKey: 'codigo', 
+    {
+      accessorKey: 'codigo',
       header: 'Código',
       cell: ({ row }) => (
         <span className="px-2 py-0.5 bg-slate-100 text-slate-800 font-extrabold text-[10px] rounded font-mono border border-slate-200 uppercase">
@@ -70,8 +70,8 @@ export default function PedidoTabla({
         </span>
       )
     },
-    { 
-      accessorKey: 'descripcion', 
+    {
+      accessorKey: 'descripcion',
       header: 'Descripción',
       cell: ({ row }) => (
         <span className="font-extrabold text-slate-900 text-xs tracking-tight block">
@@ -79,8 +79,8 @@ export default function PedidoTabla({
         </span>
       )
     },
-    { 
-      accessorKey: 'serie', 
+    {
+      accessorKey: 'serie',
       header: 'Serie',
       cell: ({ row }) => (
         <span className="text-[10px] font-semibold text-slate-500 font-mono">
@@ -148,6 +148,9 @@ export default function PedidoTabla({
      REGISTRAR PEDIDO
   ====================== */
   const handleRegistrarPedido = async () => {
+
+    if (isCreatingOrder) return;
+
     if (!cliente || !user) {
       Swal.fire({
         icon: 'warning',
@@ -203,6 +206,8 @@ export default function PedidoTabla({
     if (!confirm.isConfirmed) return;
 
     try {
+
+      setIsCreatingOrder(true);
       await createOrder(payload, user.token);
       Swal.fire({
         icon: 'success',
@@ -218,15 +223,17 @@ export default function PedidoTabla({
         text: error?.message || 'Error al registrar pedido',
         confirmButtonColor: '#4f46e5'
       });
+    } finally {
+      setIsCreatingOrder(false); // 🔥 STOP LOADING
     }
   };
 
   return (
     <div className="space-y-6">
-      
+
       {/* SECCIÓN RESUMEN METRICAS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
+
         {/* Card Total Pares */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3.5 shadow-3xs hover:border-slate-300 transition-all">
           <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 text-orange-650 text-orange-600 flex items-center justify-center shrink-0">
@@ -270,7 +277,7 @@ export default function PedidoTabla({
 
       {/* COMPOSICIÓN DEL CARRO / DATA GRID */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
-        
+
         {/* Cabecera Interna */}
         <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
           <div>
@@ -293,14 +300,14 @@ export default function PedidoTabla({
           /* Responsive Table Wrapper with proper grid control */
           <div className="w-full overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse min-w-[700px]">
-              
+
               {/* Header */}
               <thead className="bg-[#FAFBFD] border-b border-slate-150 select-none">
                 {table.getHeaderGroups().map((hg) => (
                   <tr key={hg.id}>
                     {hg.headers.map((h) => (
-                      <th 
-                        key={h.id} 
+                      <th
+                        key={h.id}
                         className="p-3 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider font-sans border-b border-slate-200"
                         style={{ textAlign: h.id === 'Acción' ? 'center' : 'left' }}
                       >
@@ -352,7 +359,7 @@ export default function PedidoTabla({
 
       {/* FOOTER ACTIONS - BOTÓN PRINCIPAL */}
       <div className="flex flex-col sm:flex-row justify-between items-center bg-white border border-slate-200 rounded-2xl p-4 gap-4 shadow-3xs">
-        
+
         {/* Dynamic Warning Alert */}
         {!cliente && items.length > 0 ? (
           <div className="flex items-center gap-2 text-[10px] text-amber-700 bg-amber-50 rounded-xl px-3.5 py-2.5 border border-amber-150">
@@ -375,11 +382,44 @@ export default function PedidoTabla({
 
         <button
           onClick={handleRegistrarPedido}
-          disabled={!items.length || !cliente}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-750 text-white font-black uppercase tracking-widest text-[10px] px-6 py-3 rounded-xl shadow-lg shadow-indigo-150 transition-all border border-indigo-700 cursor-pointer disabled:opacity-40 disabled:shadow-none"
+          disabled={!items.length || !cliente || isCreatingOrder}
+          className={`
+    w-full sm:w-auto inline-flex items-center justify-center gap-2
+    font-black uppercase tracking-widest text-[10px] px-6 py-3 rounded-xl
+    transition-all border cursor-pointer
+    ${isCreatingOrder
+              ? 'bg-indigo-400 text-white cursor-not-allowed'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-150 border-indigo-700'
+            }
+    disabled:opacity-40 disabled:shadow-none
+  `}
         >
-          <FileCheck size={14} />
-          <span>Registrar Pedido</span>
+          {isCreatingOrder ? (
+            <>
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              Procesando...
+            </>
+          ) : (
+            <>
+              <FileCheck size={14} />
+              Registrar Pedido
+            </>
+          )}
         </button>
 
       </div>
