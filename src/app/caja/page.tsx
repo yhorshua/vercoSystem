@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
-import { 
-  Wallet, 
-  RefreshCw, 
-  DollarSign, 
-  ArrowRight, 
-  Lock, 
-  History, 
-  TrendingDown, 
+import {
+  Wallet,
+  RefreshCw,
+  DollarSign,
+  ArrowRight,
+  Lock,
+  History,
+  TrendingDown,
   TrendingUp,
-  AlertCircle 
+  AlertCircle
 } from 'lucide-react';
 import styles from './caja.module.css';
 
@@ -33,7 +33,6 @@ function money(n: number) {
 
 export default function CajaPage() {
   const { user } = useUser();
-
   const token = user?.token || '';
   const warehouseId = user?.warehouse_id || 0;
   const userId = user?.id || 0;
@@ -157,9 +156,9 @@ export default function CajaPage() {
         token,
       );
 
-      Swal.fire({ 
-        icon: 'success', 
-        title: '¡Caja Abierta!', 
+      Swal.fire({
+        icon: 'success',
+        title: '¡Caja Abierta!',
         text: 'Se ha iniciado la sesión de caja correctamente.',
         timer: 2000,
         showConfirmButton: false
@@ -193,6 +192,7 @@ export default function CajaPage() {
       return;
     }
 
+    setLoading(true);
     try {
       await registerExpense(
         {
@@ -211,6 +211,8 @@ export default function CajaPage() {
       await loadMovements(session.id);
     } catch (e: any) {
       Swal.fire({ icon: 'error', title: 'Error', text: e?.message || 'No se pudo registrar egreso' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -252,7 +254,7 @@ export default function CajaPage() {
       setClosingCashCounted('');
       setClosingNotes('');
 
-      await loadStatus(); 
+      await loadStatus();
     } catch (e: any) {
       Swal.fire({ icon: 'error', title: 'Error', text: e?.message || 'No se pudo cerrar caja' });
     } finally {
@@ -277,12 +279,12 @@ export default function CajaPage() {
 
   return (
     <div className={styles.container}>
-      
+
       {/* HEADER */}
       <div className={styles.headerRow}>
         <div className={styles.headerLeft}>
           <div className={styles.iconWrapper}>
-            <Wallet size={24} color="#0f172a"/>
+            <Wallet size={24} color="#0f172a" />
           </div>
           <div>
             <h1 className={styles.title}>Gestión de Caja</h1>
@@ -317,16 +319,16 @@ export default function CajaPage() {
       {hasOpen && (
         <div className={styles.statusBanner}>
           <div className={styles.statusItem}>
-             <span className={styles.statusLabel}>Estado</span>
-             <span className={styles.badgeOpen}>ABIERTA</span>
+            <span className={styles.statusLabel}>Estado</span>
+            <span className={styles.badgeOpen}>ABIERTA</span>
           </div>
           <div className={styles.statusItem}>
-             <span className={styles.statusLabel}>Apertura</span>
-             <span className={styles.statusValue}>S/ {money(Number(session?.opening_cash || 0))}</span>
+            <span className={styles.statusLabel}>Apertura</span>
+            <span className={styles.statusValue}>S/ {money(Number(session?.opening_cash || 0))}</span>
           </div>
           <div className={styles.statusItem}>
-             <span className={styles.statusLabel}>Hora Inicio</span>
-             <span className={styles.statusValue}>{session?.opened_at ? new Date(session.opened_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '-'}</span>
+            <span className={styles.statusLabel}>Hora Inicio</span>
+            <span className={styles.statusValue}>{session?.opened_at ? new Date(session.opened_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
           </div>
         </div>
       )}
@@ -338,20 +340,20 @@ export default function CajaPage() {
         <div className={`${styles.card} ${styles.openCashCard}`}>
           <div className={styles.openCashContent}>
             <div className={styles.openCashLeft}>
-               <div className={styles.bigIcon}>
-                 <Wallet size={48} />
-               </div>
-               <div>
-                 <h2 className={styles.cardTitle}>Apertura de Caja</h2>
-                 <p className={styles.cardDesc}>Ingresa el monto inicial para comenzar las operaciones del día.</p>
-               </div>
+              <div className={styles.bigIcon}>
+                <Wallet size={48} />
+              </div>
+              <div>
+                <h2 className={styles.cardTitle}>Apertura de Caja</h2>
+                <p className={styles.cardDesc}>Ingresa el monto inicial para comenzar las operaciones del día.</p>
+              </div>
             </div>
 
             <div className={styles.formStack}>
               <div className={styles.field}>
                 <label className={styles.label}>Monto de apertura (S/)</label>
                 <div className={styles.inputGroup}>
-                  <DollarSign size={18} className={styles.inputIcon}/>
+                  <DollarSign size={18} className={styles.inputIcon} />
                   <input
                     className={styles.input}
                     type="number"
@@ -376,9 +378,9 @@ export default function CajaPage() {
                 />
               </div>
 
-              <button 
-                className={styles.primaryButton} 
-                onClick={handleOpenCash} 
+              <button
+                className={styles.primaryButton}
+                onClick={handleOpenCash}
                 disabled={!canUse || loading || !isOpeningValid} // VALIDACIÓN AQUÍ
               >
                 {loading ? 'Abriendo...' : 'Abrir Caja'}
@@ -405,24 +407,24 @@ export default function CajaPage() {
 
             <div className={styles.metricsGrid}>
               <div className={`${styles.metricCard} ${styles.incomeMetric}`}>
-                <div className={styles.metricIcon}><TrendingUp size={20}/></div>
+                <div className={styles.metricIcon}><TrendingUp size={20} /></div>
                 <div>
-                   <span>Ingresos</span>
-                   <b>S/ {money(summary?.totalIncome ?? totals.income)}</b>
+                  <span>Ingresos</span>
+                  <b>S/ {money(summary?.totalIncome ?? totals.income)}</b>
                 </div>
               </div>
               <div className={`${styles.metricCard} ${styles.expenseMetric}`}>
-                <div className={styles.metricIcon}><TrendingDown size={20}/></div>
+                <div className={styles.metricIcon}><TrendingDown size={20} /></div>
                 <div>
-                   <span>Egresos</span>
-                   <b>S/ {money(summary?.totalExpense ?? totals.expense)}</b>
+                  <span>Egresos</span>
+                  <b>S/ {money(summary?.totalExpense ?? totals.expense)}</b>
                 </div>
               </div>
               <div className={`${styles.metricCard} ${styles.netMetric}`}>
-                <div className={styles.metricIcon}><DollarSign size={20}/></div>
+                <div className={styles.metricIcon}><DollarSign size={20} /></div>
                 <div>
-                   <span>Total Neto</span>
-                   <b>S/ {money(summary?.net ?? totals.net)}</b>
+                  <span>Total Neto</span>
+                  <b>S/ {money(summary?.net ?? totals.net)}</b>
                 </div>
               </div>
             </div>
@@ -446,7 +448,7 @@ export default function CajaPage() {
           {/* Card Egresos */}
           <div className={styles.card}>
             <div className={styles.cardHeader}>
-               <h2 className={styles.cardTitle}>Registrar Salida</h2>
+              <h2 className={styles.cardTitle}>Registrar Salida</h2>
             </div>
             <div className={styles.formStack}>
               <div className={styles.field}>
@@ -469,8 +471,12 @@ export default function CajaPage() {
                   placeholder="Descripción del gasto"
                 />
               </div>
-              <button className={styles.dangerButton} onClick={handleExpense} disabled={loading}>
-                Registrar Egreso
+              <button
+                className={styles.dangerButton}
+                onClick={handleExpense}
+                disabled={loading}
+              >
+                {loading ? 'Registrando...' : 'Registrar Egreso'}
               </button>
             </div>
           </div>
@@ -483,10 +489,10 @@ export default function CajaPage() {
       {hasOpen && (
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-             <div className={styles.headerWithIcon}>
-                <History size={20} className={styles.textGray} />
-                <h2 className={styles.cardTitle}>Historial de Movimientos</h2>
-             </div>
+            <div className={styles.headerWithIcon}>
+              <History size={20} className={styles.textGray} />
+              <h2 className={styles.cardTitle}>Historial de Movimientos</h2>
+            </div>
           </div>
 
           <div className={styles.tableWrap}>
@@ -504,7 +510,7 @@ export default function CajaPage() {
               <tbody>
                 {movements.map((m) => (
                   <tr key={m.id}>
-                    <td>{new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                    <td>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                     <td>
                       {/* AQUI SE MUESTRA EL VALOR REAL DE LA BD (APERTURA, VENTA, GASTO, etc) */}
                       <span className={Number(m.amount) >= 0 ? styles.badgeIngreso : styles.badgeEgreso}>
@@ -539,13 +545,13 @@ export default function CajaPage() {
         <div className={`${styles.card} ${styles.closeCard}`}>
           <div className={styles.cardHeader}>
             <div className={styles.headerWithIcon}>
-               <Lock size={20} />
-               <h2 className={styles.cardTitle}>Cierre de Caja</h2>
+              <Lock size={20} />
+              <h2 className={styles.cardTitle}>Cierre de Caja</h2>
             </div>
           </div>
 
           <div className={styles.closeGrid}>
-             <div className={styles.field}>
+            <div className={styles.field}>
               <label className={styles.label}>Efectivo contado en caja (S/)</label>
               <input
                 className={`${styles.input} ${styles.inputLarge}`}
@@ -573,9 +579,9 @@ export default function CajaPage() {
                 placeholder="Ej: Sobrante/Faltante..."
               />
             </div>
-            
+
             <div className={styles.closeActions}>
-               <button className={styles.blackButton} onClick={handleCloseCash} disabled={loading}>
+              <button className={styles.blackButton} onClick={handleCloseCash} disabled={loading}>
                 Cerrar Turno
               </button>
             </div>
