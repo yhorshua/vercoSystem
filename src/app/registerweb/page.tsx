@@ -8,10 +8,11 @@ import {
 import Swal from 'sweetalert2';
 import rawUbigeo from '../utils/ubigeo-peru-optimizado.json';
 import type { Ubigeo } from '../utils/types/ubigeo';
-import { getProductsByCodeOrDescription } from '../services/productsService';
+import { getProductsByCodeOrDescription, getProductsByWarehouse } from '../services/productsService';
 import { useUser } from '../context/UserContext';
 import { createWebSale } from '../services/webSaleService';
 import { getProductImage } from '../utils/images';
+import { getProductStockByWarehouseAndCode } from '../services/saleServices';
 
 // --- Interfaces ---
 interface SizeStock {
@@ -59,25 +60,41 @@ export default function PantallaVentaWeb() {
         if (!code.trim()) return;
         setIsSearching(true);
         try {
-            const data = await getProductsByCodeOrDescription(code, token);
+            const warehouseId = user?.warehouse_id;
+            if (warehouseId === undefined) {
+                Swal.fire('Error', 'No se tiene almacén asignado', 'error');
+                return;
+            }
+            const data = await getProductStockByWarehouseAndCode(warehouseId, code, token);
             if (!data) {
                 Swal.fire('Sin resultados', 'No se encontró el producto', 'warning');
                 return;
             }
+
+            const stockMap = new Map<number, number>(
+                data.stock.map((s: any) => [
+                    Number(s.product_size_id),
+                    Number(s.quantity)
+                ])
+            );
+
+            const orderedSizes = [...(data.sizes || [])].sort(
+                (a, b) => Number(a.size) - Number(b.size)
+            );
 
             const mappedProduct: ProductoVendedor = {
                 id: data.product_id,
                 codigo: data.article_code,
                 nombre: data.article_description,
                 marca: data.category?.name || 'Sin categoría',
-                precio: Number(data.price || 0),
+                precio: Number(data.manufacturing_cost || 0),
                 imagen: getProductImage(data.product_image),
-                tallas: data.sizes?.map((s: any) => ({
-                    id: s.id,
+                tallas: orderedSizes.map((s: any) => ({
+                    id: Number(s.id),
                     talla: s.size,
-                    stock: s.lot_pair || 0,
+                    stock: stockMap.get(Number(s.id)) ?? 0,
                     selected: 0
-                })) || []
+                }))
             };
 
             setSelectedProduct(mappedProduct);
@@ -163,9 +180,29 @@ export default function PantallaVentaWeb() {
     // --- Auxiliares ---
     const updateQty = (index: number, val: number) => {
         if (!selectedProduct) return;
+
         const newTallas = [...selectedProduct.tallas];
-        newTallas[index].selected = Math.max(0, newTallas[index].selected + val);
-        setSelectedProduct({ ...selectedProduct, tallas: newTallas });
+
+        const talla = newTallas[index];
+
+        const nuevaCantidad = talla.selected + val;
+
+        // 🔴 VALIDACIÓN DE STOCK
+        if (nuevaCantidad > talla.stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Stock insuficiente',
+                text: `Solo hay ${talla.stock} unidades disponibles`,
+            });
+            return;
+        }
+
+        newTallas[index].selected = Math.max(0, nuevaCantidad);
+
+        setSelectedProduct({
+            ...selectedProduct,
+            tallas: newTallas
+        });
     };
 
     const agregarAlPedido = () => {
@@ -176,6 +213,12 @@ export default function PantallaVentaWeb() {
             return;
         }
 
+        for (const t of elegidas) {
+            if (t.selected > t.stock) {
+                Swal.fire('Error', `Stock insuficiente en talla ${t.talla}`, 'error');
+                return;
+            }
+        }
         const totalPares = elegidas.reduce((a, b) => a + b.selected, 0);
         setPedido([...pedido, {
             ...selectedProduct,
