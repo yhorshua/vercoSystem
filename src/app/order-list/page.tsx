@@ -17,7 +17,7 @@ import { Pedido } from '../utils/types/pedidos';
 import { createGuiaFromOrder } from '../services/guiaService';
 import { getSellersByWarehouse, SellerOption } from '../services/userServices';
 import { buildPedidoHtmlFormal, buildPedidoPdfBlobFormal } from '../utils/guiainterna';
-import html2pdf from 'html2pdf.js';
+
 
 const JEFEVEN = 'Jefe Ventas';
 const VENDEDO = 'Vendedor';

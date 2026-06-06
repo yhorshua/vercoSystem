@@ -21,6 +21,18 @@ export interface CreateProductDto {
   lot_pair?: number;
 }
 
+export interface StockItem {
+  size: string;
+  quantity: number;
+}
+
+export interface ApiProductResponse {
+  article_code: string;
+  article_description: string;
+  article_series: string;
+  stock: StockItem[];
+}
+
 // Función para manejar errores de forma segura
 function safeErrorMessage(text: string) {
   try {
@@ -169,4 +181,31 @@ export async function updateProduct(
     method: 'PATCH',
     body: JSON.stringify(cleanData),
   });
+}
+
+export async function importStockExcel(
+  file: File,
+  token: string
+) {
+  const formData = new FormData();
+
+  formData.append('file', file);
+
+  const response = await fetch(
+    `${API_URL}/products/import-stock`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text);
+  }
+
+  return response.json();
 }

@@ -11,13 +11,13 @@ const generateBarcodeHtml = (ticket: string) => {
   for (let i = 0; i < ticket.length; i++) {
     hash = ticket.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   let html = '';
   // Create 45 alternating columns (black and white) of varying proportional weights
   for (let i = 0; i < 45; i++) {
     const isBlack = i % 2 === 0;
     const bit = (Math.abs(hash) >> (i % 24)) & 1;
-    
+
     // Choose authentic standard bar thicknesses in millimeters
     let widthMm = 1;
     if (isBlack) {
@@ -25,7 +25,7 @@ const generateBarcodeHtml = (ticket: string) => {
     } else {
       widthMm = bit === 1 ? 1.5 : 0.8;
     }
-    
+
     const color = isBlack ? '#000' : '#fff';
     html += `<div style="background-color: ${color}; width: ${widthMm}mm; height: 11mm; flex-shrink: 0; display: inline-block;"></div>`;
   }
@@ -72,8 +72,8 @@ export const printLabels = (sales: WebSaleResponse[]) => {
       });
 
       // Agency or Direct badge indicators
-      const courierName = sale.is_agency_delivery 
-        ? (sale.agency_name || 'COURIER').toUpperCase() 
+      const courierName = sale.is_agency_delivery
+        ? (sale.agency_name || 'COURIER').toUpperCase()
         : 'ENTREGA LOCAL';
 
       const trackingNumber = sale.shipping_code || `ID-${sale.id}`;
@@ -134,8 +134,8 @@ export const printLabels = (sales: WebSaleResponse[]) => {
               </thead>
               <tbody>
                 ${sale.details
-                  .map(
-                    (detail) => `
+          .map(
+            (detail) => `
                   <tr>
                     <td style="font-weight: bold; font-family: monospace;">
                       ${detail.article_code} <span style="font-weight: normal; font-family: inherit; font-size: 6.5pt;">(${detail.product_name.substring(0, 18)})</span>
@@ -144,8 +144,8 @@ export const printLabels = (sales: WebSaleResponse[]) => {
                     <td style="text-align: center; font-weight: bold; font-family: monospace;">x${detail.quantity}</td>
                   </tr>
                 `
-                  )
-                  .join('')}
+          )
+          .join('')}
               </tbody>
             </table>
           </div>
@@ -180,18 +180,18 @@ export const printLabels = (sales: WebSaleResponse[]) => {
         <style>
           /* Thermal Printer Calibration: 80mm width vs 100mm height */
           @page {
-            size: 80mm 100mm;
+            size: 4in 6in;
             margin: 0;
           }
           
           html, body {
             margin: 0;
             padding: 0;
-            width: 80mm;
-            height: 100mm;
-            background-color: #ffffff;
+            width: 4in;
+            height: 6in;
+            background-color: #fff;
             color: #000000;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -199,10 +199,10 @@ export const printLabels = (sales: WebSaleResponse[]) => {
           /* Label outer card (76mm x 96mm to handle standard unprintable margin areas) */
           .thermal-label {
             box-sizing: border-box;
-            width: 76mm;
-            height: 96mm;
-            margin: 2mm auto;
-            padding: 2.5mm;
+            width: calc(4in - 6mm);
+            height: calc(6in - 6mm);
+            margin: 3mm;
+            padding: 4mm;
             border: 1.5px solid #000000;
             display: flex;
             flex-direction: column;
@@ -443,7 +443,7 @@ export const printLabels = (sales: WebSaleResponse[]) => {
     </html>
   `);
   printWindow.document.close();
-{/*}
+  {/*}
   Swal.fire({
     icon: 'success',
     title: 'Cola de Impresión Enviada',

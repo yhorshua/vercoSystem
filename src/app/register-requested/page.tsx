@@ -7,17 +7,17 @@ import PedidoTabla from './PedidoTabla';
 import { getProductStockByWarehouseAndCode } from '../services/stockServices';
 import type { ItemUI } from '../components/types';
 import { useUser } from '../context/UserContext';
-import { 
-  Search, 
-  UserPlus, 
-  FileText, 
-  Tag, 
-  HelpCircle, 
-  Hash, 
-  Layers, 
-  Sparkles, 
-  CheckCircle, 
-  Building2, 
+import {
+  Search,
+  UserPlus,
+  FileText,
+  Tag,
+  HelpCircle,
+  Hash,
+  Layers,
+  Sparkles,
+  CheckCircle,
+  Building2,
   ArrowRight,
   Info,
   Calendar,
@@ -102,7 +102,7 @@ export default function RegisterPedidoPage() {
     return {
       descripcion: data.article_description ?? '',
       serie: data.article_series ?? '',
-      precio: Number(data.manufacturing_cost ?? 0),
+      precio: Number(data.unit_price ?? 0),
       productId: Number(data.product_id ?? 0),
       unitOfMeasure: data.stock?.[0]?.unit_of_measure ?? 'PAR',
       tallasDisponibles: [...new Set(sizes)],
@@ -143,7 +143,7 @@ export default function RegisterPedidoPage() {
       setTallasDisponibles(mapped.tallasDisponibles);
       setStockPorTalla(mapped.stockPorTalla);
       setCurrentSizeIdBySizeNumber(mapped.sizeIdBySizeNumber);
-      
+
       // Auto pre-populate quantity fields with 0s for easier tracking
       const tempQ: Record<number, number> = {};
       mapped.tallasDisponibles.forEach(t => {
@@ -314,15 +314,15 @@ export default function RegisterPedidoPage() {
 
         {/* LAYOUT GRID DE BUSQUEDA Y ASIGNACIÓN */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
+
           {/* SECCIÓN CONFIGURACIÓN PRODUCTOS & CARGA (7 columnas) */}
           <div className="lg:col-span-12 space-y-6">
-            
+
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
-              
+
               {/* BLOQUE ASOCIAR ADQUIRENTE / CLIENTE */}
               <div className="pb-4 border-b border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                
+
                 <div className="md:col-span-4">
                   <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                     <UserPlus size={14} className="text-indigo-600" />
@@ -345,7 +345,7 @@ export default function RegisterPedidoPage() {
                       placeholder="Selecciona o busca un cliente aquí..."
                     />
                   </div>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setShowClienteModal(true)}
                     className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-700 text-xs font-black rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-3xs"
@@ -359,7 +359,7 @@ export default function RegisterPedidoPage() {
 
               {/* BLOQUE CONSULTA CÓDIGO BARRAS / SKU */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                
+
                 <div className="md:col-span-4">
                   <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                     <Hash size={14} className="text-indigo-600" />
@@ -368,7 +368,7 @@ export default function RegisterPedidoPage() {
                   <p className="text-[10px] font-medium text-slate-400 mt-0.5">
                     Establece el calzado que deseas cotizar
                   </p>
-                
+
                 </div>
 
                 <div className="md:col-span-8 flex gap-2">
@@ -387,7 +387,7 @@ export default function RegisterPedidoPage() {
                       }}
                     />
                   </div>
-                  
+
                   <button
                     type="button"
                     disabled={searching || !codigoArticulo.trim()}
@@ -406,7 +406,7 @@ export default function RegisterPedidoPage() {
             {/* SECCIÓN DETALLE Y TALLERO INVENTARIO */}
             {(descripcion || codigoArticulo.trim()) && (
               <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-5 animate-in fade-in zoom-in-95 duration-100">
-                
+
                 {/* Cabecera del Calzado Encontrado */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
@@ -425,7 +425,7 @@ export default function RegisterPedidoPage() {
                         ) : null}
                       </div>
                       <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                        Código SAP: <span className="font-mono font-bold text-slate-500 uppercase">{codigoArticulo}</span> 
+                        Código SAP: <span className="font-mono font-bold text-slate-500 uppercase">{codigoArticulo}</span>
                         {serie && ` • Catálogo Serie: ${serie}`}
                         {currentUnitOfMeasure && ` • Unidad: ${currentUnitOfMeasure}`}
                       </p>
@@ -434,8 +434,13 @@ export default function RegisterPedidoPage() {
 
                   {descripcion && (
                     <div className="flex items-center gap-1.5 bg-[#FAFBFD] border border-slate-200 px-3 py-1.5 rounded-xl shrink-0">
-                      <span className="text-[9px] font-black uppercase text-slate-400">Precio Unitario:</span>
-                      <span className="text-sm font-black font-mono text-indigo-700">S/. {precio.toFixed(2)}</span>
+                      <span className="text-[9px] font-black uppercase text-slate-400">Precio Unitario: S/.</span>
+                      <input
+                        type="number"
+                        value={precio}
+                        onChange={(e) => setPrecio(Number(e.target.value))}
+                        className="text-sm font-black font-mono text-indigo-700 bg-white border border-slate-200 rounded-lg px-2 py-1 w-28 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      />
                     </div>
                   )}
                 </div>
@@ -453,7 +458,7 @@ export default function RegisterPedidoPage() {
                 {/* Tallero e inputs de cantidades */}
                 {descripcion && tallasDisponibles.length > 0 && (
                   <div className="space-y-4">
-                    
+
                     <div>
                       <h4 className="text-[10px] font-black uppercase text-slate-450 tracking-wider text-slate-500">
                         Ingreso de Cantidades por Talla
@@ -467,18 +472,17 @@ export default function RegisterPedidoPage() {
                       {tallasDisponibles.map((talla) => {
                         const stock = stockPorTalla[talla] || 0;
                         const qty = cantidades[talla] || 0;
-                        
+
                         return (
-                          <div 
-                            key={talla} 
-                            className={`border rounded-xl p-3 text-center transition-all ${
-                              qty > 0 
-                                ? 'bg-indigo-50/40 border-indigo-550 border-indigo-400 ring-2 ring-indigo-50' 
+                          <div
+                            key={talla}
+                            className={`border rounded-xl p-3 text-center transition-all ${qty > 0
+                                ? 'bg-indigo-50/40 border-indigo-550 border-indigo-400 ring-2 ring-indigo-50'
                                 : 'bg-[#FAFBFD] border-slate-200'
-                            }`}
+                              }`}
                           >
                             <span className="block text-xs font-black text-slate-700 font-sans">Talla {talla}</span>
-                            
+
                             {/* Stock Badge */}
                             <span className="block text-[8px] font-black mt-1 uppercase text-slate-400 leading-none">
                               Disp: <b className="font-mono text-slate-600">{stock}</b>
@@ -494,12 +498,12 @@ export default function RegisterPedidoPage() {
                               placeholder="0"
                               onChange={(e) => handleCantidadChange(talla, e.target.value)}
                             />
-                            
+
                             {/* Visual Stock Bar */}
                             <div className="w-full bg-slate-200 h-1 rounded-full mt-2.5 overflow-hidden">
-                              <div 
-                                className={`h-full ${stock > 10 ? 'bg-emerald-500' : 'bg-amber-500'}`} 
-                                style={{ width: `${Math.min(100, (stock / 30) * 100)}%` }} 
+                              <div
+                                className={`h-full ${stock > 10 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                style={{ width: `${Math.min(100, (stock / 30) * 100)}%` }}
                               />
                             </div>
 
@@ -516,7 +520,7 @@ export default function RegisterPedidoPage() {
                           {Object.values(cantidades).reduce((s: number, v: any) => s + (Number(v) || 0), 0)} pares seleccionados
                         </span>
                       </div>
-                      
+
                       <button
                         className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:scale-100 shadow-lg shadow-indigo-150 inline-flex items-center gap-1.5 border border-indigo-700"
                         onClick={agregarItem}
