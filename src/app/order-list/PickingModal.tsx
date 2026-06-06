@@ -219,7 +219,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar }: PickingMo
 
     try {
       Swal.fire({
-        title: 'Ejecutando Surtido Exprés',
+        title: 'Ejecutando Escaneo Masivo',
         text: 'Auto-completando lecturas biométricas y físicas del lote...',
         background: '#0f172a',
         color: '#fff',
@@ -247,8 +247,8 @@ export default function PickingModal({ pedido, onClose, onFinalizar }: PickingMo
 
       Swal.fire({
         icon: 'success',
-        title: '¡Operación Simulada!',
-        text: 'Surtido exprés inyectado y validado de manera exitosa en el servidor.',
+        title: '¡Operación realizada!',
+        text: 'Escaneo completo y validado de manera exitosa en el servidor.',
         confirmButtonColor: '#10b981',
         background: '#0f172a',
         color: '#fff',
@@ -262,7 +262,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar }: PickingMo
       Swal.fire({
         icon: 'error',
         title: 'Error de Red',
-        text: 'Ocurrió un contratiempo procesando el surtido rápido.',
+        text: 'Ocurrió un contratiempo procesando el escaneo rápido.',
         background: '#0f172a',
         color: '#fff'
       });
@@ -584,7 +584,7 @@ export default function PickingModal({ pedido, onClose, onFinalizar }: PickingMo
                                 }
                               }}
                               disabled={completado}
-                              title={completado ? 'Talla totalmente surtida' : `Haga clic para simular la lectura de Talla ${t.talla}`}
+                              title={completado ? 'Talla totalmente surtida' : `Haga clic para leer la lectura de Talla ${t.talla}`}
                               className={`flex items-center border rounded-xl p-2 sm:p-2.5 shadow-2xs relative select-none transition-all duration-150 text-left outline-none cursor-pointer group/btn min-h-[44px] sm:min-h-[46px] w-full xl:min-w-[124px] ${
                                 completado 
                                   ? 'bg-emerald-500/10 border-emerald-300 text-emerald-800 shadow-inner' 
