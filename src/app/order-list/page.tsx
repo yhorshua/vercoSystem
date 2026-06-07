@@ -248,7 +248,9 @@ export default function OrderListPage() {
       Swal.fire({
         icon: response.ok ? 'success' : 'info',
         title: response.ok ? 'Operación Exitosa' : 'Información',
-        text: response.message,
+        text: response.ok
+          ? 'Guía generada correctamente'
+          : 'Operación realizada',
         confirmButtonColor: '#4f46e5'
       });
 
@@ -257,11 +259,12 @@ export default function OrderListPage() {
 
       const jefeVentas = user?.full_name || 'Jefe de Ventas';
       const pdfBlob = await buildPedidoPdfBlobFormal(pedido, jefeVentas);
-
-      const isReimpresion = response.message.toLowerCase().includes('ya generada') || response.message.toLowerCase().includes('re-despacho');
-      const filename = isReimpresion
-        ? `GUIA_REIMPRESION_DOC_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`
-        : `GUIA_DESPACHO_DOC_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`;
+      const message = response?.message ?? '';
+      const isReimpresion =
+        message.toLowerCase().includes('ya generada') ||
+        message.toLowerCase().includes('re-despacho'); const filename = isReimpresion
+          ? `GUIA_REIMPRESION_DOC_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`
+          : `GUIA_DESPACHO_DOC_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`;
 
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
