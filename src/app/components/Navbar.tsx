@@ -29,6 +29,10 @@ const Navbar = () => {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const router = useRouter();
 
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+
+
   if (!user) return null;
 
   const role = user?.role?.name_role;
@@ -38,6 +42,11 @@ const Navbar = () => {
     setIsMenuOpen(false);
     logout();
     router.replace('/login');
+  };
+
+  const toggleMenus = (menu: string) => {
+    setIsReportOpen(false);
+    setOpenMenu(openMenu === menu ? null : menu);
   };
 
   const toggleMenu = () => {
@@ -54,6 +63,7 @@ const Navbar = () => {
   const handleLinkClick = () => {
     setIsMenuOpen(false);
     setIsReportOpen(false);
+    setOpenMenu(null);
   };
 
   // Renderizado condicional de enlaces según rol
@@ -61,40 +71,87 @@ const Navbar = () => {
     <>
       {role === 'Vendedor' && (
         <>
-          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-            <ClipboardList size={18} /> Registrar Pedido
-          </Link>
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista de Pedidos
-          </Link>
+
+          <div className="relative">
+            <button
+              onClick={() => toggleMenus('pedidos')}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
+            >
+              <ClipboardList size={18} />
+              Pedidos
+              {openMenu === 'pedidos' ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {openMenu === 'pedidos' && (
+              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
+                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
+                  <ClipboardList size={18} /> Registro de Pedido x Mayor
+                </Link>
+
+                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
+                </Link>
+
+                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Nota de Pedido
+                </Link>        
+              </div>
+            )}
+          </div>
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} /> Stock
           </Link>
           <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
-          <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Nota de Pedido
-          </Link>
-          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} />Registro de stock
-          </Link>
+
         </>
       )}
 
       {role === 'Jefe Ventas' && (
         <>
+
+          <div className="relative">
+            <button
+              onClick={() => toggleMenus('pedidos')}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
+            >
+              <ClipboardList size={18} />
+              Pedidos
+              {openMenu === 'pedidos' ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {openMenu === 'pedidos' && (
+              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
+                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
+                  <ClipboardList size={18} /> Registro de Pedido x Mayor
+                </Link>
+
+                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
+                </Link>
+
+                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Nota de Pedido
+                </Link>
+
+                <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
+                  <LayoutDashboard size={18} /> Lista Pedidos Web
+                </Link>
+              </div>
+            )}
+          </div>
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} /> Stock
           </Link>
-          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-            <ClipboardList size={18} /> Pedido x Mayor
-          </Link>
-
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista Pedidos x Mayor
-          </Link>
-
           <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
@@ -105,43 +162,92 @@ const Navbar = () => {
             <Package size={18} />Registro de stock
           </Link>
           */}
-          <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Nota de Pedido
-          </Link>
 
-          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista Pedidos Web
-          </Link>
 
-          <Link href="/actualizarStock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Actualizar Stock
-          </Link>
         </>
       )}
 
       {role === 'Administrador' && (
         <>
-          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-            Registrar Pedido
-          </Link>
+
+        <div className="relative">
+            <button
+              onClick={() => toggleMenus('pedidos')}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
+            >
+              <ClipboardList size={18} />
+              Pedidos
+              {openMenu === 'pedidos' ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {openMenu === 'pedidos' && (
+              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
+                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
+                  <ClipboardList size={18} /> Registro de Pedido x Mayor
+                </Link>
+
+                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
+                </Link>
+
+                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Nota de Pedido
+                </Link>
+                <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
+                  <ClipboardList size={18} /> Registro de Pedido Web
+                </Link>
+                <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
+                  <LayoutDashboard size={18} /> Lista Pedidos Web
+                </Link>
+              </div>
+            )}
+          </div>
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             Stock
           </Link>
           <Link href="/qr" className={style.navbarLink} onClick={handleLinkClick}>
             <Tags size={18} /> Etiquetas
           </Link>
-          <Link href="/inventory" className={style.navbarLink} onClick={handleLinkClick}>
-            <Box size={18} /> Inventario
-          </Link>
           <Link href="/production" className={style.navbarLink} onClick={handleLinkClick}>
             Producción
           </Link>
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista de Pedidos
-          </Link>
-          <Link href="/listproducts" className={style.navbarLink} onClick={handleLinkClick}>
+          
+<div className="relative">
+            <button
+              onClick={() => toggleMenus('productos')}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
+            >
+              <ClipboardList size={18} />
+              Productos
+              {openMenu === 'productos' ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {openMenu === 'productos' && (
+              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
+                <Link href="/listproducts" className={style.navbarLink} onClick={handleLinkClick}>
             Productos
           </Link>
+          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
+            Registro de Producto
+          </Link>
+          <Link href="/inventorySystem" className={style.navbarLink} onClick={handleLinkClick}>
+            <Box size={18} /> Inventario
+          </Link>
+          <Link href="/actualizarStock" className={style.navbarLink} onClick={handleLinkClick}>
+            <Users size={18} /> Actualizar Stock
+          </Link>
+              </div>
+            )}
+          </div>
+        
           {/* Dropdown de Reportes */}
           <div className={style.reportDropdown}>
             <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
@@ -171,12 +277,7 @@ const Navbar = () => {
           <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
             Usuarios
           </Link>
-          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de Producto
-          </Link>
-          <Link href="/inventorySystem" className={style.navbarLink} onClick={handleLinkClick}>
-            Inventario
-          </Link>
+          
         </>
       )}
 
@@ -242,25 +343,49 @@ const Navbar = () => {
       )}
       {role === 'Vendedor Web' && (
         <>
+          <div className="relative">
+            <button
+              onClick={() => toggleMenus('pedidos')}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
+            >
+              <ClipboardList size={18} />
+              Pedidos
+              {openMenu === 'pedidos' ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {openMenu === 'pedidos' && (
+              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
+                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
+                  <ClipboardList size={18} /> Registro de Pedido x Mayor
+                </Link>
+
+                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
+                </Link>
+
+                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Nota de Pedido
+                </Link>
+                <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
+                  <ClipboardList size={18} /> Registro de Pedido Web
+                </Link>
+                <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
+                  <LayoutDashboard size={18} /> Lista Pedidos Web
+                </Link>
+              </div>
+            )}
+          </div>
+
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} /> Stock
-          </Link>
-          <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-            <ClipboardList size={18} /> Pedido x Mayor
-          </Link>
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista Pedidos x Mayor
           </Link>
           <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
-          <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
-            <ClipboardList size={18} /> Pedido Web
-          </Link>
-          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista Pedidos Web
-          </Link>
-
         </>
       )}
 
