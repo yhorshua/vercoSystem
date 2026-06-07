@@ -111,6 +111,20 @@ export const printLabels = (sales: WebSaleResponse[]) => {
               </tr>
             </table>
 
+            <div class="payment-card">
+              <div class="small-title">2. INFORMACIÓN DE PAGO</div>
+
+              <div class="payment-row">
+                <span>MÉTODO:</span>
+                <b>${sale.payment_method || 'NO DEFINIDO'}</b>
+              </div>
+
+              <div class="payment-row">
+                <span>TOTAL:</span>
+                <b>S/ ${Number(sale.total_amount || 0).toFixed(2)}</b>
+              </div>
+            </div>
+
             <div class="recipient-address">
               <strong>DIRECCIÓN:</strong> ${sale.customer_address.toUpperCase()}
             </div>
@@ -187,8 +201,8 @@ export const printLabels = (sales: WebSaleResponse[]) => {
           html, body {
             margin: 0;
             padding: 0;
-            width: 4in;
-            height: 6in;
+            width: 100mm;
+            height: 150mm;
             background-color: #fff;
             color: #000000;
             font-family: Arial, Helvetica, sans-serif;
@@ -199,10 +213,10 @@ export const printLabels = (sales: WebSaleResponse[]) => {
           /* Label outer card (76mm x 96mm to handle standard unprintable margin areas) */
           .thermal-label {
             box-sizing: border-box;
-            width: calc(4in - 6mm);
-            height: calc(6in - 6mm);
-            margin: 3mm;
-            padding: 4mm;
+            width: 96mm;
+            height: 145mm;
+            margin: 3mm auto 0 auto;
+            padding: 3mm;
             border: 1.5px solid #000000;
             display: flex;
             flex-direction: column;
@@ -275,7 +289,7 @@ export const printLabels = (sales: WebSaleResponse[]) => {
 
           /* Title of modular parts */
           .small-title {
-            font-size: 5.5pt;
+            font-size: 6pt;
             font-weight: 950;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -290,17 +304,18 @@ export const printLabels = (sales: WebSaleResponse[]) => {
           }
 
           .recipient-name {
-            font-size: 9.5pt;
+            font-size: 14pt;
             font-weight: 900;
-            line-height: 1.15;
+            line-height: 1.1;
             text-transform: uppercase;
-            letter-spacing: -0.1px;
+            text-align: center;
+            margin: 2mm 0;
           }
 
           .nested-meta-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7pt;
+            font-size: 18pt;
             margin-top: 0.6mm;
             margin-bottom: 0.6mm;
           }
@@ -308,16 +323,31 @@ export const printLabels = (sales: WebSaleResponse[]) => {
           .nested-meta-table td {
             padding: 0;
             border: none;
-            font-size: 7pt;
+            font-size: 12pt;
           }
 
           .recipient-address {
-            font-size: 7.5pt;
-            line-height: 1.25;
+            font-size: 10pt;
+            line-height: 1.4;
             max-height: 9.5mm;
             overflow: hidden;
             word-wrap: break-word;
-            margin-top: 0.5mm;
+            padding: 2mm;
+            border: 1px solid #000;
+            margin-top: 2mm;
+          }
+
+          .payment-card {
+            border: 2px solid #000;
+            padding: 2mm;
+            margin-top: 2mm;
+          }
+
+          .payment-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1mm;
+            font-size: 9pt;
           }
 
           /* Route highlighting */
@@ -347,7 +377,7 @@ export const printLabels = (sales: WebSaleResponse[]) => {
           .manifest-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7pt;
+            font-size: 10pt;
             margin-top: 0.5mm;
           }
 
@@ -355,17 +385,17 @@ export const printLabels = (sales: WebSaleResponse[]) => {
             background-color: #000000;
             color: #ffffff;
             border: 1px solid #000000;
-            padding: 0.5mm;
-            font-size: 6pt;
+            padding: 2mm;
+            font-size: 7pt;
             font-weight: bold;
             text-transform: uppercase;
           }
 
           .manifest-table td {
             border: 1px solid #000000;
-            padding: 0.6mm;
+            padding: 2mm;
             line-height: 1.1;
-            font-size: 7pt;
+            font-size: 9pt;
           }
 
           /* Barcode module bottom */
@@ -424,7 +454,7 @@ export const printLabels = (sales: WebSaleResponse[]) => {
             .thermal-label {
               border: 1.5px solid #000000 !important;
               box-shadow: none !important;
-              margin: 0 auto !important;
+              margin: 3mm 0 auto !important;
               page-break-after: always !important;
             }
           }
