@@ -248,6 +248,9 @@ const Navbar = () => {
                 <Link href="/actualizarStock" className={style.navbarLink} onClick={handleLinkClick}>
                   <Users size={18} /> Actualizar Stock
                 </Link>
+                <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Package size={18} />Registro de stock
+                </Link>
               </div>
             )}
           </div>

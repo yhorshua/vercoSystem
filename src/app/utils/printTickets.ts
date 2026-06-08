@@ -202,7 +202,6 @@ export const printLabels = (sales: WebSaleResponse[]) => {
             margin: 0;
             padding: 0;
             width: 100mm;
-            height: 150mm;
             background-color: #fff;
             color: #000000;
             font-family: Arial, Helvetica, sans-serif;
@@ -455,7 +454,7 @@ export const printLabels = (sales: WebSaleResponse[]) => {
               border: 1.5px solid #000000 !important;
               box-shadow: none !important;
               margin: 3mm 0 auto !important;
-              page-break-after: always !important;
+              break-after: page;
             }
           }
         </style>
