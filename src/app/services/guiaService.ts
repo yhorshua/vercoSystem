@@ -6,13 +6,19 @@ export type CreateGuiaDto = {
 };
 
 export async function createGuiaFromOrder(dto: CreateGuiaDto, token: string) {
+  const payload = {
+    ...dto,
+    tipo_credito: 'CONTADO',
+    fecha_vencimiento: null,
+  };
+
   const res = await fetch(`${API_URL}/guia-interna/from-order`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(dto),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
