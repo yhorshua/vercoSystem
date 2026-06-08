@@ -447,14 +447,14 @@ export default function OrderListPage() {
                 onChange={(e) => setSearchEstado(e.target.value)}
               >
                 <option value="">Todos los Estados</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobado">Aprobado</option>
-                <option value="Rechazado">Rechazado</option>
-                <option value="En Alistamiento">En Alistamiento</option>
-                <option value="Alistado">Alistado</option>
-                <option value="Despachado">Despachado</option>
-                <option value="Facturado">Facturado</option>
-                <option value="Cerrado">Cerrado</option>
+                <option value="1">Pendiente</option>
+                <option value="2">Aprobado</option>
+                <option value="3">Rechazado</option>
+                <option value="4">En Alistamiento</option>
+                <option value="5">Alistado</option>
+                <option value="7">Despachado</option>
+                <option value="8">Facturado</option>
+                <option value="9">Cerrado</option>
               </select>
             </div>
 

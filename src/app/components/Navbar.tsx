@@ -98,7 +98,7 @@ const Navbar = () => {
 
                 <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
                   <Users size={18} /> Nota de Pedido
-                </Link>        
+                </Link>
               </div>
             )}
           </div>
@@ -155,6 +155,9 @@ const Navbar = () => {
           <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
+          <Link href="/estadoCuenta" className={style.navbarLink} onClick={handleLinkClick}>
+            <Users size={18} /> Estado de cuentas
+          </Link>
           {/*
           
           
@@ -170,7 +173,7 @@ const Navbar = () => {
       {role === 'Administrador' && (
         <>
 
-        <div className="relative">
+          <div className="relative">
             <button
               onClick={() => toggleMenus('pedidos')}
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
@@ -215,8 +218,8 @@ const Navbar = () => {
           <Link href="/production" className={style.navbarLink} onClick={handleLinkClick}>
             Producción
           </Link>
-          
-<div className="relative">
+
+          <div className="relative">
             <button
               onClick={() => toggleMenus('productos')}
               className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
@@ -233,21 +236,21 @@ const Navbar = () => {
             {openMenu === 'productos' && (
               <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
                 <Link href="/listproducts" className={style.navbarLink} onClick={handleLinkClick}>
-            Productos
-          </Link>
-          <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-            Registro de Producto
-          </Link>
-          <Link href="/inventorySystem" className={style.navbarLink} onClick={handleLinkClick}>
-            <Box size={18} /> Inventario
-          </Link>
-          <Link href="/actualizarStock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Actualizar Stock
-          </Link>
+                  Productos
+                </Link>
+                <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
+                  Registro de Producto
+                </Link>
+                <Link href="/inventorySystem" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Box size={18} /> Inventario
+                </Link>
+                <Link href="/actualizarStock" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Actualizar Stock
+                </Link>
               </div>
             )}
           </div>
-        
+
           {/* Dropdown de Reportes */}
           <div className={style.reportDropdown}>
             <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
@@ -277,7 +280,7 @@ const Navbar = () => {
           <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
             Usuarios
           </Link>
-          
+
         </>
       )}
 

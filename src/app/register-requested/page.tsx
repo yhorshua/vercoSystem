@@ -363,7 +363,7 @@ export default function RegisterPedidoPage() {
                 <div className="md:col-span-4">
                   <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                     <Hash size={14} className="text-indigo-600" />
-                    <span>Cargar Artículo</span>
+                    <span>Código de Artículo</span>
                   </h3>
                   <p className="text-[10px] font-medium text-slate-400 mt-0.5">
                     Establece el calzado que deseas cotizar
@@ -379,7 +379,7 @@ export default function RegisterPedidoPage() {
                       type="text"
                       value={codigoArticulo}
                       onChange={(e) => setCodigoArticulo(e.target.value)}
-                      placeholder="Ej: RUN-PEG-40"
+                      placeholder="Ej: A4013NN"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           buscarProducto();
@@ -410,8 +410,8 @@ export default function RegisterPedidoPage() {
                 {/* Cabecera del Calzado Encontrado */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center font-mono text-xs font-black shrink-0 shadow-3xs">
-                      {codigoArticulo.substring(0, 3).toUpperCase() || 'REF'}
+                    <div className="w-25 h-10 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center font-mono text-xs font-black shrink-0 shadow-3xs">
+                      {codigoArticulo.substring(0, 9).toUpperCase() || 'REF'}
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
@@ -425,8 +425,8 @@ export default function RegisterPedidoPage() {
                         ) : null}
                       </div>
                       <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                        Código SAP: <span className="font-mono font-bold text-slate-500 uppercase">{codigoArticulo}</span>
-                        {serie && ` • Catálogo Serie: ${serie}`}
+                        Código: <span className="font-mono font-bold text-slate-500 uppercase">{codigoArticulo}</span>
+                        {serie && ` • Serie: ${serie}`}
                         {currentUnitOfMeasure && ` • Unidad: ${currentUnitOfMeasure}`}
                       </p>
                     </div>
