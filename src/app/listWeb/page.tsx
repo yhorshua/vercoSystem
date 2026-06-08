@@ -1036,7 +1036,7 @@ export default function ListaPedidosPage() {
               <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
 
                 {/* Jefe Ventas Print capability */}
-                {isSalesManager && selectedSale.status === 'APROBADO' && (
+                {isSalesManager && (selectedSale.status === 'APROBADO' || selectedSale.status === 'DESPACHADO') && (
                   <button
                     onClick={() =>
                       runAction('print', async () => {
