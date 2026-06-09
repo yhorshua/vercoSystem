@@ -142,6 +142,10 @@ const Navbar = () => {
                 <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
                   <Users size={18} /> Nota de Pedido
                 </Link>
+                
+                <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
+                  <ClipboardList size={18} /> Registro de Pedido Web
+                </Link>
 
                 <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
                   <LayoutDashboard size={18} /> Lista Pedidos Web
