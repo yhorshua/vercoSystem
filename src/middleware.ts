@@ -1,29 +1,202 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
+const PUBLIC_ROUTES = ["/login", "/register", "/no-autorizado"];
 
-  const token = request.cookies.get('access_token')?.value;
+const ROUTE_ROLES: Record<string, string[]> = {
+  "/home": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor",
+    "Tienda",
+    "Emprendedor",
+    "Vendedor Web",
+    "Delivery",
+  ],
 
-  const publicPaths = ['/login', '/register'];
+  "/register-requested": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor",
+    "Vendedor Web",
+  ],
 
-  const isPublicPath = publicPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+  "/order-list": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor",
+    "Vendedor Web",
+  ],
 
-  // Usuario logueado intentando ir al login
-  if (token && request.nextUrl.pathname === '/login') {
-    return NextResponse.redirect(new URL('/home', request.url));
+  "/cotizacion": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor",
+    "Tienda",
+    "Vendedor Web",
+  ],
+
+  "/stock": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor",
+    "Tienda",
+    "Vendedor Web",
+  ],
+
+  "/clients": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor",
+    "Vendedor Web",
+  ],
+
+  "/estadoCuenta": [
+    "Administrador",
+    "Jefe Ventas",
+  ],
+
+  "/registerweb": [
+    "Administrador",
+    "Vendedor Web",
+    "Emprendedor",
+  ],
+
+  "/listWeb": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor Web",
+    "Delivery",
+  ],
+
+  "/qr": ["Administrador"],
+  "/production": ["Administrador"],
+  "/listproducts": ["Administrador"],
+  "/register-product": ["Administrador"],
+  "/inventorySystem": ["Administrador"],
+  "/actualizarStock": ["Administrador"],
+
+  "/register-stock": [
+    "Administrador",
+    "Tienda",
+  ],
+
+  "/report-client": ["Administrador"],
+  "/report-vendedor": ["Administrador"],
+  "/report-pedidos": ["Administrador"],
+  "/report-fechas": ["Administrador"],
+  "/warehouses": ["Administrador"],
+  "/user": ["Administrador"],
+
+  "/sale": ["Tienda"],
+  "/caja": ["Tienda"],
+  "/reportsale": ["Tienda"],
+  "/asistencia": ["Tienda"],
+  "/change": ["Tienda"],
+
+  "/pedidos": ["Emprendedor"],
+  "/dashboardPedido": ["Emprendedor"],
+  "/detailPedido": ["Emprendedor"],
+  "/listPedidos": ["Emprendedor"],
+};
+
+function normalizePath(pathname: string) {
+  if (pathname !== "/" && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
   }
 
-  // Usuario no autenticado
-  if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  return pathname;
+}
+
+function isPublicRoute(pathname: string) {
+  return PUBLIC_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+}
+
+function getAllowedRoles(pathname: string) {
+  const cleanPathname = normalizePath(pathname);
+
+  const matchedRoute = Object.keys(ROUTE_ROLES)
+    .sort((a, b) => b.length - a.length)
+    .find(
+      (route) =>
+        cleanPathname === route ||
+        cleanPathname.startsWith(`${route}/`)
+    );
+
+  return matchedRoute ? ROUTE_ROLES[matchedRoute] : null;
+}
+
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value).trim();
+  } catch {
+    return value.trim();
+  }
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const token = request.cookies.get("access_token")?.value;
+  const roleCookie = request.cookies.get("role")?.value || "";
+  const role = safeDecode(roleCookie);
+
+  const cleanPathname = normalizePath(pathname);
+
+  console.log("[MIDDLEWARE AUTH]", {
+    pathname: cleanPathname,
+    hasToken: Boolean(token),
+    role,
+  });
+
+  // Ruta raíz
+  if (cleanPathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = token ? "/home" : "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Rutas públicas
+  if (isPublicRoute(cleanPathname)) {
+    if (cleanPathname === "/login" && token) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
+
+    return NextResponse.next();
+  }
+
+  // Si no tiene token, mandarlo al login
+  if (!token) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("redirect", cleanPathname);
+    return NextResponse.redirect(url);
+  }
+
+  const allowedRoles = getAllowedRoles(cleanPathname);
+
+  // Si la ruta no está registrada, bloquear
+  if (!allowedRoles) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/no-autorizado";
+    return NextResponse.redirect(url);
+  }
+
+  // Si no tiene rol o su rol no está permitido
+  if (!role || !allowedRoles.includes(role)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/no-autorizado";
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!_next|api|favicon.ico|img).*)'],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|img|.*\\..*).*)",
+  ],
 };
-

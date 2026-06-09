@@ -8,12 +8,14 @@ export function useEstadoCuenta(token: string) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const cargarEstadoCuenta = async (clienteId: number) => {
+  const cargarEstadoCuenta = async (
+    clienteId: number,
+    startDate?: string,
+    endDate?: string
+  ) => {
     try {
       setLoading(true);
-
-      const res = await getEstadoCuentaCliente(clienteId, token);
-
+      const res = await getEstadoCuentaCliente(clienteId, token, startDate, endDate);
       setData(res);
       return res;
     } finally {

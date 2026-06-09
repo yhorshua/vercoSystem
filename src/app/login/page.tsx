@@ -25,6 +25,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { setUser } = useUser();
 
+
   const handleLogin = async () => {
     if (loading || isPending) return;
 
@@ -94,6 +95,9 @@ export default function LoginPage() {
 
         document.cookie =
           `access_token=${data.access_token}; path=/; max-age=86400; SameSite=Lax${secure}`;
+
+        document.cookie =
+          `role=${encodeURIComponent(data.user.role.name_role)}; path=/; max-age=86400; SameSite=Lax${secure}`;
       }
 
       setUser(userData);
@@ -152,7 +156,7 @@ export default function LoginPage() {
           </h1>
 
           <p className="mt-6 text-zinc-400 text-sm max-w-sm leading-relaxed">
-            Centraliza la gestión de almacenes, 
+            Centraliza la gestión de almacenes,
             stock y despachos con información actualizada en tiempo real.
           </p>
         </div>

@@ -9,23 +9,17 @@ export interface RegistrarAbonoDto {
   moneda_abono: string;
 }
 
-export async function getEstadoCuentaCliente(
-  clienteId: number,
-  token: string,
-) {
-  const res = await fetch(
-    `${API_URL}/estado-cuenta/cliente/${clienteId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+export async function getEstadoCuentaCliente(clienteId: number, token: string, startDate?: string, endDate?: string) {
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+
+  const res = await fetch(`${API_URL}/estado-cuenta/cliente/${clienteId}?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-  );
-
-  if (!res.ok) {
-    throw new Error('Error obteniendo estado de cuenta');
-  }
-
+  });
+  if (!res.ok) throw new Error('Error obteniendo estado de cuenta');
   return res.json();
 }
 

@@ -155,13 +155,10 @@ const Navbar = () => {
           <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Clientes
           </Link>
-          {/*
           <Link href="/estadoCuenta" className={style.navbarLink} onClick={handleLinkClick}>
             <Users size={18} /> Estado de cuentas
           </Link>
-
-          
-          
+          {/*
           <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} />Registro de stock
           </Link>
