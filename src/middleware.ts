@@ -87,16 +87,16 @@ const ROUTE_ROLES: Record<string, string[]> = {
   "/warehouses": ["Administrador"],
   "/user": ["Administrador"],
 
-  "/sale": ["Tienda"],
-  "/caja": ["Tienda"],
-  "/reportsale": ["Tienda"],
-  "/asistencia": ["Tienda"],
-  "/change": ["Tienda"],
+  "/sale": ["Tienda", "Administrador"],
+  "/caja": ["Tienda", "Administrador"],
+  "/reportsale": ["Tienda", "Administrador"],
+  "/asistencia": ["Tienda", "Administrador"],
+  "/change": ["Tienda", "Administrador"],
 
-  "/pedidos": ["Emprendedor"],
-  "/dashboardPedido": ["Emprendedor"],
-  "/detailPedido": ["Emprendedor"],
-  "/listPedidos": ["Emprendedor"],
+  "/pedidos": ["Emprendedor", "Administrador"],
+  "/dashboardPedido": ["Emprendedor", "Administrador"],
+  "/detailPedido": ["Emprendedor", "Administrador"],
+  "/listPedidos": ["Emprendedor", "Administrador"],
 };
 
 function normalizePath(pathname: string) {
