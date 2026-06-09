@@ -4,13 +4,7 @@ import { ShieldAlert, ArrowLeft, HelpCircle, Lock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
 
-interface NoAutorizadoScreenProps {
-  onGoBack?: () => void;
-  onOpenLogin?: () => void;
-}
-
-
-export default function NoAutorizadoScreen({ onGoBack, onOpenLogin }: NoAutorizadoScreenProps) {
+export default function NoAutorizadoScreen() {
 
 
   const router = useRouter();
