@@ -8,7 +8,6 @@ import {
 import Swal from 'sweetalert2';
 import rawUbigeo from '../utils/ubigeo-peru-optimizado.json';
 import type { Ubigeo } from '../utils/types/ubigeo';
-import { getProductsByCodeOrDescription, getProductsByWarehouse } from '../services/productsService';
 import { useUser } from '../context/UserContext';
 import { createWebSale } from '../services/webSaleService';
 import { getProductImage } from '../utils/images';
@@ -107,7 +106,7 @@ export default function PantallaVentaWeb() {
     };
 
     const finalizarVentaCompleta = async () => {
-        if (!customerData.name || !customerData.phone || !customerData.address || !customerData.dni || !customerData.department || !customerData.province || !customerData.district) {
+        if (!customerData.name || !customerData.phone || !customerData.dni || !customerData.department || !customerData.province || !customerData.district) {
             Swal.fire('Atención', 'Por favor, completa todos los campos obligatorios del cliente', 'warning');
             return;
         }
