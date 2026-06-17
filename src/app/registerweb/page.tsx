@@ -43,18 +43,42 @@ export default function PantallaVentaWeb() {
     const token = user?.token ?? '';
     const ubigeo = rawUbigeo as Ubigeo;
 
-    const [customerData, setCustomerData] = useState({
-        name: '', dni: '', phone: '', address: '',
-        department: '', province: '', district: '',
-        reference: '', paymentMethod: 'Yape',
-        observations: '', agencyName: '',
-    });
+    const initialCustomerData = {
+    name: '',
+    dni: '',
+    phone: '',
+    address: '',
+    department: '',
+    province: '',
+    district: '',
+    reference: '',
+    paymentMethod: 'Yape',
+    observations: '',
+    agencyName: '',
+};
+
+    const [customerData, setCustomerData] = useState(initialCustomerData);
 
     const [depId, setDepId] = useState<keyof Ubigeo | ''>('');
     const [provId, setProvId] = useState('');
     const [distId, setDistId] = useState('');
 
     // --- Lógica de Servicios Originales ---
+
+    const resetVentaWeb = () => {
+    setPedido([]);
+    setStep(1);
+    setCustomerData(initialCustomerData);
+
+    setDepId('');
+    setProvId('');
+    setDistId('');
+
+    setIsAgencyDelivery(false);
+    setSelectedProduct(null);
+    setShowModal(false);
+};
+
     const handleSearch = async (code: string) => {
         if (!code.trim()) return;
         setIsSearching(true);
@@ -159,7 +183,7 @@ export default function PantallaVentaWeb() {
             // Resetear estados
             setPedido([]);
             setStep(1);
-            setCustomerData({ name: '', dni: '', phone: '', address: '', department: '', province: '', district: '', reference: '', paymentMethod: 'Yape', observations: '', agencyName: '' });
+            resetVentaWeb();
         } catch (error: any) {
             Swal.fire('Error', error.message || 'No se pudo registrar la venta', 'error');
         }
@@ -379,7 +403,7 @@ export default function PantallaVentaWeb() {
 
                                         <div className="relative">
                                             <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
-                                            <textarea className="w-full pl-12 p-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none font-bold text-sm min-h-[80px] focus:ring-2 ring-indigo-500/20 transition-all" placeholder="Dirección exacta y Referencias..." onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })} />
+                                            <textarea className="w-full pl-12 p-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none font-bold text-sm min-h-[80px] focus:ring-2 ring-indigo-500/20 transition-all" placeholder="Dirección exacta y Referencias..." value={customerData.address} onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })} />
                                         </div>
 
                                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -403,7 +427,7 @@ export default function PantallaVentaWeb() {
 
                                         <div className="relative">
                                             <MessageSquare className="absolute left-4 top-4 text-slate-400" size={18} />
-                                            <textarea className="w-full pl-12 p-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none font-bold text-sm min-h-[60px] italic" placeholder="Observaciones extras del pedido..." onChange={(e) => setCustomerData({ ...customerData, observations: e.target.value })} />
+                                            <textarea className="w-full pl-12 p-4 rounded-2xl bg-slate-50 border border-slate-200 outline-none font-bold text-sm min-h-[60px] italic" placeholder="Observaciones extras del pedido..." value={customerData.observations} onChange={(e) => setCustomerData({ ...customerData, observations: e.target.value })} />
                                         </div>
                                     </div>
 

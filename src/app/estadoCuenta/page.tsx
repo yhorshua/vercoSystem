@@ -2,13 +2,13 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { 
-  FileText, 
-  Search, 
-  Calendar, 
-  DollarSign, 
-  Clock, 
-  CheckCircle2, 
+import {
+  FileText,
+  Search,
+  Calendar,
+  DollarSign,
+  Clock,
+  CheckCircle2,
   AlertCircle,
   ChevronRight,
   UserPlus,
@@ -27,20 +27,33 @@ export default function EstadoCuentaClientePage() {
   const [selectedClient, setSelectedClient] = useState<ClienteUI | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedStatementId, setSelectedStatementId] = useState<number | null>(null);
-  const [startDate, setStartDate] = useState('2024-01-01');
-  const [endDate, setEndDate] = useState('2026-12-31');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const { data, loading, cargarEstadoCuenta } = useEstadoCuenta(token);
 
   // --- Tipos ---
   type EstadoCuentaType = {
     id: number;
-    monto_inicial: number;
-    monto_pago?: number;
-    monto_saldo: number;
+    cliente_id: number;
+    vendedor_id: number;
+    monto_inicial: string;
+    monto_pago?: string;
+    monto_saldo: string;
     fecha_registro?: string;
     estado?: string;
-    guia_interna_code?: string;
+    fecha_vencimiento?: string | null;
+    tipo_credito?: string;
+    dias_credito?: number | null;
+    guia_interna?: {
+      id: number;
+      id_pedido: number;
+      proforma_number: number;
+      total_unidades: number;
+      total_precio: string;
+      estado: string;
+      fecha_registro: string;
+    };
   };
 
   type CuotaType = { id: number; estadoCuenta?: { id: number }; estado?: string };
@@ -60,11 +73,16 @@ export default function EstadoCuentaClientePage() {
 
   // --- Lógica de filtrado ---
   const cuentasFiltradas = useMemo(() => {
-    return cuentas.filter(c => 
-      c.fecha_registro && 
-      c.fecha_registro.substring(0, 10) >= startDate && 
-      c.fecha_registro.substring(0, 10) <= endDate
-    );
+    return cuentas.filter(c => {
+      if (!c.fecha_registro) return false;
+
+      const fecha = c.fecha_registro.substring(0, 10);
+
+      if (startDate && fecha < startDate) return false;
+      if (endDate && fecha > endDate) return false;
+
+      return true;
+    });
   }, [cuentas, startDate, endDate]);
 
   const cuentaSeleccionada = useMemo(() => {
@@ -137,7 +155,7 @@ export default function EstadoCuentaClientePage() {
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 text-slate-900 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header Section */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div>
@@ -174,7 +192,7 @@ export default function EstadoCuentaClientePage() {
 
             {/* Filters and Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Left Column: List and Filters */}
               <div className="lg:col-span-4 space-y-4">
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
@@ -185,8 +203,8 @@ export default function EstadoCuentaClientePage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-400 uppercase">Desde</label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         className="w-full text-xs p-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -194,8 +212,8 @@ export default function EstadoCuentaClientePage() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-400 uppercase">Hasta</label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="w-full text-xs p-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -221,13 +239,14 @@ export default function EstadoCuentaClientePage() {
                         <div
                           key={c.id}
                           onClick={() => setSelectedStatementId(c.id)}
-                          className={`p-4 cursor-pointer transition-all flex items-center justify-between group ${
-                            selectedStatementId === c.id ? 'bg-indigo-50 border-l-4 border-indigo-500' : 'hover:bg-gray-50 border-l-4 border-transparent'
-                          }`}
+                          className={`p-4 cursor-pointer transition-all flex items-center justify-between group ${selectedStatementId === c.id ? 'bg-indigo-50 border-l-4 border-indigo-500' : 'hover:bg-gray-50 border-l-4 border-transparent'
+                            }`}
                         >
                           <div>
                             <p className={`font-bold text-sm ${selectedStatementId === c.id ? 'text-indigo-700' : 'text-slate-700'}`}>
-                              {c.guia_interna_code || `ID: ${c.id}`}
+                              {c.guia_interna?.proforma_number
+                                ? `Proforma N° ${c.guia_interna.proforma_number}`
+                                : `Cuenta ID: ${c.id}`}
                             </p>
                             <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1">
                               <Calendar size={12} /> {c.fecha_registro?.substring(0, 10)}
@@ -235,12 +254,11 @@ export default function EstadoCuentaClientePage() {
                           </div>
                           <div className="text-right flex items-center gap-3">
                             <div>
-                                <p className="text-xs font-bold text-slate-700">S/ {c.monto_saldo.toFixed(2)}</p>
-                                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                                    c.estado === 'PAGADO' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                              <p className="text-xs font-bold text-slate-700">S/ {c.monto_saldo}</p>
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${c.estado === 'PAGADO' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
                                 }`}>
-                                    {c.estado}
-                                </span>
+                                {c.estado}
+                              </span>
                             </div>
                             <ChevronRight size={16} className={`text-slate-300 transition-transform ${selectedStatementId === c.id ? 'translate-x-1 text-indigo-400' : ''}`} />
                           </div>
@@ -266,66 +284,69 @@ export default function EstadoCuentaClientePage() {
                     <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between md:items-center gap-4">
                       <div>
                         <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Detalle de Operación</span>
-                        <h2 className="text-xl font-bold text-slate-800">{cuentaSeleccionada.guia_interna_code}</h2>
+                        <h2 className="text-xl font-bold text-slate-800">
+                          {cuentaSeleccionada.guia_interna?.proforma_number
+                            ? `Proforma N° ${cuentaSeleccionada.guia_interna.proforma_number}`
+                            : `Cuenta ID: ${cuentaSeleccionada.id}`}
+                        </h2>
                       </div>
                       <div className="flex gap-2">
                         <div className="bg-gray-100 px-4 py-2 rounded-xl text-center">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase">Cuotas</p>
-                            <p className="text-sm font-bold text-slate-700">{cuotasActivas.length}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Cuotas</p>
+                          <p className="text-sm font-bold text-slate-700">{cuotasActivas.length}</p>
                         </div>
                         <div className="bg-gray-100 px-4 py-2 rounded-xl text-center">
-                            <p className="text-[9px] font-bold text-slate-400 uppercase">Abonos</p>
-                            <p className="text-sm font-bold text-slate-700">{abonosActivos.length}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Abonos</p>
+                          <p className="text-sm font-bold text-slate-700">{abonosActivos.length}</p>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto">
-                        <section className="space-y-4">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                                <Clock size={14} /> Historial de Cuotas
-                            </h4>
-                            {cuotasActivas.length > 0 ? (
-                                <div className="space-y-2">
-                                    {cuotasActivas.map(cuota => (
-                                        <div key={cuota.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
-                                            <span className="text-xs font-medium text-slate-600">ID Cuota #{cuota.id}</span>
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${
-                                                cuota.estado === 'VENCIDO' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
-                                            }`}>
-                                                {cuota.estado}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : <p className="text-xs text-slate-400 italic">No hay cuotas registradas.</p>}
-                        </section>
 
-                        <section className="space-y-4">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                                <FileText size={14} /> Abonos Aplicados
-                            </h4>
-                            {abonosActivos.length > 0 ? (
-                                <div className="space-y-2">
-                                    {abonosActivos.map((abono, idx) => (
-                                        <div key={idx} className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex justify-between items-center">
-                                            <span className="text-xs font-medium text-emerald-800 tracking-tight">Referencia EC-{abono.id_estado_cuenta}</span>
-                                            <CheckCircle2 size={14} className="text-emerald-500" />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : <p className="text-xs text-slate-400 italic">No se han realizado abonos.</p>}
-                        </section>
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto">
+                      <section className="space-y-4">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                          <Clock size={14} /> Historial de Cuotas
+                        </h4>
+                        {cuotasActivas.length > 0 ? (
+                          <div className="space-y-2">
+                            {cuotasActivas.map(cuota => (
+                              <div key={cuota.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
+                                <span className="text-xs font-medium text-slate-600">ID Cuota #{cuota.id}</span>
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${cuota.estado === 'VENCIDO' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'
+                                  }`}>
+                                  {cuota.estado}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : <p className="text-xs text-slate-400 italic">No hay cuotas registradas.</p>}
+                      </section>
+
+                      <section className="space-y-4">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                          <FileText size={14} /> Abonos Aplicados
+                        </h4>
+                        {abonosActivos.length > 0 ? (
+                          <div className="space-y-2">
+                            {abonosActivos.map((abono, idx) => (
+                              <div key={idx} className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex justify-between items-center">
+                                <span className="text-xs font-medium text-emerald-800 tracking-tight">Referencia EC-{abono.id_estado_cuenta}</span>
+                                <CheckCircle2 size={14} className="text-emerald-500" />
+                              </div>
+                            ))}
+                          </div>
+                        ) : <p className="text-xs text-slate-400 italic">No se han realizado abonos.</p>}
+                      </section>
                     </div>
                   </div>
                 ) : (
                   <div className="bg-white rounded-2xl border border-dashed border-gray-300 h-full min-h-[400px] flex flex-col items-center justify-center text-center p-10">
                     <div className="bg-gray-50 p-6 rounded-full mb-4">
-                        <FileText size={48} className="text-gray-300" />
+                      <FileText size={48} className="text-gray-300" />
                     </div>
                     <h3 className="text-slate-600 font-bold">Ninguna cuenta seleccionada</h3>
                     <p className="text-slate-400 text-sm max-w-xs mt-2">
-                        Selecciona un documento del listado de la izquierda para ver el detalle de cuotas y pagos.
+                      Selecciona un documento del listado de la izquierda para ver el detalle de cuotas y pagos.
                     </p>
                   </div>
                 )}
@@ -353,24 +374,24 @@ export default function EstadoCuentaClientePage() {
 // --- Componentes Auxiliares ---
 
 function StatCard({ label, value, icon, color, isCount = false }: { label: string, value: number, icon: React.ReactNode, color: string, isCount?: boolean }) {
-    const colors: any = {
-        blue: 'bg-blue-50 text-blue-700 border-blue-100',
-        emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-        amber: 'bg-amber-50 text-amber-700 border-amber-100',
-        rose: 'bg-rose-50 text-rose-700 border-rose-100'
-    };
+  const colors: any = {
+    blue: 'bg-blue-50 text-blue-700 border-blue-100',
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    amber: 'bg-amber-50 text-amber-700 border-amber-100',
+    rose: 'bg-rose-50 text-rose-700 border-rose-100'
+  };
 
-    return (
-        <div className={`bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start justify-between`}>
-            <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-                <p className="text-2xl font-black text-slate-800">
-                    {isCount ? value : `S/ ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                </p>
-            </div>
-            <div className={`p-3 rounded-xl ${colors[color]} border`}>
-                {icon}
-            </div>
-        </div>
-    );
+  return (
+    <div className={`bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start justify-between`}>
+      <div>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-2xl font-black text-slate-800">
+          {isCount ? value : `S/ ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+        </p>
+      </div>
+      <div className={`p-3 rounded-xl ${colors[color]} border`}>
+        {icon}
+      </div>
+    </div>
+  );
 }
