@@ -1,5 +1,11 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export interface WebSalesReportParams {
+  startDate?: string;
+  endDate?: string;
+  userId?: number;
+}
+
 export interface WebSaleDetailDto {
   product_id: number;
   product_size_id: number;
@@ -137,7 +143,7 @@ export async function getWebSales(
 }
 
 export async function updateWebSaleStatus(
-   id: number,
+  id: number,
   status: string,
   token: string,
   shipping_code?: string
@@ -193,6 +199,42 @@ export async function deliverSaleRequest(
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || 'Error al registrar entrega');
+  }
+
+  return res.json();
+}
+
+export async function getWebSalesReport(
+  params: WebSalesReportParams,
+  token: string
+) {
+  const query = new URLSearchParams();
+
+  if (params.startDate) {
+    query.append('startDate', params.startDate);
+  }
+
+  if (params.endDate) {
+    query.append('endDate', params.endDate);
+  }
+
+  if (params.userId) {
+    query.append('userId', String(params.userId));
+  }
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/websales`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error('Error al obtener reporte de ventas web');
   }
 
   return res.json();

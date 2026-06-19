@@ -183,8 +183,6 @@ const Navbar = () => {
             )}
           </Link>
 
-
-
           <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
             <LayoutDashboard size={18} /> Lista Pedidos Web
             {counters.webSalesNew > 0 && (
@@ -193,6 +191,29 @@ const Navbar = () => {
               </span>
             )}
           </Link>
+
+           <div className="relative">
+            <button
+              onClick={() => toggleMenus('reporte')}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
+            >
+              <ClipboardList size={18} />
+              Reporte
+              {openMenu === 'reporte' ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {openMenu === 'reporte' && (
+              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
+                <Link href="/reportWebPage" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Reporte
+                </Link>
+              </div>
+            )}
+          </div>
           {/*
           <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} />Registro de stock
