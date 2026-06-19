@@ -41,6 +41,14 @@ import {
 } from '../services/webSaleService';
 import Swal from 'sweetalert2';
 import { printLabels } from '../utils/printTickets';
+import {
+  getDashboardSocket,
+  WebSaleNotification,
+  OrderNotification,
+  DashboardCounters,
+} from '../services/dashboardSocketService';
+import { useDashboardSocket } from '../context/DashboardSocketContext';
+
 
 export default function ListaPedidosPage() {
   const [filter, setFilter] = useState('todos');
@@ -58,6 +66,9 @@ export default function ListaPedidosPage() {
   const [selectedSale, setSelectedSale] = useState<WebSaleResponse | null>(null);
   const [shippingCodeInput, setShippingCodeInput] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const { counters } = useDashboardSocket();
+  const { refreshKey } = useDashboardSocket();
+
 
   const role = user?.role?.name_role;
   const isSalesManager = user?.role?.name_role === 'Jefe Ventas';
@@ -165,7 +176,7 @@ export default function ListaPedidosPage() {
       loadSales();
     }, 100000);
     return () => clearInterval(interval);
-  }, [token, filter]);
+  }, [token, filter, refreshKey]);
 
   // Trigger loads on filter/token change
   useEffect(() => {

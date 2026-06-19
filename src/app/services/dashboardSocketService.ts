@@ -27,7 +27,7 @@ export function getDashboardSocket(params: {
   roleName?: string;
 }) {
   if (!SOCKET_URL) {
-    throw new Error('NEXT_PUBLIC_SOCKET_URL no está configurado');
+    throw new Error('NEXT_PUBLIC_API_URL no está configurado');
   }
 
   if (!dashboardSocket) {

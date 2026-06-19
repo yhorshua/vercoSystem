@@ -22,6 +22,7 @@ import {
   ClipboardPen
 } from 'lucide-react';
 import style from './page.module.css';
+import { useDashboardSocket } from '../context/DashboardSocketContext';
 
 const Navbar = () => {
   const { user, logout } = useUser();
@@ -31,7 +32,7 @@ const Navbar = () => {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-
+  const { counters } = useDashboardSocket();
 
   if (!user) return null;
 
@@ -134,21 +135,37 @@ const Navbar = () => {
                 <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
                   <ClipboardList size={18} /> Registro de Pedido x Mayor
                 </Link>
-
-                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
-                </Link>
-
                 <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
                   <Users size={18} /> Nota de Pedido
                 </Link>
-                
                 <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
                   <ClipboardList size={18} /> Registro de Pedido Web
                 </Link>
+              </div>
+            )}
+          </div>
 
-                <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-                  <LayoutDashboard size={18} /> Lista Pedidos Web
+          <div className="relative">
+            <button
+              onClick={() => toggleMenus('clientes')}
+              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
+            >
+              <ClipboardList size={18} />
+              Clientes
+              {openMenu === 'clientes' ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+
+            {openMenu === 'clientes' && (
+              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
+                <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Gestión de Clientes
+                </Link>
+                <Link href="/estadoCuenta" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Estado de Cuentas de Clientes
                 </Link>
               </div>
             )}
@@ -156,11 +173,25 @@ const Navbar = () => {
           <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
             <Package size={18} /> Stock
           </Link>
-          <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Clientes
+
+          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
+            <LayoutDashboard size={18} /> Lista Pedidos x Mayor
+            {counters.ordersNew > 0 && (
+              <span className="absolute -top-2 -right-3 bg-red-600 text-white text-[10px] font-black px-2 py-[2px] rounded-full">
+                {counters.ordersNew}
+              </span>
+            )}
           </Link>
-          <Link href="/estadoCuenta" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Estado de cuentas
+
+
+
+          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
+            <LayoutDashboard size={18} /> Lista Pedidos Web
+            {counters.webSalesNew > 0 && (
+              <span className="absolute -top-2 -right-3 bg-indigo-600 text-white text-[10px] font-black px-2 py-[2px] rounded-full">
+                {counters.webSalesNew}
+              </span>
+            )}
           </Link>
           {/*
           <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
