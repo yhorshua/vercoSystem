@@ -223,7 +223,7 @@ export async function getWebSalesReport(
   }
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/websales`,
+    `${process.env.NEXT_PUBLIC_API_URL}/websales?${query.toString()}`,
     {
       method: 'GET',
       headers: {

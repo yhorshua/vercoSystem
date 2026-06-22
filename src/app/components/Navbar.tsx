@@ -209,7 +209,7 @@ const Navbar = () => {
             {openMenu === 'reporte' && (
               <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
                 <Link href="/reportWebPage" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Reporte
+                  <Users size={18} /> Reporte de Ventas Web
                 </Link>
               </div>
             )}
