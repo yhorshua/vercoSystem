@@ -171,19 +171,28 @@ export default function ListaPedidosPage() {
 
   // Autorefresh logic (every 100 seconds)
   useEffect(() => {
-    if (!token) return;
-    const interval = setInterval(() => {
-      loadSales();
-    }, 100000);
-    return () => clearInterval(interval);
-  }, [token, filter, refreshKey]);
 
-  // Trigger loads on filter/token change
-  useEffect(() => {
-    if (token) {
+    if (!token) return;
+
+
+    loadSales();
+
+
+    const interval = setInterval(() => {
+
       loadSales();
-    }
-  }, [filter, token]);
+
+    }, 300000); // 5 minutos
+
+
+    return () => clearInterval(interval);
+
+
+  }, [
+    token,
+    filter,
+    refreshKey
+  ]);
 
   const loadSales = async () => {
     try {
