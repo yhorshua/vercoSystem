@@ -51,7 +51,12 @@ export function exportWebSalesReportExcel(data: any) {
   // ========================
   const detalle: any[] = [];
 
+  let totalParesVendidos = 0;
+  let totalVendido = 0;
+  let totalUtilidad = 0;
+
   data.resumen_por_vendedor.forEach((v: any) => {
+
     v.ventas.forEach((venta: any) => {
 
       let paresVendidos = 0;
@@ -79,7 +84,24 @@ export function exportWebSalesReportExcel(data: any) {
         costo: venta.resumen_venta.costo_compra_total,
         utilidad: venta.resumen_venta.total_utilidad,
       });
+
+      // Totales solamente para pedidos entregados
+      if (venta.estado_pedido === 'ENTREGADO') {
+
+        totalParesVendidos += paresVendidos;
+
+        totalVendido += Number(
+          venta.pago.total_pedido_actual || 0
+        );
+
+        totalUtilidad += Number(
+          venta.resumen_venta.total_utilidad || 0
+        );
+
+      }
+
     });
+
   });
 
   // Ordenar correlativamente por ticket
@@ -95,6 +117,24 @@ export function exportWebSalesReportExcel(data: any) {
 
     return ticketA - ticketB;
 
+  });
+
+  // Fila en blanco
+  detalle.push({});
+
+  // Resumen final
+  detalle.push({
+    vendedor: 'TOTAL GENERAL',
+    ticket: '',
+    cliente: '',
+    dni: '',
+    celular: '',
+    distrito: '',
+    estado: 'ENTREGADOS',
+    pares_vendidos: totalParesVendidos,
+    total: totalVendido,
+    costo: '',
+    utilidad: totalUtilidad,
   });
 
   XLSX.utils.book_append_sheet(
