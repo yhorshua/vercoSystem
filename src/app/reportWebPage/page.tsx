@@ -183,7 +183,7 @@ export default function ReporteVentasWebPage() {
                                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70"
                             >
                                 {loading ? <RefreshCw className="animate-spin" size={20} /> : <Search size={20} />}
-                                {loading ? 'Buscando...' : 'Actualizar Reporte'}
+                                {loading ? 'Buscando...' : 'Consultar'}
                             </button>
                         </div>
                     </div>
@@ -207,7 +207,7 @@ export default function ReporteVentasWebPage() {
                         color="emerald"
                     />
                     <StatCard
-                        label="Ticket Promedio"
+                        label="Utilidad"
                         value={`S/ ${stats.total_utilidad.toFixed(2)}`}
                         icon={<ArrowUpRight size={24} />}
                         color="amber"

@@ -53,6 +53,19 @@ export function exportWebSalesReportExcel(data: any) {
 
   data.resumen_por_vendedor.forEach((v: any) => {
     v.ventas.forEach((venta: any) => {
+
+      let paresVendidos = 0;
+
+      venta.detalles?.forEach((d: any) => {
+
+        if (d.estado_detalle !== 'DEVUELTO') {
+          paresVendidos += Number(
+            d.cantidad_pares || 0
+          );
+        }
+
+      });
+
       detalle.push({
         vendedor: v.vendedor,
         ticket: venta.ticket,
@@ -61,6 +74,7 @@ export function exportWebSalesReportExcel(data: any) {
         celular: venta.cliente.telefono,
         distrito: venta.cliente.distrito,
         estado: venta.estado_pedido,
+        pares_vendidos: paresVendidos,
         total: venta.pago.total_pedido_actual,
         costo: venta.resumen_venta.costo_compra_total,
         utilidad: venta.resumen_venta.total_utilidad,
@@ -68,11 +82,133 @@ export function exportWebSalesReportExcel(data: any) {
     });
   });
 
+  // Ordenar correlativamente por ticket
+  detalle.sort((a, b) => {
+
+    const ticketA = Number(
+      String(a.ticket).replace(/\D/g, '')
+    );
+
+    const ticketB = Number(
+      String(b.ticket).replace(/\D/g, '')
+    );
+
+    return ticketA - ticketB;
+
+  });
+
   XLSX.utils.book_append_sheet(
     workbook,
     XLSX.utils.json_to_sheet(detalle),
     'Detalle'
   );
+
+  // ========================
+  // DETALLE POR VENDEDOR
+  // ========================
+
+  data.resumen_por_vendedor.forEach((v: any) => {
+
+    const detalleVendedor: any[] = [];
+
+    let totalPedidos = 0;
+    let totalPares = 0;
+    let totalVendido = 0;
+    let totalUtilidad = 0;
+
+    const ventasOrdenadas = [...v.ventas].sort(
+      (a: any, b: any) => {
+
+        const ticketA = Number(
+          String(a.ticket).replace(/\D/g, '')
+        );
+
+        const ticketB = Number(
+          String(b.ticket).replace(/\D/g, '')
+        );
+
+        return ticketA - ticketB;
+      }
+    );
+
+    ventasOrdenadas.forEach((venta: any) => {
+
+      totalPedidos++;
+
+      let paresVendidos = 0;
+
+      venta.detalles?.forEach((d: any) => {
+
+        if (d.estado_detalle !== 'DEVUELTO') {
+
+          paresVendidos += Number(
+            d.cantidad_pares || 0
+          );
+
+        }
+
+      });
+
+      if (venta.estado_pedido === 'ENTREGADO') {
+
+        totalPares += paresVendidos;
+
+        totalVendido += Number(
+          venta.pago.total_pedido_actual || 0
+        );
+
+        totalUtilidad += Number(
+          venta.resumen_venta.total_utilidad || 0
+        );
+
+      }
+
+      detalleVendedor.push({
+        ticket: venta.ticket,
+        cliente: venta.cliente.nombre,
+        dni: venta.cliente.dni,
+        celular: venta.cliente.telefono,
+        distrito: venta.cliente.distrito,
+        estado: venta.estado_pedido,
+        pares_vendidos: paresVendidos,
+        total: venta.pago.total_pedido_actual,
+        costo: venta.resumen_venta.costo_compra_total,
+        utilidad: venta.resumen_venta.total_utilidad,
+      });
+
+    });
+
+    // fila resumen
+    detalleVendedor.push({});
+    detalleVendedor.push({
+      ticket: 'RESUMEN',
+      cliente: '',
+      dni: '',
+      celular: '',
+      distrito: '',
+      estado: '',
+      pares_vendidos: totalPares,
+      total: totalVendido,
+      costo: '',
+      utilidad: totalUtilidad,
+    });
+
+    detalleVendedor.push({
+      ticket: 'TOTAL PEDIDOS',
+      cliente: totalPedidos,
+    });
+
+    const nombreHoja = `Detalle_${String(v.vendedor)
+      .replace(/[\\/:*?\[\]]/g, '')
+      .substring(0, 20)}`;
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(detalleVendedor),
+      nombreHoja
+    );
+
+  });
 
   // ========================
   // 4. PRODUCTOS RECHAZADOS
