@@ -2,6 +2,7 @@
 
 import Swal from "sweetalert2";
 import { CheckCircle2, MapPin, Phone } from "lucide-react";
+import { useState } from "react";
 
 type DeliveryOrder = {
   id: number;
@@ -12,6 +13,8 @@ type DeliveryOrder = {
 };
 
 export default function DeliveryView() {
+
+  const [loadingId, setLoadingId] = useState<number | null>(null);
 
   const myOrders: DeliveryOrder[] = [
     {
@@ -32,32 +35,37 @@ export default function DeliveryView() {
 
   const confirmDelivery = async (id: number) => {
 
-    const result = await Swal.fire({
-      title: "¿Confirmar entrega?",
-      text: `Pedido #${id} será marcado como entregado`,
-      icon: "question",
-      showCancelButton: true,
+    // Evita doble click
+    if (loadingId === id) return;
 
-      confirmButtonColor: "#16a34a",
-      cancelButtonColor: "#ef4444",
+    try {
 
-      confirmButtonText: "Sí, entregar",
-      cancelButtonText: "Cancelar",
+      setLoadingId(id);
 
-      background: "#ffffff",
-      color: "#0f172a",
+      const result = await Swal.fire({
+        title: "¿Confirmar entrega?",
+        text: `Pedido #${id} será marcado como entregado`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#16a34a",
+        cancelButtonColor: "#ef4444",
+        confirmButtonText: "Sí, entregar",
+        cancelButtonText: "Cancelar",
+        background: "#ffffff",
+        color: "#0f172a",
+        customClass: {
+          popup: "rounded-[20px]",
+        },
+      });
 
-      customClass: {
-        popup: 'rounded-[20px]',
-      },
-    });
-
-    if (result.isConfirmed) {
+      if (!result.isConfirmed) {
+        return;
+      }
 
       // API CALL
       // await fetch(...)
 
-      Swal.fire({
+      await Swal.fire({
         title: "Entrega Confirmada",
         text: `Pedido #${id} entregado correctamente`,
         icon: "success",
@@ -65,6 +73,9 @@ export default function DeliveryView() {
         timer: 2000,
         showConfirmButton: false,
       });
+
+    } finally {
+      setLoadingId(null);
     }
   };
 
@@ -159,28 +170,36 @@ export default function DeliveryView() {
               {/* BUTTON */}
               <button
                 onClick={() => confirmDelivery(order.id)}
-                className="
-                  w-full
-                  h-12
-                  rounded-2xl
-                  bg-green-600
-                  hover:bg-green-700
-                  active:scale-[0.98]
-                  transition-all
-                  text-white
-                  font-black
-                  flex
-                  items-center
-                  justify-center
-                  gap-2
-                  shadow-lg
-                "
+                disabled={loadingId === order.id}
+                className={`
+    w-full
+    h-12
+    rounded-2xl
+    text-white
+    font-black
+    flex
+    items-center
+    justify-center
+    gap-2
+    shadow-lg
+    transition-all
+    ${loadingId === order.id
+                    ? "bg-slate-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700 active:scale-[0.98]"
+                  }
+  `}
               >
-
-                <CheckCircle2 size={20} />
-
-                Confirmar Entrega
-
+                {loadingId === order.id ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={20} />
+                    Confirmar Entrega
+                  </>
+                )}
               </button>
 
             </div>

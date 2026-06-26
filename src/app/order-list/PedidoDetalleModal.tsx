@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Package, Hash, DollarSign, ArrowRight, TableProperties, Download, Truck } from 'lucide-react';
 import { Pedido, PedidoItem } from '../utils/types/pedidos';
 import { startPacking } from '../services/packingService';
@@ -17,8 +17,13 @@ export default function PedidoDetalleModal({ pedido, onClose }: PedidoDetalleMod
   const { user } = useUser();
   const rolUsuario = user?.role?.name_role || '';
 
+  const [loadingPicking, setLoadingPicking] = useState(false);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+
   const handleStartPacking = async () => {
-    if (!user) return;
+    if (!user || loadingPicking) return;
+
+    setLoadingPicking(true);
     try {
       await startPacking(Number(pedido.id), user.token);
       Swal.fire({
@@ -35,6 +40,8 @@ export default function PedidoDetalleModal({ pedido, onClose }: PedidoDetalleMod
         text: e.message || 'No se pudo iniciar el proceso.',
         confirmButtonColor: '#ef4444'
       });
+    } finally {
+      setLoadingPicking(false);
     }
   };
 
@@ -54,6 +61,10 @@ export default function PedidoDetalleModal({ pedido, onClose }: PedidoDetalleMod
   }
 
   const handleGeneratePdf = async () => {
+    if (loadingPdf) return;
+
+    setLoadingPdf(true);
+
     try {
       const blob = await buildPedidoPdfBlob(pedido);
       const url = URL.createObjectURL(blob);
@@ -71,6 +82,8 @@ export default function PedidoDetalleModal({ pedido, onClose }: PedidoDetalleMod
         text: e.message,
         confirmButtonColor: '#ef4444'
       });
+    } finally {
+      setLoadingPdf(false);
     }
   };
 
@@ -80,7 +93,7 @@ export default function PedidoDetalleModal({ pedido, onClose }: PedidoDetalleMod
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md transition-opacity duration-300" onClick={onClose} />
       <div className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-slate-150 animate-in zoom-in-95 duration-200">
-        
+
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-[#FAFBFD]">
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0 shadow-3xs">
@@ -231,12 +244,56 @@ export default function PedidoDetalleModal({ pedido, onClose }: PedidoDetalleMod
           </button>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {rolUsuario === 'Jefe Ventas' && pedido.estado === 'Aprobado' && (
-              <button onClick={handleStartPacking} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm">
-                <Truck size={14} /> <span>Iniciar Picking</span>
+              <button
+                onClick={handleStartPacking}
+                disabled={loadingPicking}
+                className={`
+    px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider
+    flex items-center justify-center gap-2 shadow-sm transition-all
+    ${loadingPicking
+                    ? 'bg-emerald-400 cursor-not-allowed opacity-70'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                  }
+    text-white
+  `}
+              >
+                {loadingPicking ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <Truck size={14} />
+                    <span>Iniciar Picking</span>
+                  </>
+                )}
               </button>
             )}
-            <button onClick={handleGeneratePdf} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm">
-              <Download size={14} /> <span>Descargar Orden (PDF)</span>
+            <button
+              onClick={handleGeneratePdf}
+              disabled={loadingPdf}
+              className={`
+    px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider
+    flex items-center justify-center gap-2 shadow-sm transition-all
+    ${loadingPdf
+                  ? 'bg-indigo-400 cursor-not-allowed opacity-70'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+                }
+    text-white
+  `}
+            >
+              {loadingPdf ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Generando PDF...
+                </>
+              ) : (
+                <>
+                  <Download size={14} />
+                  <span>Descargar Orden (PDF)</span>
+                </>
+              )}
             </button>
           </div>
         </div>
