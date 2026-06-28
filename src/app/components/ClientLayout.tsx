@@ -13,14 +13,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return null;
 }
 
-  // ✅ mostramos navbar solo si hay usuario logueado
-  const showNavbar = pathname !== '/login' && !!user;
+  // ✅ mostramos navbar y footer solo si hay usuario logueado
+  const showLayout = pathname !== '/login' && !!user;
 
   return (
     <div className="layoutWrapper">
-      {showNavbar && <Navbar />}
+      {showLayout && <Navbar />}
       <main className="contentWrapper">{children}</main>
-      <Footer /> {/* El Footer siempre estará aquí */}
+      {showLayout && <Footer />}
     </div>
   );
 }
