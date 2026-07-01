@@ -1,15 +1,16 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // DTO de escaneo
-export type ScanItemDto = {
+export type ScanItemsBulkDto = {
   order_id: number;
-  codigo_producto: string;
-  talla: string;
-  cantidad: number;
-}
+  items: {
+    codigo_producto: string;
+    talla: string;
+    cantidad: number;
+  }[];
+};
 
-
-export async function scanItem(dto: ScanItemDto, token: string) {
+export async function scanItemsBulk(dto: ScanItemsBulkDto, token: string) {
   const res = await fetch(`${API_URL}/packing/scan`, {
     method: 'POST',
     headers: {
@@ -21,7 +22,12 @@ export async function scanItem(dto: ScanItemDto, token: string) {
 
   if (!res.ok) {
     const error = await res.json().catch(() => null);
-    throw new Error(error?.message || 'Error al registrar escaneo');
+
+    throw new Error(
+      Array.isArray(error?.message)
+        ? error.message.join(', ')
+        : error?.message || 'Error al registrar escaneo masivo',
+    );
   }
 
   return res.json();
