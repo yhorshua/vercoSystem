@@ -25,30 +25,44 @@ export async function getProductStockByWarehouseAndCode(
   return res.json();  // Retorna la respuesta con el stock del producto
 }
 
+export type RegisterStockItemPayload = {
+  productId: number;
+  productSizeId: number;
+  quantity: number;
+};
+
+export type RegisterStockMultiplePayload = {
+  warehouseId: number;
+  guideId?: number | null;
+  guideNumber: string;
+  products: RegisterStockItemPayload[];
+};
+
 // Registrar stock para varios productos
 export async function registerStockForMultipleItems(
-  warehouseId: number,
-  products: { productId: number; productSizeId: number; quantity: number }[],
-  token: string  // Asegúrate de pasar el token aquí
+  payload: RegisterStockMultiplePayload,
+  token: string,
 ) {
   const res = await fetch(`${API_URL}/stock/register-multiple`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,  // Enviamos el token en la cabecera de autorización
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      warehouseId,
-      products,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Error al registrar el stock para los productos');
+    const error = await res.json().catch(() => null);
+
+    throw new Error(
+      Array.isArray(error?.message)
+        ? error.message.join(', ')
+        : error?.message || 'Error al registrar el stock para los productos',
+    );
   }
 
-  return res.json();  // Retorna la respuesta de la API (mensaje de éxito o los productos registrados)
+  return res.json();
 }
 
 export async function getInventoryByWarehouseAndCategory(

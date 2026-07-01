@@ -75,6 +75,12 @@ const ROUTE_ROLES: Record<string, string[]> = {
     "Vendedor Web",
   ],
 
+  "/reportMayorPage": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor Web",
+  ],
+
   "/qr": ["Administrador"],
   "/production": ["Administrador"],
   "/listproducts": ["Administrador"],

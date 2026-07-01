@@ -211,6 +211,9 @@ const Navbar = () => {
                 <Link href="/reportWebPage" className={style.navbarLink} onClick={handleLinkClick}>
                   <Users size={18} /> Reporte de Ventas Web
                 </Link>
+                <Link href="/reportMayorPage" className={style.navbarLink} onClick={handleLinkClick}>
+                  <Users size={18} /> Reporte de Ventas por Mayor
+                </Link>
               </div>
             )}
           </div>

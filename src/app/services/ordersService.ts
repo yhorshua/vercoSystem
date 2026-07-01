@@ -161,3 +161,42 @@ export async function rejectOrder(
 
   return res.json();
 }
+
+
+/* ===============================
+   SALES REPORT
+================================ */
+
+export type SalesReportParams = {
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  vendedor_id?: number | null;
+};
+
+export async function getSalesReport(
+  token: string,
+  params: SalesReportParams,
+) {
+  const query = new URLSearchParams(
+    Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        acc[key] = String(value);
+      }
+      return acc;
+    }, {} as Record<string, string>),
+  ).toString();
+
+  const res = await fetch(`${API_URL}/orders/report/sales?${query}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null);
+    throw new Error(error?.message || 'Error al obtener reporte de ventas');
+  }
+
+  return res.json();
+}

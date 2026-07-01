@@ -1,8 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useReactTable, createColumnHelper, getCoreRowModel, getSortedRowModel, flexRender } from '@tanstack/react-table';
+import {
+  useReactTable,
+  createColumnHelper,
+  getCoreRowModel,
+  getSortedRowModel,
+  flexRender,
+} from '@tanstack/react-table';
+
 import Swal from 'sweetalert2';
+
 import {
   Search,
   PackagePlus,
@@ -11,7 +19,8 @@ import {
   Tag,
   Layers,
   PlusCircle,
-  Trash2
+  Trash2,
+  FileText,
 } from 'lucide-react';
 
 import { getProductsByCodeOrDescription } from '../services/productsService';
@@ -51,55 +60,89 @@ interface StockItem {
 export default function StockPage() {
   const { user } = useUser();
 
+  const [guideNumber, setGuideNumber] = useState('');
+
   const [productData, setProductData] = useState<StockItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [cantidadTallas, setCantidadTallas] = useState<{ [key: string]: number }>({});
+
+  const [cantidadTallas, setCantidadTallas] = useState<{
+    [key: string]: number;
+  }>({});
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Lista de productos listos para registrar
   const [stockData, setStockData] = useState<StockItem[]>([]);
 
-  // Buscar producto
+  // ===============================
+  // BUSCAR PRODUCTO
+  // ===============================
   const handleSearch = async () => {
-
     if (!user?.token) {
       Swal.fire({
         icon: 'error',
         title: 'Token no disponible',
-        text: 'No se pudo realizar la acción porque no se encuentra el token.'
+        text: 'No se pudo realizar la acción porque no se encuentra el token.',
       });
       return;
     }
 
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo vacío',
+        text: 'Ingresa un código o descripción para buscar.',
+      });
+      return;
+    }
+
     setLoading(true);
     setProductData(null);
     setCantidadTallas({});
 
     try {
-      const product = await getProductsByCodeOrDescription(searchQuery, user?.token);
+      const product = await getProductsByCodeOrDescription(
+        searchQuery.trim(),
+        user.token,
+      );
+
       if (product) {
         setProductData(product);
       } else {
-        Swal.fire({ icon: 'info', title: 'Sin resultados', text: 'No se encontró el producto.' });
+        Swal.fire({
+          icon: 'info',
+          title: 'Sin resultados',
+          text: 'No se encontró el producto.',
+        });
       }
     } catch (error) {
       console.error(error);
-      Swal.fire({ icon: 'error', title: 'Error', text: 'Ocurrió un error al buscar el producto.' });
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ocurrió un error al buscar el producto.',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch();
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
+  // ===============================
+  // CAMBIAR CANTIDAD POR TALLA
+  // ===============================
   const handleCantidadChange = (size: string, value: string) => {
-    // Usamos parseInt para asegurar que sea entero desde la entrada
-    const num = Math.floor(parseFloat(value));
-    if (isNaN(num) || num < 0) return;
+    const num = Math.floor(Number(value));
+
+    if (Number.isNaN(num) || num < 0) {
+      return;
+    }
 
     setCantidadTallas((prevState) => ({
       ...prevState,
@@ -107,26 +150,36 @@ export default function StockPage() {
     }));
   };
 
-  // Agregar producto a la tabla temporal
+  // ===============================
+  // AGREGAR PRODUCTO A TABLA TEMPORAL
+  // ===============================
   const addProductToTable = () => {
     if (!productData) return;
 
-    // Verificar si hay cantidades ingresadas
-    const totalQty = Object.values(cantidadTallas).reduce((a, b) => a + b, 0);
+    const totalQty = Object.values(cantidadTallas).reduce(
+      (acc, qty) => acc + Number(qty || 0),
+      0,
+    );
+
     if (totalQty === 0) {
-      Swal.fire({ icon: 'warning', text: 'Ingresa al menos una cantidad.' });
+      Swal.fire({
+        icon: 'warning',
+        text: 'Ingresa al menos una cantidad.',
+      });
       return;
     }
 
     const newProduct: StockItem = {
       ...productData,
-      sizes: productData.sizes.map(size => ({
-        size: size.size,
-        id: size.id,
-        // Aseguramos entero con Math.floor
-        quantity: Math.floor(cantidadTallas[size.size] || 0),
-      })).filter(s => s.quantity > 0), // Solo guardamos tallas con cantidad > 0
+      sizes: productData.sizes
+        .map((size) => ({
+          size: size.size,
+          id: size.id,
+          quantity: Math.floor(Number(cantidadTallas[size.size] || 0)),
+        }))
+        .filter((s) => s.quantity > 0),
     };
+
     setStockData((prev) => [...prev, newProduct]);
     setProductData(null);
     setSearchQuery('');
@@ -137,7 +190,7 @@ export default function StockPage() {
       title: 'Agregado',
       text: 'Producto agregado a la lista. Sigue buscando o registra el stock.',
       timer: 1500,
-      showConfirmButton: false
+      showConfirmButton: false,
     });
   };
 
@@ -145,57 +198,131 @@ export default function StockPage() {
     setStockData((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Registrar todo en BD
+  // ===============================
+  // REGISTRAR STOCK
+  // ===============================
   const handleRegisterStock = async () => {
-    const warehouseId = user?.warehouse_id;
-
     if (isSubmitting) return;
 
-    setIsSubmitting(true);
+    const warehouseId = user?.warehouse_id;
+    const token = user?.token;
 
-    if (!warehouseId) {
-      Swal.fire({ icon: 'error', text: 'No tienes un almacén asignado.' });
-      setIsSubmitting(false);
+    if (!token) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Token no disponible',
+        text: 'No se pudo realizar la acción porque no se encuentra el token.',
+      });
       return;
     }
+
+    if (!warehouseId) {
+      Swal.fire({
+        icon: 'error',
+        text: 'No tienes un almacén asignado.',
+      });
+      return;
+    }
+
+    if (!guideNumber.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Guía interna requerida',
+        text: 'Debes ingresar el número de guía interna antes de registrar el stock.',
+      });
+      return;
+    }
+
+    const guideText = guideNumber.trim().toUpperCase();
+    const guideId = extractGuideNumber(guideText);
+
+    if (stockData.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin productos',
+        text: 'Agrega al menos un producto para registrar el ingreso.',
+      });
+      return;
+    }
+
     const productsToRegister = stockData.flatMap((item) =>
       item.sizes.map((size) => ({
         productId: item.product_id,
         productSizeId: size.id,
-        // Aseguramos entero al generar el payload final
-        quantity: Math.floor(size.quantity),
-      }))
+        quantity: Math.floor(Number(size.quantity || 0)),
+      })),
     );
+
+    const productsValidos = productsToRegister.filter(
+      (item) => item.quantity > 0,
+    );
+
+    if (productsValidos.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cantidades inválidas',
+        text: 'No hay cantidades válidas para registrar.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      await registerStockForMultipleItems(warehouseId, productsToRegister, user?.token);
+      await registerStockForMultipleItems(
+        {
+          warehouseId: Number(warehouseId),
+          guideNumber: guideNumber.trim().toUpperCase(),
+          guideId: guideId,
+          products: productsValidos,
+        },
+        token,
+      );
 
       Swal.fire({
         icon: 'success',
         title: '¡Stock Registrado!',
-        text: 'El inventario ha sido actualizado correctamente.'
+        text: 'El inventario ha sido actualizado correctamente y quedó registrado en el historial.',
       });
 
       setStockData([]);
-    } catch (error) {
+      setGuideNumber('');
+      setProductData(null);
+      setSearchQuery('');
+      setCantidadTallas({});
+    } catch (error: any) {
       console.error(error);
-      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo registrar el stock.' });
-    }finally {
-    // Habilitar el botón nuevamente después de que el proceso haya terminado
-    setIsSubmitting(false);
-  }
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error?.message || 'No se pudo registrar el stock.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Renderizado de las tallas (Grid de inputs)
+  // ===============================
+  // RENDER TALLAS
+  // ===============================
   const renderSizes = () => {
     if (!productData?.sizes || productData.sizes.length === 0) {
-      return <p style={{ color: '#64748b' }}>No hay tallas configuradas para este producto.</p>;
+      return (
+        <p style={{ color: '#64748b' }}>
+          No hay tallas configuradas para este producto.
+        </p>
+      );
     }
 
-    // Ordenar tallas para que sea amigable (numérico si es posible)
     const sortedSizes = [...productData.sizes].sort((a, b) => {
       const na = Number(a.size);
       const nb = Number(b.size);
-      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) {
+        return na - nb;
+      }
+
       return a.size.localeCompare(b.size);
     });
 
@@ -204,13 +331,17 @@ export default function StockPage() {
         {sortedSizes.map((size) => (
           <div key={size.id} className={styles.sizeCard}>
             <label className={styles.sizeLabel}>{size.size}</label>
+
             <input
               type="number"
               value={cantidadTallas[size.size] || ''}
-              onChange={(e) => handleCantidadChange(size.size, e.target.value)}
+              onChange={(e) =>
+                handleCantidadChange(size.size, e.target.value)
+              }
               min="0"
               placeholder="0"
               className={styles.sizeInput}
+              disabled={isSubmitting}
             />
           </div>
         ))}
@@ -218,30 +349,43 @@ export default function StockPage() {
     );
   };
 
-  // Configuración de la tabla
+  // ===============================
+  // TABLA
+  // ===============================
   const columnHelper = createColumnHelper<StockItem>();
+
   const columns = [
     columnHelper.accessor('article_code', {
       header: 'Código',
     }),
+
     columnHelper.accessor('article_description', {
       header: 'Descripción',
     }),
+
     columnHelper.accessor('article_series', {
       header: 'Serie',
     }),
+
     columnHelper.accessor('sizes', {
       header: 'Tallas a Ingresar',
       cell: (info) => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '4px',
+          }}
+        >
           {info.getValue().map((size) => (
-            <span key={size.size} className={styles.sizeTag}>
+            <span key={size.id} className={styles.sizeTag}>
               {size.size}: {size.quantity}
             </span>
           ))}
         </div>
       ),
     }),
+
     columnHelper.display({
       id: 'actions',
       header: 'Acción',
@@ -250,6 +394,7 @@ export default function StockPage() {
           onClick={() => handleRemoveItem(info.row.index)}
           className={styles.deleteButton}
           title="Eliminar"
+          disabled={isSubmitting}
         >
           <Trash2 size={18} />
         </button>
@@ -264,6 +409,14 @@ export default function StockPage() {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  function extractGuideNumber(value: string): number | null {
+    const onlyNumbers = value.replace(/\D/g, '');
+
+    if (!onlyNumbers) return null;
+
+    return Number(onlyNumbers);
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -271,12 +424,44 @@ export default function StockPage() {
         <h1 className={styles.title}>Ingreso de Mercadería</h1>
       </div>
 
-      {/* TARJETA 1: BUSCADOR */}
+      {/* TARJETA 1: GUÍA INTERNA */}
+      <div className={styles.card}>
+        <h2 className={styles.cardTitle}>
+          <FileText size={20} /> Guía Interna
+        </h2>
+
+        <div className={styles.productGrid}>
+          <div
+            className={styles.fieldGroup}
+            style={{
+              gridColumn: '1 / -1',
+            }}
+          >
+
+            <input
+              type="text"
+              value={guideNumber}
+              onChange={(e) => setGuideNumber(e.target.value)}
+              placeholder="Ejemplo: GI-000155"
+              className={styles.inputSearch}
+              disabled={isSubmitting}
+            />
+
+            <small style={{ color: '#64748b', marginTop: '6px' }}>
+              Ingrese el número de guía interna.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      {/* TARJETA 2: BUSCADOR */}
       <div className={styles.card}>
         <h2 className={styles.cardTitle}>Buscar Producto</h2>
+
         <div className={styles.searchContainer}>
           <div className={styles.inputGroup}>
             <Search className={styles.searchIcon} size={20} />
+
             <input
               type="text"
               value={searchQuery}
@@ -285,16 +470,27 @@ export default function StockPage() {
               placeholder="Escanear código de barras o escribir código..."
               className={styles.inputSearch}
               autoFocus
+              disabled={isSubmitting}
             />
           </div>
-          <button onClick={handleSearch} className={styles.searchButton} disabled={loading}>
+
+          <button
+            onClick={handleSearch}
+            className={styles.searchButton}
+            disabled={loading || isSubmitting}
+          >
             {loading ? 'Buscando...' : 'Buscar'}
           </button>
         </div>
-        {loading && <p className={styles.loadingText}>Cargando datos del producto...</p>}
+
+        {loading && (
+          <p className={styles.loadingText}>
+            Cargando datos del producto...
+          </p>
+        )}
       </div>
 
-      {/* TARJETA 2: DETALLES DEL PRODUCTO (Solo si se encontró) */}
+      {/* TARJETA 3: DETALLES DEL PRODUCTO */}
       {productData && (
         <div className={styles.card} style={{ border: '2px solid #bfdbfe' }}>
           <h2 className={styles.cardTitle} style={{ color: '#2563eb' }}>
@@ -304,45 +500,85 @@ export default function StockPage() {
           <div className={styles.productGrid}>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Código</label>
-              <div className={styles.inputDisabled}>{productData.article_code}</div>
+              <div className={styles.inputDisabled}>
+                {productData.article_code}
+              </div>
             </div>
+
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Descripción</label>
-              <div className={styles.inputDisabled}>{productData.article_description}</div>
+              <div className={styles.inputDisabled}>
+                {productData.article_description}
+              </div>
             </div>
+
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Serie</label>
-              <div className={styles.inputDisabled}>{productData.article_series}</div>
+              <div className={styles.inputDisabled}>
+                {productData.article_series}
+              </div>
             </div>
+
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Categoría</label>
-              <div className={styles.inputDisabled}>{productData.category?.name || '-'}</div>
+              <div className={styles.inputDisabled}>
+                {productData.category?.name || '-'}
+              </div>
             </div>
+
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Precio Venta</label>
-              <div className={styles.inputDisabled}>S/ {Number(productData.price).toFixed(2)}</div>
+              <div className={styles.inputDisabled}>
+                S/ {Number(productData.price || 0).toFixed(2)}
+              </div>
             </div>
           </div>
 
           <div className={styles.sizesSection}>
-            <h3 className={styles.label} style={{ fontSize: '1rem', display: 'flex', gap: '8px' }}>
+            <h3
+              className={styles.label}
+              style={{
+                fontSize: '1rem',
+                display: 'flex',
+                gap: '8px',
+              }}
+            >
               <Layers size={18} /> Ingresar Cantidades por Talla
             </h3>
+
             {renderSizes()}
           </div>
 
-          <button onClick={addProductToTable} className={styles.addProductBtn} disabled={isSubmitting}>
+          <button
+            onClick={addProductToTable}
+            className={styles.addProductBtn}
+            disabled={isSubmitting}
+          >
             <PlusCircle size={20} /> Agregar a la Lista
           </button>
         </div>
       )}
 
-      {/* TARJETA 3: LISTA DE PRODUCTOS A INGRESAR */}
+      {/* TARJETA 4: LISTA DE PRODUCTOS A INGRESAR */}
       {stockData.length > 0 && (
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>
-            <Tag size={20} /> Productos Listos para Registrar ({stockData.length})
+            <Tag size={20} /> Productos Listos para Registrar (
+            {stockData.length})
           </h2>
+
+          <div
+            style={{
+              marginBottom: '12px',
+              color: '#475569',
+              fontWeight: 600,
+            }}
+          >
+            Guía interna:{' '}
+            <span style={{ color: '#0f172a' }}>
+              {guideNumber.trim() || 'Pendiente de ingresar'}
+            </span>
+          </div>
 
           <div className={styles.tableContainer}>
             <table className={styles.table}>
@@ -355,11 +591,17 @@ export default function StockPage() {
                   <th>Acción</th>
                 </tr>
               </thead>
+
               <tbody>
                 {table.getRowModel().rows.map((row) => (
                   <tr key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                      <td key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
                     ))}
                   </tr>
                 ))}
@@ -370,9 +612,12 @@ export default function StockPage() {
           <button
             onClick={handleRegisterStock}
             className={styles.registerStockBtn}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !guideNumber.trim()}
           >
-            <Save size={24} /> {isSubmitting ? 'Registrando...' : 'Registrar Ingreso en Almacén'}
+            <Save size={24} />{' '}
+            {isSubmitting
+              ? 'Registrando...'
+              : 'Registrar Ingreso en Almacén'}
           </button>
         </div>
       )}
