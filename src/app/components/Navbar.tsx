@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type MouseEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '../context/UserContext';
+import { useDashboardSocket } from '../context/DashboardSocketContext';
 import {
   Menu,
   X,
@@ -19,46 +20,55 @@ import {
   BarChart3,
   Tags,
   Box,
-  ClipboardPen
+  ClipboardPen,
+  type LucideIcon,
 } from 'lucide-react';
-import style from './page.module.css';
-import { useDashboardSocket } from '../context/DashboardSocketContext';
 
 const Navbar = () => {
   const { user, logout } = useUser();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isReportOpen, setIsReportOpen] = useState(false);
+  const { counters } = useDashboardSocket();
   const router = useRouter();
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-
-  const { counters } = useDashboardSocket();
 
   if (!user) return null;
 
   const role = user?.role?.name_role;
-  const warehouse_name = user?.warehouse?.warehouse_name;
+  const warehouseName = user?.warehouse?.warehouse_name ?? '';
+
+  const ordersNew = counters?.ordersNew ?? 0;
+  const webSalesNew = counters?.webSalesNew ?? 0;
 
   const handleLogout = () => {
     setIsMenuOpen(false);
+    setIsReportOpen(false);
+    setOpenMenu(null);
     logout();
     router.replace('/login');
   };
 
   const toggleMenus = (menu: string) => {
     setIsReportOpen(false);
-    setOpenMenu(openMenu === menu ? null : menu);
+    setOpenMenu((current) => (current === menu ? null : menu));
   };
 
   const toggleMenu = () => {
-    setIsMenuOpen((v) => !v);
-    // Si cerramos el menú, reseteamos reportes
-    if (isMenuOpen) setIsReportOpen(false);
+    setIsMenuOpen((current) => {
+      if (current) {
+        setIsReportOpen(false);
+        setOpenMenu(null);
+      }
+
+      return !current;
+    });
   };
 
-  const toggleReportMenu = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Evitar que cierre el menú padre si hubiera
-    setIsReportOpen((v) => !v);
+  const toggleReportMenu = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setOpenMenu(null);
+    setIsReportOpen((current) => !current);
   };
 
   const handleLinkClick = () => {
@@ -67,476 +77,530 @@ const Navbar = () => {
     setOpenMenu(null);
   };
 
-  // Renderizado condicional de enlaces según rol
-  const RoleLinks = () => (
+  const cn = (...classes: Array<string | false | null | undefined>) => {
+    return classes.filter(Boolean).join(' ');
+  };
+
+  type NavItemProps = {
+    href: string;
+    children: ReactNode;
+    icon?: LucideIcon;
+    mobile?: boolean;
+    badge?: number;
+    badgeColor?: 'red' | 'indigo';
+  };
+
+  const NavItem = ({
+    href,
+    children,
+    icon: Icon,
+    mobile = false,
+    badge = 0,
+    badgeColor = 'red',
+  }: NavItemProps) => {
+    return (
+      <Link
+        href={href}
+        onClick={handleLinkClick}
+        className={cn(
+          'relative flex items-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium text-slate-100 transition-all duration-200 hover:bg-white/10 hover:text-white',
+          mobile
+            ? 'w-full justify-start px-4 py-3 text-[15px]'
+            : 'px-3 py-2 hover:-translate-y-0.5'
+        )}
+      >
+        {Icon && <Icon size={18} className="shrink-0" />}
+        <span className="truncate">{children}</span>
+
+        {badge > 0 && (
+          <span
+            className={cn(
+              'rounded-full px-2 py-[2px] text-[10px] font-black text-white',
+              badgeColor === 'indigo' ? 'bg-indigo-600' : 'bg-red-600',
+              mobile ? 'ml-auto' : 'absolute -right-3 -top-2'
+            )}
+          >
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
+  type DropdownProps = {
+    id: string;
+    label: string;
+    icon?: LucideIcon;
+    children: ReactNode;
+    mobile?: boolean;
+    report?: boolean;
+  };
+
+  const Dropdown = ({
+    id,
+    label,
+    icon: Icon = ClipboardList,
+    children,
+    mobile = false,
+    report = false,
+  }: DropdownProps) => {
+    const isOpen = report ? isReportOpen : openMenu === id;
+
+    return (
+      <div className={cn('relative', mobile && 'w-full')}>
+        <button
+          type="button"
+          onClick={report ? toggleReportMenu : () => toggleMenus(id)}
+          aria-expanded={isOpen}
+          className={cn(
+            'flex items-center gap-2 rounded-lg text-sm font-medium text-slate-100 transition-all duration-200 hover:bg-white/10 hover:text-white',
+            mobile
+              ? 'w-full justify-between px-4 py-3 text-[15px]'
+              : 'px-3 py-2 hover:-translate-y-0.5'
+          )}
+        >
+          <span className="flex items-center gap-2">
+            <Icon size={18} className="shrink-0" />
+            {label}
+          </span>
+
+          {isOpen ? (
+            <ChevronUp size={16} className="shrink-0" />
+          ) : (
+            <ChevronDown size={16} className="shrink-0" />
+          )}
+        </button>
+
+        {isOpen && (
+          <div
+            className={cn(
+              'flex flex-col gap-1 rounded-xl border border-white/10 p-2',
+              mobile
+                ? 'mt-2 w-full bg-white/5 pl-3'
+                : 'absolute left-0 top-full z-[1100] mt-2 w-72 bg-black shadow-2xl'
+            )}
+          >
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const RoleLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
       {role === 'Vendedor' && (
         <>
+          <Dropdown id="pedidos" label="Pedidos" mobile={mobile}>
+            <NavItem href="/register-requested" icon={ClipboardList} mobile={mobile}>
+              Registro de Pedido x Mayor
+            </NavItem>
 
-          <div className="relative">
-            <button
-              onClick={() => toggleMenus('pedidos')}
-              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
-            >
-              <ClipboardList size={18} />
-              Pedidos
-              {openMenu === 'pedidos' ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+            <NavItem href="/order-list" icon={LayoutDashboard} mobile={mobile}>
+              Lista Pedidos x Mayor
+            </NavItem>
 
-            {openMenu === 'pedidos' && (
-              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
-                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-                  <ClipboardList size={18} /> Registro de Pedido x Mayor
-                </Link>
+            <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
+              Nota de Pedido
+            </NavItem>
+          </Dropdown>
 
-                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
-                </Link>
+          <NavItem href="/stock" icon={Package} mobile={mobile}>
+            Stock
+          </NavItem>
 
-                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Nota de Pedido
-                </Link>
-              </div>
-            )}
-          </div>
-          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} /> Stock
-          </Link>
-          <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Clientes
-          </Link>
-
+          <NavItem href="/clients" icon={Users} mobile={mobile}>
+            Clientes
+          </NavItem>
         </>
       )}
 
       {role === 'Jefe Ventas' && (
         <>
+          <Dropdown id="pedidos" label="Pedidos" mobile={mobile}>
+            <NavItem href="/register-requested" icon={ClipboardList} mobile={mobile}>
+              Registro de Pedido x Mayor
+            </NavItem>
 
-          <div className="relative">
-            <button
-              onClick={() => toggleMenus('pedidos')}
-              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
-            >
-              <ClipboardList size={18} />
-              Pedidos
-              {openMenu === 'pedidos' ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+            <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
+              Nota de Pedido
+            </NavItem>
 
-            {openMenu === 'pedidos' && (
-              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
-                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-                  <ClipboardList size={18} /> Registro de Pedido x Mayor
-                </Link>
-                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Nota de Pedido
-                </Link>
-                <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
-                  <ClipboardList size={18} /> Registro de Pedido Web
-                </Link>
-              </div>
-            )}
-          </div>
+            <NavItem href="/registerweb" icon={ClipboardList} mobile={mobile}>
+              Registro de Pedido Web
+            </NavItem>
+          </Dropdown>
 
-          <div className="relative">
-            <button
-              onClick={() => toggleMenus('clientes')}
-              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
-            >
-              <ClipboardList size={18} />
-              Clientes
-              {openMenu === 'clientes' ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+          <Dropdown id="clientes" label="Clientes" icon={Users} mobile={mobile}>
+            <NavItem href="/clients" icon={Users} mobile={mobile}>
+              Gestión de Clientes
+            </NavItem>
 
-            {openMenu === 'clientes' && (
-              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
-                <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Gestión de Clientes
-                </Link>
-                <Link href="/estadoCuenta" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Estado de Cuentas de Clientes
-                </Link>
-              </div>
-            )}
-          </div>
-          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} /> Stock
-          </Link>
+            <NavItem href="/estadoCuenta" icon={Users} mobile={mobile}>
+              Estado de Cuentas de Clientes
+            </NavItem>
+          </Dropdown>
 
-          <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista Pedidos x Mayor
-            {counters.ordersNew > 0 && (
-              <span className="absolute -top-2 -right-3 bg-red-600 text-white text-[10px] font-black px-2 py-[2px] rounded-full">
-                {counters.ordersNew}
-              </span>
-            )}
-          </Link>
+          <NavItem href="/stock" icon={Package} mobile={mobile}>
+            Stock
+          </NavItem>
 
-          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Lista Pedidos Web
-            {counters.webSalesNew > 0 && (
-              <span className="absolute -top-2 -right-3 bg-indigo-600 text-white text-[10px] font-black px-2 py-[2px] rounded-full">
-                {counters.webSalesNew}
-              </span>
-            )}
-          </Link>
+          <NavItem
+            href="/order-list"
+            icon={LayoutDashboard}
+            mobile={mobile}
+            badge={ordersNew}
+            badgeColor="red"
+          >
+            Lista Pedidos x Mayor
+          </NavItem>
 
-           <div className="relative">
-            <button
-              onClick={() => toggleMenus('reporte')}
-              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
-            >
-              <ClipboardList size={18} />
-              Reporte
-              {openMenu === 'reporte' ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+          <NavItem
+            href="/listWeb"
+            icon={LayoutDashboard}
+            mobile={mobile}
+            badge={webSalesNew}
+            badgeColor="indigo"
+          >
+            Lista Pedidos Web
+          </NavItem>
 
-            {openMenu === 'reporte' && (
-              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
-                <Link href="/reportWebPage" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Reporte de Ventas Web
-                </Link>
-                <Link href="/reportMayorPage" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Reporte de Ventas por Mayor
-                </Link>
-              </div>
-            )}
-          </div>
-          {/*
-          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} />Registro de stock
-          </Link>
-          */}
+          <Dropdown id="reporte" label="Reporte" icon={BarChart3} mobile={mobile}>
+            <NavItem href="/reportWebPage" icon={Users} mobile={mobile}>
+              Reporte de Ventas Web
+            </NavItem>
 
-
+            <NavItem href="/reportMayorPage" icon={Users} mobile={mobile}>
+              Reporte de Ventas por Mayor
+            </NavItem>
+          </Dropdown>
         </>
       )}
 
       {role === 'Administrador' && (
         <>
+          <Dropdown id="pedidos" label="Pedidos" mobile={mobile}>
+            <NavItem href="/register-requested" icon={ClipboardList} mobile={mobile}>
+              Registro de Pedido x Mayor
+            </NavItem>
 
-          <div className="relative">
-            <button
-              onClick={() => toggleMenus('pedidos')}
-              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
-            >
-              <ClipboardList size={18} />
-              Pedidos
-              {openMenu === 'pedidos' ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+            <NavItem href="/order-list" icon={LayoutDashboard} mobile={mobile}>
+              Lista Pedidos x Mayor
+            </NavItem>
 
-            {openMenu === 'pedidos' && (
-              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
-                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-                  <ClipboardList size={18} /> Registro de Pedido x Mayor
-                </Link>
+            <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
+              Nota de Pedido
+            </NavItem>
 
-                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
-                </Link>
+            <NavItem href="/registerweb" icon={ClipboardList} mobile={mobile}>
+              Registro de Pedido Web
+            </NavItem>
 
-                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Nota de Pedido
-                </Link>
-                <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
-                  <ClipboardList size={18} /> Registro de Pedido Web
-                </Link>
-                <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-                  <LayoutDashboard size={18} /> Lista Pedidos Web
-                </Link>
-              </div>
-            )}
-          </div>
-          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
+            <NavItem href="/listWeb" icon={LayoutDashboard} mobile={mobile}>
+              Lista Pedidos Web
+            </NavItem>
+          </Dropdown>
+
+          <NavItem href="/stock" icon={Package} mobile={mobile}>
             Stock
-          </Link>
-          <Link href="/qr" className={style.navbarLink} onClick={handleLinkClick}>
-            <Tags size={18} /> Etiquetas
-          </Link>
-          <Link href="/production" className={style.navbarLink} onClick={handleLinkClick}>
+          </NavItem>
+
+          <NavItem href="/qr" icon={Tags} mobile={mobile}>
+            Etiquetas
+          </NavItem>
+
+          <NavItem href="/production" icon={ClipboardPen} mobile={mobile}>
             Producción
-          </Link>
+          </NavItem>
 
-          <div className="relative">
-            <button
-              onClick={() => toggleMenus('productos')}
-              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
-            >
-              <ClipboardList size={18} />
+          <Dropdown id="productos" label="Productos" icon={Package} mobile={mobile}>
+            <NavItem href="/listproducts" icon={Package} mobile={mobile}>
               Productos
-              {openMenu === 'productos' ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+            </NavItem>
 
-            {openMenu === 'productos' && (
-              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
-                <Link href="/listproducts" className={style.navbarLink} onClick={handleLinkClick}>
-                  Productos
-                </Link>
-                <Link href="/register-product" className={style.navbarLink} onClick={handleLinkClick}>
-                  Registro de Producto
-                </Link>
-                <Link href="/inventorySystem" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Box size={18} /> Inventario
-                </Link>
-                <Link href="/actualizarStock" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Actualizar Stock
-                </Link>
-                <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Package size={18} />Registro de stock
-                </Link>
-              </div>
-            )}
-          </div>
+            <NavItem href="/register-product" icon={ClipboardList} mobile={mobile}>
+              Registro de Producto
+            </NavItem>
 
-          {/* Dropdown de Reportes */}
-          <div className={style.reportDropdown}>
-            <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
-              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-            {isReportOpen && (
-              <div className={style.dropdownMenu}>
-                <Link href="/report-client" className={style.navbarLink} onClick={handleLinkClick}>
-                  Por Cliente
-                </Link>
-                <Link href="/report-vendedor" className={style.navbarLink} onClick={handleLinkClick}>
-                  Por Vendedor
-                </Link>
-                <Link href="/report-pedidos" className={style.navbarLink} onClick={handleLinkClick}>
-                  Por Pedidos
-                </Link>
-                <Link href="/report-fechas" className={style.navbarLink} onClick={handleLinkClick}>
-                  Por Fecha
-                </Link>
-              </div>
-            )}
-          </div>
+            <NavItem href="/inventorySystem" icon={Box} mobile={mobile}>
+              Inventario
+            </NavItem>
 
-          <Link href="/warehouses" className={style.navbarLink} onClick={handleLinkClick}>
+            <NavItem href="/actualizarStock" icon={Users} mobile={mobile}>
+              Actualizar Stock
+            </NavItem>
+
+            <NavItem href="/register-stock" icon={Package} mobile={mobile}>
+              Registro de stock
+            </NavItem>
+          </Dropdown>
+
+          <Dropdown
+            id="reportes-admin"
+            label="Reportes"
+            icon={BarChart3}
+            mobile={mobile}
+            report
+          >
+            <NavItem href="/report-client" mobile={mobile}>
+              Por Cliente
+            </NavItem>
+
+            <NavItem href="/report-vendedor" mobile={mobile}>
+              Por Vendedor
+            </NavItem>
+
+            <NavItem href="/report-pedidos" mobile={mobile}>
+              Por Pedidos
+            </NavItem>
+
+            <NavItem href="/report-fechas" mobile={mobile}>
+              Por Fecha
+            </NavItem>
+          </Dropdown>
+
+          <NavItem href="/warehouses" icon={Box} mobile={mobile}>
             Almacenes
-          </Link>
-          <Link href="/user" className={style.navbarLink} onClick={handleLinkClick}>
-            Usuarios
-          </Link>
+          </NavItem>
 
+          <NavItem href="/user" icon={Users} mobile={mobile}>
+            Usuarios
+          </NavItem>
         </>
       )}
 
       {role === 'Tienda' && (
         <>
-          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} /> Stock
-          </Link>
-          <Link href="/sale" className={style.navbarLink} onClick={handleLinkClick}>
-            <LayoutDashboard size={18} /> Venta
-          </Link>
-          <Link href="/caja" className={style.navbarLink} onClick={handleLinkClick}>
+          <NavItem href="/stock" icon={Package} mobile={mobile}>
+            Stock
+          </NavItem>
+
+          <NavItem href="/sale" icon={LayoutDashboard} mobile={mobile}>
+            Venta
+          </NavItem>
+
+          <NavItem href="/caja" icon={Box} mobile={mobile}>
             Caja
-          </Link>
+          </NavItem>
 
-          <div className={style.reportDropdown}>
-            <button onClick={toggleReportMenu} className={`${style.navbarLink} ${style.dropdownTrigger}`} type="button">
-              <BarChart3 size={18} /> Reportes {isReportOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-            {isReportOpen && (
-              <div className={style.dropdownMenu}>
-                <Link href="/reportsale" className={style.navbarLink} onClick={handleLinkClick}>
-                  Reporte de Venta
-                </Link>
-              </div>
-            )}
-          </div>
+          <Dropdown
+            id="reportes-tienda"
+            label="Reportes"
+            icon={BarChart3}
+            mobile={mobile}
+            report
+          >
+            <NavItem href="/reportsale" mobile={mobile}>
+              Reporte de Venta
+            </NavItem>
+          </Dropdown>
 
-          <Link href="/asistencia" className={style.navbarLink} onClick={handleLinkClick}>
+          <NavItem href="/asistencia" icon={ClipboardList} mobile={mobile}>
             Asistencia
-          </Link>
+          </NavItem>
 
-          <Link href="/register-stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} />Registro de stock
-          </Link>
-          <Link href="/change" className={style.navbarLink} onClick={handleLinkClick}>
+          <NavItem href="/register-stock" icon={Package} mobile={mobile}>
+            Registro de stock
+          </NavItem>
+
+          <NavItem href="/change" icon={ClipboardList} mobile={mobile}>
             Cambio o Devolución
-          </Link>
-          <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Nota de Pedido
-          </Link>
+          </NavItem>
+
+          <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
+            Nota de Pedido
+          </NavItem>
         </>
       )}
 
       {role === 'Emprendedor' && (
         <>
-          <Link href="/pedidos" className={style.navbarLink} onClick={handleLinkClick}>
+          <NavItem href="/pedidos" icon={ClipboardList} mobile={mobile}>
             Registrar Pedidos
-          </Link>
-          <Link href="/dashboardPedido" className={style.navbarLink} onClick={handleLinkClick}>
+          </NavItem>
+
+          <NavItem href="/dashboardPedido" icon={LayoutDashboard} mobile={mobile}>
             Dashboard
-          </Link>
-          <Link href="/detailPedido" className={style.navbarLink} onClick={handleLinkClick}>
+          </NavItem>
+
+          <NavItem href="/detailPedido" icon={ClipboardList} mobile={mobile}>
             Detalle de pedido
-          </Link>
-          <Link href="/listPedidos" className={style.navbarLink} onClick={handleLinkClick}>
+          </NavItem>
+
+          <NavItem href="/listPedidos" icon={LayoutDashboard} mobile={mobile}>
             Lista de Pedidos
-          </Link>
-          <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
+          </NavItem>
+
+          <NavItem href="/registerweb" icon={ClipboardList} mobile={mobile}>
             Venta por Redes
-          </Link>
+          </NavItem>
         </>
       )}
+
       {role === 'Vendedor Web' && (
         <>
-          <div className="relative">
-            <button
-              onClick={() => toggleMenus('pedidos')}
-              className="flex items-center gap-2 px-3 py-2 text-white hover:bg-black-100 rounded-md"
-            >
-              <ClipboardList size={18} />
-              Pedidos
-              {openMenu === 'pedidos' ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+          <Dropdown id="pedidos" label="Pedidos" mobile={mobile}>
+            <NavItem href="/register-requested" icon={ClipboardList} mobile={mobile}>
+              Registro de Pedido x Mayor
+            </NavItem>
 
-            {openMenu === 'pedidos' && (
-              <div className="absolute left-0 mt-2 w-64 bg-black shadow-lg rounded-lg border z-50">
-                <Link href="/register-requested" className={style.navbarLink} onClick={handleLinkClick}>
-                  <ClipboardList size={18} /> Registro de Pedido x Mayor
-                </Link>
+            <NavItem href="/order-list" icon={LayoutDashboard} mobile={mobile}>
+              Lista Pedidos x Mayor
+            </NavItem>
 
-                <Link href="/order-list" className={style.navbarLink} onClick={handleLinkClick}>
-                  <LayoutDashboard size={18} /> Lista Pedidos x Mayor
-                </Link>
+            <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
+              Nota de Pedido
+            </NavItem>
 
-                <Link href="/cotizacion" className={style.navbarLink} onClick={handleLinkClick}>
-                  <Users size={18} /> Nota de Pedido
-                </Link>
-                <Link href="/registerweb" className={style.navbarLink} onClick={handleLinkClick}>
-                  <ClipboardList size={18} /> Registro de Pedido Web
-                </Link>
-                <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-                  <LayoutDashboard size={18} /> Lista Pedidos Web
-                </Link>
-              </div>
-            )}
-          </div>
+            <NavItem href="/registerweb" icon={ClipboardList} mobile={mobile}>
+              Registro de Pedido Web
+            </NavItem>
 
-          <Link href="/stock" className={style.navbarLink} onClick={handleLinkClick}>
-            <Package size={18} /> Stock
-          </Link>
-          <Link href="/clients" className={style.navbarLink} onClick={handleLinkClick}>
-            <Users size={18} /> Clientes
-          </Link>
+            <NavItem href="/listWeb" icon={LayoutDashboard} mobile={mobile}>
+              Lista Pedidos Web
+            </NavItem>
+          </Dropdown>
+
+          <NavItem href="/stock" icon={Package} mobile={mobile}>
+            Stock
+          </NavItem>
+
+          <NavItem href="/clients" icon={Users} mobile={mobile}>
+            Clientes
+          </NavItem>
         </>
       )}
 
       {role === 'Delivery' && (
-        <>
-          <Link href="/listWeb" className={style.navbarLink} onClick={handleLinkClick}>
-            Lista de Pedidos
-          </Link>
-        </>
+        <NavItem href="/listWeb" icon={LayoutDashboard} mobile={mobile}>
+          Lista de Pedidos
+        </NavItem>
       )}
-
-
     </>
   );
 
-
   return (
     <>
-      <nav className={style.navbar}>
-        {/* LOGO */}
-        <div className={style.navbarLogo}>
-          <Link href="/home">
-            <Image src="/img/verco_logo.png" alt="Logo Empresa" width={50} height={30} style={{ objectFit: 'contain' }} />
+      <nav className="sticky top-0 z-[1000] flex h-16 w-full items-center justify-between border-b border-white/10 bg-black px-4 shadow-lg shadow-black/30 backdrop-blur-xl md:px-6">
+        {/* Logo */}
+        <div className="flex h-full shrink-0 items-center">
+          <Link href="/home" className="flex items-center transition-transform duration-200 hover:scale-[1.02]">
+            <Image
+              src="/img/verco_logo.png"
+              alt="Logo Empresa"
+              width={50}
+              height={30}
+              className="object-contain"
+              priority
+            />
           </Link>
         </div>
 
-        {/* MENU DESKTOP CENTRAL */}
-        <div className={style.navbarCenter}>
+        {/* Menú desktop */}
+        <div className="hidden min-w-0 flex-1 items-center justify-center gap-1 px-4 xl:flex">
           <RoleLinks />
         </div>
 
-        {/* PANEL USUARIO DESKTOP */}
-        <div className={style.navbarRight}>
-          <div className={style.userInfo}>
-            <div className={style.userDetails}>
-              <span className={style.username}>{user.full_name}</span>
-              <span className={style.userArea}>{warehouse_name}</span>
+        {/* Usuario desktop */}
+        <div className="hidden shrink-0 items-center gap-5 xl:flex">
+          <div className="flex items-center gap-3 text-right">
+            <div className="flex max-w-[190px] flex-col">
+              <span className="truncate text-sm font-bold text-white">
+                {user.full_name}
+              </span>
+              <span className="truncate text-xs uppercase tracking-wider text-slate-100">
+                {warehouseName}
+              </span>
             </div>
-            <div className={style.userAvatar}>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30">
               <User size={20} />
             </div>
           </div>
-          <button onClick={handleLogout} className={style.logoutButton}>
-            <LogOut size={16} /> Salir
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-300 transition-all duration-200 hover:bg-red-500/25 hover:text-white hover:shadow-lg hover:shadow-red-500/30"
+          >
+            <LogOut size={16} />
+            Salir
           </button>
         </div>
 
-        {/* BOTON HAMBURGUESA MOVIL */}
-        <div className={style.hamburger} onClick={toggleMenu}>
+        {/* Botón hamburguesa */}
+        <button
+          type="button"
+          onClick={toggleMenu}
+          aria-label="Abrir menú"
+          aria-expanded={isMenuOpen}
+          className="flex items-center justify-center rounded-lg border border-transparent bg-white/5 p-2 text-white transition-colors duration-200 hover:border-white/10 hover:bg-white/10 xl:hidden"
+        >
           <Menu size={28} />
-        </div>
+        </button>
       </nav>
 
-      {/* OVERLAY MOVIL */}
+      {/* Overlay móvil */}
       {isMenuOpen && (
-        <div className={style.mobileOverlay} onClick={toggleMenu} />
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={toggleMenu}
+          className="fixed inset-0 z-[1200] bg-black/70 backdrop-blur-sm xl:hidden"
+        />
       )}
 
-      {/* DRAWER MENU MOVIL */}
-      <div className={`${style.mobileDrawer} ${isMenuOpen ? style.open : ''}`}>
-        <div className={style.drawerHeader}>
-          <span className="text-white font-bold text-lg">Menú</span>
-          <button onClick={toggleMenu} className={style.closeBtn}>
+      {/* Drawer móvil */}
+      <aside
+        className={cn(
+          'fixed right-0 top-0 z-[1300] flex h-dvh w-[86vw] max-w-sm flex-col overflow-y-auto bg-black p-5 shadow-2xl shadow-black/70 transition-transform duration-300 ease-out xl:hidden',
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        <div className="mb-6 flex items-center justify-between border-b border-white/20 pb-4">
+          <span className="text-lg font-bold text-white">Menú</span>
+
+          <button
+            type="button"
+            onClick={toggleMenu}
+            aria-label="Cerrar menú"
+            className="rounded-lg p-2 text-slate-300 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+          >
             <X size={24} />
           </button>
         </div>
 
-        {/* INFO USUARIO EN MOVIL */}
-        <div className={style.mobileUserInfo}>
-          <div className={style.userAvatar}>
+        {/* Usuario móvil */}
+        <div className="mb-6 flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30">
             <User size={20} />
           </div>
-          <div className={style.mobileUserText}>
-            <span className={style.username}>{user.full_name}</span>
-            <span className={style.userArea}>{warehouse_name}</span>
+
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-bold text-white">
+              {user.full_name}
+            </span>
+            <span className="truncate text-xs uppercase tracking-wider text-slate-200">
+              {warehouseName}
+            </span>
           </div>
         </div>
 
-        {/* ENLACES MOVIL */}
-        <div className={style.mobileLinks}>
-          <RoleLinks />
+        {/* Links móvil */}
+        <div className="flex flex-1 flex-col gap-2">
+          <RoleLinks mobile />
         </div>
 
-        {/* LOGOUT MOVIL */}
-        <button onClick={handleLogout} className={`${style.logoutButton} ${style.logoutButtonMobile}`}>
-          <LogOut size={18} /> Cerrar Sesión
+        {/* Logout móvil */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-4 text-sm font-bold text-red-300 transition-colors duration-200 hover:bg-red-500/20 hover:text-white"
+        >
+          <LogOut size={18} />
+          Cerrar Sesión
         </button>
-      </div>
+      </aside>
     </>
   );
 };
