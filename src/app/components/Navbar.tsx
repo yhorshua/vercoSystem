@@ -22,6 +22,7 @@ import {
   Box,
   ClipboardPen,
   type LucideIcon,
+  RotateCwSquare,
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -264,6 +265,12 @@ const Navbar = () => {
           >
             Lista Pedidos Web
           </NavItem>
+
+          <Dropdown id="product" label="Productos" icon={BarChart3} mobile={mobile}>
+            <NavItem href="/productUpdate" icon={RotateCwSquare} mobile={mobile}>
+              Actualizar Productos
+            </NavItem>
+          </Dropdown>
 
           <Dropdown id="reporte" label="Reporte" icon={BarChart3} mobile={mobile}>
             <NavItem href="/reportWebPage" icon={Users} mobile={mobile}>

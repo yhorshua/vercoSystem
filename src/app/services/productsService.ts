@@ -39,7 +39,7 @@ function safeErrorMessage(text: string) {
     const j = JSON.parse(text);
     if (typeof j?.message === 'string') return j.message;
     if (Array.isArray(j?.message)) return j.message.join('\n');
-  } catch {}
+  } catch { }
   return text || 'Error';
 }
 
@@ -208,4 +208,142 @@ export async function importStockExcel(
   }
 
   return response.json();
+}
+
+// ==========================
+// TIPOS PARA VERCO ZAPATILLAS
+// ==========================
+
+export interface VercoZapatillaPrices {
+  manufacturing_cost: number;
+  unit_price: number;
+  factory_price: number;
+  dropshipping_price: number;
+  wholesale_price: number;
+  selling_price: number;
+}
+
+export interface VercoZapatillaProduct {
+  id: number;
+  article_code: string;
+  article_description: string;
+  article_series: string;
+  brand_name: string;
+  model_code?: string;
+  material_type?: string;
+  color?: string;
+
+  category: {
+    id: number;
+    name: string;
+  };
+
+  series: {
+    code: string;
+    name: string;
+  };
+
+  prices: VercoZapatillaPrices;
+
+  sizes: {
+    id: number;
+    size: string;
+    lot_pair?: number;
+  }[];
+}
+
+export interface UpdateProductPriceItemDto {
+  id: number;
+  manufacturing_cost?: number;
+  unit_price?: number;
+  factory_price?: number;
+  dropshipping_price?: number;
+  wholesale_price?: number;
+  selling_price?: number;
+}
+
+export interface UpdateProductPricesResponse {
+  message: string;
+  totalReceived: number;
+  totalUpdated: number;
+  productsNotFound: number[];
+  updatedProducts: {
+    id: number;
+    article_code: string;
+    article_description: string;
+    brand_name: string;
+    category: string;
+    prices: VercoZapatillaPrices;
+  }[];
+}
+
+// ==========================
+// SERVICIO 1: LISTAR VERCO ZAPATILLAS
+// GET /products/verco-zapatillas
+// ==========================
+
+export async function getVercoZapatillas(
+  token: string
+): Promise<VercoZapatillaProduct[]> {
+  const res = await fetch(`${API_URL}/products/verco-zapatillas`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null);
+
+    throw new Error(
+      Array.isArray(error?.message)
+        ? error.message.join(', ')
+        : error?.message || 'Error al obtener productos VERCO Zapatillas'
+    );
+  }
+
+  return res.json();
+}
+
+// ==========================
+// SERVICIO 2: ACTUALIZAR PRECIOS EN MASIVO
+// PATCH /products/prices/bulk
+// ==========================
+
+export async function updateManyProductPrices(
+  products: UpdateProductPriceItemDto[],
+  token: string
+): Promise<UpdateProductPricesResponse> {
+  const cleanProducts = products.map((product) => {
+    return Object.fromEntries(
+      Object.entries(product).filter(([_, value]) => {
+        return value !== null && value !== undefined && value !== '';
+      })
+    ) as UpdateProductPriceItemDto;
+  });
+
+  const res = await fetch(`${API_URL}/products/prices/bulk`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      products: cleanProducts,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => null);
+
+    throw new Error(
+      Array.isArray(error?.message)
+        ? error.message.join(', ')
+        : error?.message || 'Error al actualizar precios de productos'
+    );
+  }
+
+  return res.json();
 }
