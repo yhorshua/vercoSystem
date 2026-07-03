@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = ["/login", "/register", "/no-autorizado"];
+const PUBLIC_ROUTES = ["/login", "/register", "/no-autorizado", "/politica-privacidad"];
 
 const ROUTE_ROLES: Record<string, string[]> = {
   "/home": [
