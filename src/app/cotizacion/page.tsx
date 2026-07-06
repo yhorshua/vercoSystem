@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
-    User, Search, Plus, Trash2, FileText,
-    MapPin, Hash, Phone, ShoppingBag,
-    ChevronRight, Printer, Info
+    User, Search, Plus, Trash2, ShoppingBag, Printer, Info, Loader2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -54,6 +52,15 @@ interface ItemCotizacion {
 export default function CotizadorPage() {
 
 
+    const [generatingPdf, setGeneratingPdf] = useState(false);
+
+    const gradientCacheRef = useRef<string | null>(null);
+
+    const logoCacheRef = useRef<{
+        data: string;
+        format: 'JPEG' | 'PNG';
+    } | null>(null);
+
     // Estados de Cliente
     const [cliente, setCliente] = useState<Cliente>({
         nombre: '', tipoDoc: 'DNI', numDoc: '', direccion: '',
@@ -67,7 +74,6 @@ export default function CotizadorPage() {
     const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
     const [tempPrice, setTempPrice] = useState<number>(0);
     const [selectedSizes, setSelectedSizes] = useState<Record<string, number>>({});
-    const img = new Image();
     // Lista Final
     const [items, setItems] = useState<ItemCotizacion[]>([]);
     const [loading, setLoading] = useState(false);
@@ -208,168 +214,318 @@ export default function CotizadorPage() {
     );
     // Función para generar el fondo degradado
     const getGradientHeader = (width: number, height: number) => {
+        if (gradientCacheRef.current) {
+            return gradientCacheRef.current;
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
+
         const ctx = canvas.getContext('2d');
         if (!ctx) return '';
 
-        // Crear degradado: Negro -> Azul -> Rojo
         const gradient = ctx.createLinearGradient(0, 0, width, 0);
-        gradient.addColorStop(1, '#000000');     // Negro profundo
-        gradient.addColorStop(0.5, '#000000');   // Azul corporativo
-        gradient.addColorStop(0, '#000000');     // Rojo intenso
+
+        gradient.addColorStop(0, '#000000');
+        gradient.addColorStop(0.5, '#000000');
+        gradient.addColorStop(1, '#000000');
 
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, width, height);
-        return canvas.toDataURL('image/jpeg', 1.0);
+
+        const compressed = canvas.toDataURL('image/jpeg', 0.45);
+
+        gradientCacheRef.current = compressed;
+
+        return compressed;
     };
 
-    // --- GENERACIÓN DE PDF PROFESIONAL ---
-    const generarPDF = () => {
-        const doc = new jsPDF({
-            compress: true
+    const getCompressedLogo = async (): Promise<{
+        data: string;
+        format: 'JPEG' | 'PNG';
+    }> => {
+        if (logoCacheRef.current) {
+            return logoCacheRef.current;
+        }
+
+        return new Promise((resolve) => {
+            const image = new Image();
+
+            image.onload = () => {
+                const canvas = document.createElement('canvas');
+
+                canvas.width = 360;
+                canvas.height = 140;
+
+                const ctx = canvas.getContext('2d');
+
+                if (!ctx) {
+                    const fallback = {
+                        data: base64Img,
+                        format: 'PNG' as const,
+                    };
+
+                    logoCacheRef.current = fallback;
+                    resolve(fallback);
+                    return;
+                }
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                const compressedLogo = {
+                    data: canvas.toDataURL('image/jpeg', 0.68),
+                    format: 'JPEG' as const,
+                };
+
+                logoCacheRef.current = compressedLogo;
+
+                resolve(compressedLogo);
+            };
+
+            image.onerror = () => {
+                const fallback = {
+                    data: base64Img,
+                    format: 'PNG' as const,
+                };
+
+                logoCacheRef.current = fallback;
+                resolve(fallback);
+            };
+
+            image.src = base64Img;
         });
-        const date = new Date().toLocaleDateString();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const headerHeight = 40; // Altura del encabezado
+    };
 
-        // 1. Fondo con Degradado Profesional
-        const gradientImg = getGradientHeader(600, 100); // Alta resolución para el canvas
-        doc.addImage(gradientImg, 'JPEG', 0, 0, pageWidth, headerHeight);
-
-        // 2. Logo (Alineado a la izquierda)
-        // Ajustamos el logo para que esté centrado verticalmente dentro de los 40px
-        const logoWidth = 50;
-        const logoHeight = 20;
-        const logoY = (headerHeight - logoHeight) / 2; // Centrado vertical
-        doc.addImage(base64Img, 'PNG', 7, logoY, logoWidth, logoHeight);
-
-        // 3. Textos del Encabezado (Alineados a la derecha)
-        doc.setTextColor(255, 255, 255); // Blanco
-
-        // Título principal
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(18);
-        const title = "NOTA DE PEDIDO";
-        const titleWidth = doc.getTextWidth(title);
-        doc.text(title, pageWidth - titleWidth - 14, 22); // 22 es la altura ideal para centrar texto
-
-        // Fecha (Debajo del título)
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        const dateText = `Fecha: ${date}`;
-        const dateWidth = doc.getTextWidth(dateText);
-        doc.text(dateText, pageWidth - dateWidth - 14, 30);
-
-        // 4. Datos del Cliente (Estilo Factura)
-        doc.setTextColor(50, 50, 50);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text("INFORMACIÓN DEL CLIENTE", 14, 55);
-
-        // Línea sutil decorativa
-        doc.setDrawColor(220, 220, 220);
-        doc.line(14, 57, 196, 57);
-
-        // Contenido del cliente en dos columnas
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-
-        // Columna 1
-        doc.text(`Cliente: ${cliente.nombre || '---'}`, 14, 66);
-        doc.text(`${cliente.tipoDoc}: ${cliente.numDoc || '---'}`, 14, 72);
-        doc.text(`Teléfono: ${cliente.telefono || '---'}`, 14, 78);
-
-        // Columna 2
-
-        doc.text(`Departamento: ${cliente.departamento || '-'}`, 110, 66);
-        doc.text(`Provincia: ${cliente.provincia || '-'}`, 110, 72);
-        doc.text(`Distrito: ${cliente.distrito || '-'}`, 110, 78);
-        doc.text(`Dirección: ${cliente.direccion || '---'}`, 110, 84);
-
-        // Columna 3 (Método de Pago y Agencia)
-        doc.text(`Metodo de Pago: ${cliente.metodoPago || '---'}`, 250, 66);
-        doc.text(`Agencia: ${cliente.agencia || '---'}`, 250, 72);
-
-        // 5. Tabla de Productos (Configuración Moderna)
-        const tableBody = items.map(item => [
-            item.codigo,
-            item.nombre,
-            `S/ ${Number(item.precio).toFixed(2)}`,
-            item.tallas.map(t => `${t.talla}(${t.cantidad})`).join(', '),
-            item.totalPares,
-            `S/ ${item.subtotal.toFixed(2)}`
-        ]);
-
-        autoTable(doc, {
-            startY: 90,
-            head: [['ARTÍCULO', 'DESCRIPCIÓN', 'P. UNITARIO', 'TALLAS (CANTIDADES)', 'PARES', 'SUBTOTAL']],
-            body: tableBody,
-            theme: 'striped',
-            headStyles: {
-                fillColor: [30, 41, 59], // Slate-800 para contraste con el degradado
-                textColor: [255, 255, 255],
-                fontSize: 8,
-                fontStyle: 'bold',
-                halign: 'center'
-            },
-            styles: {
-                fontSize: 10,
-                cellPadding: 4,
-                valign: 'middle'
-            },
-            columnStyles: {
-                0: { halign: 'left', fontStyle: 'bold' },
-                2: { halign: 'right' },
-                3: { halign: 'left' },
-                4: { halign: 'center' },
-                5: { halign: 'right', fontStyle: 'bold' }
-            }
+    const waitNextPaint = () => {
+        return new Promise<void>((resolve) => {
+            requestAnimationFrame(() => {
+                setTimeout(resolve, 80);
+            });
         });
+    };
 
-        // 6. Resumen de Totales (Posicionado dinámicamente)
-        const finalY = (doc as any).lastAutoTable.finalY + 10;
-        doc.setDrawColor(220, 220, 220);
-        doc.line(14, finalY, 196, finalY);
-        // Caja de totales centrada a la derecha
-        doc.setFillColor(248, 250, 252);
-        doc.roundedRect(130, finalY, 66, 35, 2, 2, 'F');
-        doc.setDrawColor(230, 230, 230);
-        doc.rect(130, finalY, 66, 25, 'F');
+    const generarPDF = async () => {
+        if (items.length === 0 || generatingPdf) return;
 
-        doc.setFontSize(9);
-        doc.setTextColor(100);
-        doc.text("Total Pares:", 135, finalY + 10);
-        doc.text(`${totalGeneralPares}`, 190, finalY + 10, { align: 'right' });
+        setGeneratingPdf(true);
 
-        doc.setTextColor(220, 38, 38); // Rojo para descuento
-        doc.text("Descuento:", 135, finalY + 18);
-        doc.text(`- S/ ${totalDescuento.toFixed(2)}`, 190, finalY + 18, { align: 'right' });
+        try {
+            await waitNextPaint();
 
-        doc.setTextColor(30, 41, 59);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text("TOTAL FINAL:", 135, finalY + 28);
-        doc.text(`S/ ${totalGeneralMonto.toFixed(2)}`, 190, finalY + 28, { align: 'right' });
+            const logoImg = await getCompressedLogo();
 
-        // 📦 Información adicional (lado izquierdo)
-        doc.setFontSize(9);
-        doc.setTextColor(100);
-        doc.setFont('helvetica', 'normal');
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                compress: true,
+                precision: 2,
+                putOnlyUsedFonts: true,
+            });
 
-        doc.text("Método de Pago:", 14, finalY + 10);
-        doc.text(`${cliente.metodoPago || '-'}`, 60, finalY + 10);
+            const date = new Date().toLocaleDateString();
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const headerHeight = 40;
 
-        doc.text("Agencia:", 14, finalY + 18);
-        doc.text(`${cliente.agencia || '-'}`, 60, finalY + 18);
+            const gradientImg = getGradientHeader(320, 70);
 
-        // 7. Pie de página
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text("Esta cotización tiene una validez de 7 días hábiles.", 14, finalY + 40);
+            doc.addImage(
+                gradientImg,
+                'JPEG',
+                0,
+                0,
+                pageWidth,
+                headerHeight,
+                undefined,
+                'FAST'
+            );
 
-        doc.save(`Pedido_${cliente.nombre.replace(/\s/g, '_') || 'Nuevo'}.pdf`);
+            const logoWidth = 50;
+            const logoHeight = 20;
+            const logoY = (headerHeight - logoHeight) / 2;
+
+            doc.addImage(
+                logoImg.data,
+                logoImg.format,
+                7,
+                logoY,
+                logoWidth,
+                logoHeight,
+                undefined,
+                'FAST'
+            );
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+
+            const title = 'NOTA DE PEDIDO';
+            const titleWidth = doc.getTextWidth(title);
+
+            doc.text(title, pageWidth - titleWidth - 14, 22);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+
+            const dateText = `Fecha: ${date}`;
+            const dateWidth = doc.getTextWidth(dateText);
+
+            doc.text(dateText, pageWidth - dateWidth - 14, 30);
+
+            doc.setTextColor(50, 50, 50);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INFORMACIÓN DEL CLIENTE', 14, 55);
+
+            doc.setDrawColor(220, 220, 220);
+            doc.line(14, 57, 196, 57);
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+
+            doc.text(`Cliente: ${cliente.nombre || '---'}`, 14, 66);
+            doc.text(`${cliente.tipoDoc}: ${cliente.numDoc || '---'}`, 14, 72);
+            doc.text(`Teléfono: ${cliente.telefono || '---'}`, 14, 78);
+
+            doc.text(`Departamento: ${cliente.departamento || '-'}`, 110, 66);
+            doc.text(`Provincia: ${cliente.provincia || '-'}`, 110, 72);
+            doc.text(`Distrito: ${cliente.distrito || '-'}`, 110, 78);
+            doc.text(`Dirección: ${cliente.direccion || '---'}`, 110, 84);
+
+            doc.text(`Método de Pago: ${cliente.metodoPago || '---'}`, 14, 88);
+            doc.text(`Agencia: ${cliente.agencia || '---'}`, 110, 88);
+
+            const tableBody = items.map(item => [
+                item.codigo,
+                item.nombre,
+                `S/ ${Number(item.precio).toFixed(2)}`,
+                item.tallas.map(t => `${t.talla}(${t.cantidad})`).join(', '),
+                String(item.totalPares),
+                `S/ ${item.subtotal.toFixed(2)}`
+            ]);
+
+            autoTable(doc, {
+                startY: 96,
+                head: [[
+                    'ARTÍCULO',
+                    'DESCRIPCIÓN',
+                    'P. UNITARIO',
+                    'TALLAS',
+                    'PARES',
+                    'SUBTOTAL'
+                ]],
+                body: tableBody,
+                theme: 'striped',
+                margin: {
+                    left: 14,
+                    right: 14,
+                },
+                headStyles: {
+                    fillColor: [30, 41, 59],
+                    textColor: [255, 255, 255],
+                    fontSize: 8,
+                    fontStyle: 'bold',
+                    halign: 'center',
+                },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 3,
+                    valign: 'middle',
+                    overflow: 'linebreak',
+                },
+                columnStyles: {
+                    0: {
+                        halign: 'left',
+                        fontStyle: 'bold',
+                        cellWidth: 24,
+                    },
+                    1: {
+                        cellWidth: 48,
+                    },
+                    2: {
+                        halign: 'right',
+                        cellWidth: 24,
+                    },
+                    3: {
+                        halign: 'left',
+                        cellWidth: 45,
+                    },
+                    4: {
+                        halign: 'center',
+                        cellWidth: 17,
+                    },
+                    5: {
+                        halign: 'right',
+                        fontStyle: 'bold',
+                        cellWidth: 24,
+                    },
+                },
+            });
+
+            const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+            doc.setDrawColor(220, 220, 220);
+            doc.line(14, finalY, 196, finalY);
+
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(130, finalY, 66, 35, 2, 2, 'F');
+
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.setFont('helvetica', 'normal');
+
+            doc.text('Total Pares:', 135, finalY + 10);
+            doc.text(`${totalGeneralPares}`, 190, finalY + 10, {
+                align: 'right',
+            });
+
+            doc.setTextColor(220, 38, 38);
+            doc.text('Descuento:', 135, finalY + 18);
+            doc.text(`- S/ ${totalDescuento.toFixed(2)}`, 190, finalY + 18, {
+                align: 'right',
+            });
+
+            doc.setTextColor(30, 41, 59);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('TOTAL FINAL:', 135, finalY + 28);
+            doc.text(`S/ ${totalGeneralMonto.toFixed(2)}`, 190, finalY + 28, {
+                align: 'right',
+            });
+
+            doc.setFontSize(9);
+            doc.setTextColor(100);
+            doc.setFont('helvetica', 'normal');
+
+            doc.text('Método de Pago:', 14, finalY + 10);
+            doc.text(`${cliente.metodoPago || '-'}`, 60, finalY + 10);
+
+            doc.text('Agencia:', 14, finalY + 18);
+            doc.text(`${cliente.agencia || '-'}`, 60, finalY + 18);
+
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(
+                'Esta cotización tiene una validez de 7 días hábiles.',
+                14,
+                finalY + 40
+            );
+
+            const safeName = cliente.nombre.trim()
+                ? cliente.nombre.trim().replace(/\s+/g, '_')
+                : 'Nuevo';
+
+            doc.save(`Pedido_${safeName}.pdf`);
+        } catch (error) {
+            console.error(error);
+            alert('No se pudo generar el PDF');
+        } finally {
+            setGeneratingPdf(false);
+        }
     };
 
 
@@ -386,10 +542,20 @@ export default function CotizadorPage() {
                     </div>
                     <button
                         onClick={generarPDF}
-                        disabled={items.length === 0}
+                        disabled={items.length === 0 || generatingPdf}
                         className="bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-300 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all shadow-lg active:scale-95"
                     >
-                        <Printer size={20} /> GENERAR PDF
+                        {generatingPdf ? (
+                            <>
+                                <Loader2 size={20} className="animate-spin" />
+                                GENERANDO PDF...
+                            </>
+                        ) : (
+                            <>
+                                <Printer size={20} />
+                                GENERAR PDF
+                            </>
+                        )}
                     </button>
                 </div>
 
