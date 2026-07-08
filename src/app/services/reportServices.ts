@@ -497,3 +497,23 @@ export async function getSneakersGoal(
 
   return res.json();
 }
+
+export async function getMonthlyWebSalesTotal(token: string) {
+  const res = await fetch(
+    `${API_URL}/reports/monthly-total`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Error al obtener ventas web mensuales');
+  }
+
+  return res.json();
+}
