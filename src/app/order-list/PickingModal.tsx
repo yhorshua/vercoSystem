@@ -93,7 +93,13 @@ export default function PickingModal({ pedido, onClose, onFinalizar }: PickingMo
     }
   };
 
-  useEffect(() => { loadStatus(); }, [pedido.id, user]);
+  useEffect(() => {
+    pendingScansRef.current.clear();
+    setPendingCount(0);
+    setLastScanned(null);
+
+    loadStatus();
+  }, [pedido.id, user?.token]);
 
   useEffect(() => {
     const focusInterval = setInterval(() => {
@@ -160,10 +166,30 @@ export default function PickingModal({ pedido, onClose, onFinalizar }: PickingMo
       );
 
       pendingScansRef.current.clear();
-      refreshPendingCount();
+      setPendingCount(0);
+
+      await loadStatus();
+    } catch (error: any) {
+      const message = error?.message || '';
+
+      if (
+        message.includes('Excede lo pedido') ||
+        message.includes('Cantidad Completa')
+      ) {
+        pendingScansRef.current.clear();
+        setPendingCount(0);
+        await loadStatus();
+      }
+
+      throw error;
     } finally {
       setSyncingScans(false);
     }
+  };
+
+  const getPendingQuantity = (codigo: string, talla: string) => {
+    const key = `${codigo.trim().toUpperCase()}|${normalizarTalla(talla)}`;
+    return Number(pendingScansRef.current.get(key)?.cantidad || 0);
   };
 
   const marcarPorCodigo = (codigoBarras: string) => {
@@ -223,7 +249,9 @@ export default function PickingModal({ pedido, onClose, onFinalizar }: PickingMo
       return;
     }
 
-    if (tallaObj.escaneado >= tallaObj.solicitado) {
+    const pendienteLocal = getPendingQuantity(codigoLeido, tallaLeidaNorm);
+
+    if (tallaObj.escaneado + pendienteLocal >= tallaObj.solicitado) {
       Swal.fire({
         icon: 'info',
         title: 'Cantidad Completa',
