@@ -31,6 +31,21 @@ function money(n: number) {
   return Number(n || 0).toFixed(2);
 }
 
+function formatDateTime(value?: string) {
+  if (!value) return '-';
+
+  return new Intl.DateTimeFormat('es-PE', {
+    timeZone: 'America/Lima',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(new Date(value));
+}
+
 export default function CajaPage() {
   const { user } = useUser();
   const token = user?.token || '';
@@ -499,7 +514,7 @@ export default function CajaPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Hora</th>
+                  <th>Fecha y Hora</th>
                   <th>Tipo</th>
                   <th>Método</th>
                   <th>Monto</th>
@@ -510,7 +525,7 @@ export default function CajaPage() {
               <tbody>
                 {movements.map((m) => (
                   <tr key={m.id}>
-                    <td>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td>{formatDateTime(m.created_at)}</td>
                     <td>
                       {/* AQUI SE MUESTRA EL VALOR REAL DE LA BD (APERTURA, VENTA, GASTO, etc) */}
                       <span className={Number(m.amount) >= 0 ? styles.badgeIngreso : styles.badgeEgreso}>

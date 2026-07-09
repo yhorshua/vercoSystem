@@ -239,3 +239,51 @@ export async function getWebSalesReport(
 
   return res.json();
 }
+
+
+export async function generateWebSaleBoleta(
+  id: number,
+  token: string
+) {
+  const res = await fetch(
+    `${API_URL}/websales/${id}/boleta`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Error al generar boleta');
+  }
+
+  return res.json();
+}
+
+export async function openWebSaleBoletaPdf(
+  id: number,
+  token: string
+) {
+  const res = await fetch(
+    `${API_URL}/websales/${id}/boleta/pdf`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Error al obtener PDF de boleta');
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  window.open(url, '_blank');
+}

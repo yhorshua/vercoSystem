@@ -17,37 +17,25 @@ import {
   Printer,
   Route,
   RefreshCw,
-  TrendingUp,
   Clock,
-  TrendingDown,
   CheckCircle,
   AlertCircle,
   Compass,
-  ChevronRight,
   ShieldAlert,
   SlidersHorizontal,
   Info,
-  Layers,
-  Sparkles,
   ShoppingBag
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { PedidoStatusBadge } from '../components/badge';
-
 import {
   getWebSales,
   updateWebSaleStatus,
-  WebSaleResponse, deliverSaleRequest
+  WebSaleResponse, deliverSaleRequest, generateWebSaleBoleta,
+  openWebSaleBoletaPdf
 } from '../services/webSaleService';
 import Swal from 'sweetalert2';
 import { printLabels } from '../utils/printTickets';
-import {
-  getDashboardSocket,
-  WebSaleNotification,
-  OrderNotification,
-  DashboardCounters,
-} from '../services/dashboardSocketService';
-import { useDashboardSocket } from '../context/DashboardSocketContext';
 
 
 export default function ListaPedidosPage() {
@@ -66,8 +54,6 @@ export default function ListaPedidosPage() {
   const [selectedSale, setSelectedSale] = useState<WebSaleResponse | null>(null);
   const [shippingCodeInput, setShippingCodeInput] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const { counters } = useDashboardSocket();
-  const { refreshKey } = useDashboardSocket();
 
 
   const role = user?.role?.name_role;
@@ -190,8 +176,7 @@ export default function ListaPedidosPage() {
 
   }, [
     token,
-    filter,
-    refreshKey
+    filter
   ]);
 
   const loadSales = async () => {
@@ -344,6 +329,72 @@ export default function ListaPedidosPage() {
       [detailId]: status
     }));
   };
+
+  const handleGenerateBoleta = async (sale: WebSaleResponse) => {
+    if (!token) return;
+
+    const result = await Swal.fire({
+      title: '¿Generar boleta electrónica?',
+      html: `
+      <p>Se enviará el pedido <b>${sale.ticket}</b> a eFact.</p>
+      <p>Total: <b>S/ ${Number(sale.total_amount).toFixed(2)}</b></p>
+    `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, generar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#4f46e5',
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: 'Generando boleta...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await generateWebSaleBoleta(sale.id, token);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Boleta generada',
+        text: response.message || 'La boleta fue enviada correctamente a eFact',
+        confirmButtonColor: '#10b981',
+      });
+
+      await loadSales();
+    } catch (error: any) {
+      console.error(error);
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al generar boleta',
+        text: error.message || 'No se pudo generar la boleta electrónica',
+        confirmButtonColor: '#ef4444',
+      });
+    }
+  };
+
+  const handleOpenBoletaPdf = async (sale: WebSaleResponse) => {
+    if (!token) return;
+
+    try {
+      await openWebSaleBoletaPdf(sale.id, token);
+    } catch (error: any) {
+      Swal.fire({
+        icon: 'error',
+        title: 'PDF no disponible',
+        text: error.message || 'No se pudo abrir el PDF de la boleta',
+        confirmButtonColor: '#ef4444',
+      });
+    }
+  };
+
+
+
+
 
   // Complete KPI live state computations
   const stats = useMemo(() => {
@@ -788,17 +839,47 @@ export default function ListaPedidosPage() {
 
                         {/* Inspect details button */}
                         <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedSale(sale);
-                              setShowModal(true);
-                              setShippingCodeInput(sale.shipping_code || '');
-                            }}
-                            className="p-1.5 bg-slate-50 hover:bg-slate-900 border border-slate-200/60 text-slate-500 hover:text-white rounded-lg transition-all cursor-pointer active:scale-95 shadow-3xs"
-                            title="Gestionar Pedido"
-                          >
-                            <Eye size={13} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedSale(sale);
+                                setShowModal(true);
+                                setShippingCodeInput(sale.shipping_code || '');
+                              }}
+                              className="p-1.5 bg-slate-50 hover:bg-slate-900 border border-slate-200/60 text-slate-500 hover:text-white rounded-lg transition-all cursor-pointer active:scale-95 shadow-3xs"
+                              title="Gestionar Pedido"
+                            >
+                              <Eye size={13} />
+                            </button>
+
+                            {sale.status === 'ENTREGADO' && (
+                              <button
+                                onClick={() =>
+                                  runAction(`boleta-${sale.id}`, async () => {
+                                    await handleGenerateBoleta(sale);
+                                  })
+                                }
+                                disabled={actionLoading === `boleta-${sale.id}`}
+                                className="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[10px] font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                              >
+                                Generar Boleta
+                              </button>
+                            )}
+
+                            {sale.status === 'ENTREGADO' && (
+                              <button
+                                onClick={() =>
+                                  runAction(`boleta-pdf-${sale.id}`, async () => {
+                                    await handleOpenBoletaPdf(sale);
+                                  })
+                                }
+                                disabled={actionLoading === `boleta-pdf-${sale.id}`}
+                                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                              >
+                                Ver PDF
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

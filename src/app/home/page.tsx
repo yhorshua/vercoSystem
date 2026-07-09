@@ -35,6 +35,20 @@ type DashboardData = {
   webMonthly: any | null;
 };
 
+function toNumber(value: any) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function percentage(actual: number, goal: number) {
+  if (!goal || goal <= 0) return 0;
+  return Number(((actual / goal) * 100).toFixed(2));
+}
+
+function percentageForBar(value: number) {
+  return Math.min(100, Math.max(0, value));
+}
+
 export default function Dashboard() {
   const { user } = useUser();
 
@@ -251,8 +265,35 @@ export default function Dashboard() {
     const pares = web?.pares || {};
     const metaMensual = web?.meta_mensual || {};
 
-    const porcentajeMonto = Number(metaMensual.porcentaje_monto || 0);
-    const porcentajePares = Number(metaMensual.porcentaje_pares || 0);
+    /**
+     * METAS DEL WAREHOUSE
+     * Ajusta los nombres según cómo estén en tu UserContext.
+     */
+    const warehouse = user?.warehouse as any;
+
+    /**
+     * Usa primero la meta del warehouse.
+     * Si no existe, usa la que venga del backend en meta_mensual.
+     */
+    const montoObjetivo = toNumber(
+      warehouse?.monto ?? metaMensual?.monto_objetivo
+    );
+
+    const paresObjetivo = toNumber(
+      warehouse?.cantidad_pares ?? metaMensual?.pares_objetivo
+    );
+
+    const totalVendidoReal = toNumber(importes.total_vendido_real);
+    const paresVendidos = toNumber(pares.vendidos);
+
+    const porcentajeMonto = percentage(totalVendidoReal, montoObjetivo);
+    const porcentajePares = percentage(paresVendidos, paresObjetivo);
+
+    const porcentajeMontoBar = percentageForBar(porcentajeMonto);
+    const porcentajeParesBar = percentageForBar(porcentajePares);
+
+    const montoFaltante = Math.max(montoObjetivo - totalVendidoReal, 0);
+    const paresFaltantes = Math.max(paresObjetivo - paresVendidos, 0);
 
     return (
       <div className="min-h-screen bg-[#FDFDFD] text-slate-900 p-4 md:p-10 font-sans tracking-tight">
@@ -291,7 +332,7 @@ export default function Dashboard() {
                 ).toLocaleString('es-PE', {
                   minimumFractionDigits: 2,
                 })}`}
-                percentage={porcentajeMonto}
+                percentage={porcentajeMontoBar}
                 icon={<DollarSign size={24} />}
               >
                 <div className="mt-6 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
@@ -305,17 +346,15 @@ export default function Dashboard() {
                     </span>
                   </div>
 
-                  <ProgressBar percentage={porcentajeMonto} />
+                  <ProgressBar percentage={porcentajeMontoBar} />
 
                   <div className="mt-4 flex justify-between text-[10px] font-black uppercase text-slate-400">
                     <span>
-                      Meta: S/{' '}
-                      {Number(metaMensual.monto_objetivo || 0).toFixed(2)}
+                      Meta: S/ {montoObjetivo.toFixed(2)}
                     </span>
 
                     <span>
-                      Faltan: S/{' '}
-                      {Number(metaMensual.monto_faltante || 0).toFixed(2)}
+                      Faltan: S/ {montoFaltante.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -326,16 +365,16 @@ export default function Dashboard() {
               <KpiCard
                 title="Pares Vendidos Web"
                 value={`${Number(pares.vendidos || 0)} Pares`}
-                percentage={porcentajePares}
+                percentage={porcentajeParesBar}
                 icon={<ShoppingBag size={24} />}
               >
-                <ProgressBar percentage={porcentajePares} />
+                <ProgressBar percentage={porcentajeParesBar} />
 
                 <div className="mt-4 flex justify-between text-[10px] font-black uppercase text-slate-400">
-                  <span>Meta: {metaMensual.pares_objetivo || 0}</span>
+                  <span>Meta: {paresObjetivo || 0}</span>
 
                   <span className="text-slate-600">
-                    Faltan {metaMensual.pares_faltantes || 0}
+                    Faltan {paresFaltantes || 0}
                   </span>
                 </div>
               </KpiCard>
