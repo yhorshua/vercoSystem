@@ -32,11 +32,106 @@ import {
   getWebSales,
   updateWebSaleStatus,
   WebSaleResponse, deliverSaleRequest, generateWebSaleBoleta,
-  openWebSaleBoletaPdf
+  openWebSaleBoletaPdf, exchangeWebSaleProduct
 } from '../services/webSaleService';
+import { getProductStockByWarehouseAndCode } from '../services/saleServices';
 import Swal from 'sweetalert2';
 import { printLabels } from '../utils/printTickets';
 
+function escapeHtml(value: any) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function normalizeStockResponse(raw: any) {
+  const data = raw?.data ?? raw?.result ?? raw;
+
+  /**
+   * Soporta varias formas de respuesta:
+   * - { product: {}, stock: [] }
+   * - { producto: {}, tallas: [] }
+   * - []
+   * - { stocks: [] }
+   */
+  const product = data?.product ?? data?.producto ?? data;
+
+  const rows =
+    data?.stock ??
+    data?.stocks ??
+    data?.tallas ??
+    data?.sizes ??
+    data?.items ??
+    (Array.isArray(data) ? data : []);
+
+  if (!Array.isArray(rows)) return [];
+
+  return rows
+    .map((row: any) => {
+      const rowProduct = row?.product ?? row?.producto ?? product;
+      const rowSize = row?.productSize ?? row?.product_size ?? row?.sizeData ?? {};
+
+      return {
+        product_id: Number(
+          row?.product_id ??
+          rowProduct?.id ??
+          product?.id
+        ),
+
+        product_size_id: Number(
+          row?.product_size_id ??
+          row?.size_id ??
+          rowSize?.id ??
+          row?.id
+        ),
+
+        article_code:
+          row?.article_code ??
+          rowProduct?.article_code ??
+          product?.article_code ??
+          '',
+
+        product_name:
+          row?.product_name ??
+          rowProduct?.article_description ??
+          rowProduct?.product_name ??
+          product?.article_description ??
+          product?.sale_price ??
+          product?.product_name ??
+          'Producto encontrado',
+
+        size: String(
+          row?.size ??
+          row?.talla ??
+          rowSize?.size ??
+          rowSize?.talla ??
+          ''
+        ),
+
+        stock: Number(
+          row?.stock ??
+          row?.quantity ??
+          row?.available_stock ??
+          row?.current_stock ??
+          row?.cantidad ??
+          0
+        ),
+
+        sale_price: Number(
+          row?.sale_price ??
+          row?.price ??
+          rowProduct?.sale_price ??
+          rowProduct?.price ??
+          rowProduct?.retail_price ??
+          0
+        ),
+      };
+    })
+    .filter((item: any) => item.product_id && item.product_size_id && item.size);
+}
 
 export default function ListaPedidosPage() {
   const [filter, setFilter] = useState('todos');
@@ -59,6 +154,8 @@ export default function ListaPedidosPage() {
   const role = user?.role?.name_role;
   const isSalesManager = user?.role?.name_role === 'Jefe Ventas';
   const isDelivery = role === 'Delivery';
+
+  const isWebSeller = role === 'Vendedor Web';
 
   const canViewAgencyInfo =
     role === 'Jefe Ventas' ||
@@ -393,8 +490,355 @@ export default function ListaPedidosPage() {
   };
 
 
+  const handleExchangeProduct = async (item: any) => {
+    if (!selectedSale || !token) return;
 
+    const warehouseId = Number(
+      user?.warehouse_id || user?.warehouse?.id || 0
+    );
 
+    if (!warehouseId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Almacén no encontrado',
+        text: 'No se encontró el almacén del usuario para consultar stock.',
+        confirmButtonColor: '#4f46e5',
+      });
+      return;
+    }
+
+    let stockOptions: any[] = [];
+
+    const result = await Swal.fire({
+      title: '',
+      html: `
+        <div class="text-left font-sans space-y-4 -mt-2">
+          
+          <!-- Encabezado del Modal -->
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900 tracking-tight">Cambio de Producto</h3>
+              <p class="text-[11px] text-slate-500 font-medium">Pedido: <span class="font-mono font-bold text-indigo-600">${escapeHtml(selectedSale.ticket)}</span></p>
+            </div>
+            <span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+              Item #${escapeHtml(item.id)}
+            </span>
+          </div>
+
+          <!-- Resumen del Producto Actual -->
+          <div class="bg-slate-50/80 border border-slate-200/60 p-3 rounded-xl space-y-1 text-xs">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Producto a reemplazar:</span>
+            <p class="font-bold text-slate-800">${escapeHtml(item.product_name || '-')}</p>
+            <div class="flex gap-4 text-slate-500 pt-0.5 font-mono text-[11px]">
+              <span>Código: <b class="text-slate-700">${escapeHtml(item.article_code || '-')}</b></span>
+              <span>Precio: <b class="text-slate-700">${escapeHtml(item.sale_price || '-')}</b></span>
+              <span>Talla: <b class="text-slate-700">${escapeHtml(item.size || '-')}</b></span>
+            </div>
+          </div>
+
+          <!-- Buscador de Nuevo Producto -->
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Buscar nuevo artículo</label>
+            <div class="flex gap-2">
+              <input
+                id="articleCodeSearch"
+                class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400"
+                placeholder="Ej: A6001NJ"
+              />
+              <button
+                type="button"
+                id="btnSearchProduct"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
+              >
+                Buscar
+              </button>
+            </div>
+            <div id="searchStatus" class="text-[11px] font-medium text-slate-500 pt-0.5"></div>
+          </div>
+
+          <!-- Resultado del Producto Encontrado -->
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Resultado de búsqueda</label>
+            <div
+              id="productInfo"
+              class="bg-slate-50/60 border border-slate-200/60 rounded-xl p-3 text-xs text-slate-600 font-medium"
+            >
+              <span class="text-slate-400 italic">Primero busca un producto por código para ver disponibilidad.</span>
+            </div>
+          </div>
+
+          <!-- Selección de Talla y Stock -->
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Tallas y Stock Disponible</label>
+            <select
+              id="newSizeSelect"
+              disabled
+              class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed transition-all"
+            >
+              <option value="">Busca un producto primero...</option>
+            </select>
+          </div>
+
+          <!-- Inputs de Cantidad y Precio (Grid de 2) -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1.5">
+              <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Cantidad</label>
+              <input
+                id="quantity"
+                type="number"
+                min="1"
+                value="${Number(item.quantity || 1)}"
+                class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-700 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Nuevo Precio (S/)</label>
+              <input
+                id="newSalePrice"
+                type="number"
+                step="0.01"
+                value="${Number(item.sale_price || 0)}"
+                class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-700 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all"
+              />
+            </div>
+          </div>
+
+          <!-- Motivo del Cambio -->
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Motivo del Cambio</label>
+            <textarea
+              id="reason"
+              rows="2"
+              class="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-700 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition-all placeholder:text-slate-400 resize-none"
+              placeholder="Ej: Cliente solicita cambio porque no le quedó la talla..."
+            ></textarea>
+          </div>
+
+        </div>
+      `,
+      width: 580,
+      showCancelButton: true,
+      confirmButtonText: 'Registrar cambio',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#4f46e5',
+      cancelButtonColor: '#64748b',
+      customClass: {
+        popup: 'rounded-2xl border border-slate-100 shadow-2xl p-6 font-sans',
+        confirmButton: 'px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs',
+        cancelButton: 'px-5 py-2.5 rounded-xl font-bold text-xs'
+      },
+
+      didOpen: () => {
+        const popup = Swal.getPopup();
+        if (!popup) return;
+
+        const articleInput = popup.querySelector('#articleCodeSearch') as HTMLInputElement;
+        const btnSearch = popup.querySelector('#btnSearchProduct') as HTMLButtonElement;
+        const statusBox = popup.querySelector('#searchStatus') as HTMLDivElement;
+        const productInfo = popup.querySelector('#productInfo') as HTMLDivElement;
+        const sizeSelect = popup.querySelector('#newSizeSelect') as HTMLSelectElement;
+        const priceInput = popup.querySelector('#newSalePrice') as HTMLInputElement;
+
+        const renderSizeOptions = () => {
+          sizeSelect.innerHTML = '';
+
+          if (!stockOptions.length) {
+            sizeSelect.disabled = true;
+            sizeSelect.innerHTML = `<option value="">Sin tallas disponibles</option>`;
+            return;
+          }
+
+          stockOptions.forEach((option, index) => {
+            const opt = document.createElement('option');
+            opt.value = String(index);
+            opt.textContent = `Talla ${option.size} — Stock: ${option.stock} unids.`;
+            sizeSelect.appendChild(opt);
+          });
+
+          sizeSelect.disabled = false;
+
+          const first = stockOptions[0];
+
+          if (first?.sale_price) {
+            priceInput.value = String(Number(first.sale_price).toFixed(2));
+          }
+
+          productInfo.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-extrabold text-slate-800">${escapeHtml(first.product_name)}</p>
+                <p class="text-[11px] text-slate-500 font-mono mt-0.5">Código: <span class="text-slate-700">${escapeHtml(first.article_code)}</span></p>
+              </div>
+              <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded text-[10px] font-bold">
+                Disponible
+              </span>
+            </div>
+          `;
+        };
+
+        sizeSelect.addEventListener('change', () => {
+          const selectedIndex = Number(sizeSelect.value);
+          const selected = stockOptions[selectedIndex];
+
+          if (selected?.sale_price) {
+            priceInput.value = String(Number(selected.sale_price).toFixed(2));
+          }
+
+          if (selected) {
+            productInfo.innerHTML = `
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="font-extrabold text-slate-800">${escapeHtml(selected.product_name)}</p>
+                  <p class="text-[11px] text-slate-500 font-mono mt-0.5">Código: <span class="text-slate-700">${escapeHtml(selected.article_code)}</span> | Talla seleccionada: <span class="font-bold text-indigo-600">${escapeHtml(selected.size)}</span></p>
+                </div>
+                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded text-[10px] font-bold">
+                  Stock: ${selected.stock}
+                </span>
+              </div>
+            `;
+          }
+        });
+
+        btnSearch.addEventListener('click', async () => {
+          const articleCode = articleInput.value.trim();
+
+          if (!articleCode) {
+            statusBox.innerHTML = `<span class="text-rose-600 font-semibold">⚠️ Ingresa un código de artículo válido.</span>`;
+            return;
+          }
+
+          try {
+            btnSearch.disabled = true;
+            btnSearch.textContent = 'Buscando...';
+            statusBox.innerHTML = `<span class="text-indigo-600 animate-pulse">Consultando disponibilidad en almacén...</span>`;
+            productInfo.innerHTML = `<span class="text-slate-400 italic">Buscando producto...</span>`;
+            sizeSelect.disabled = true;
+            sizeSelect.innerHTML = `<option value="">Cargando tallas...</option>`;
+
+            const rawStock = await getProductStockByWarehouseAndCode(
+              warehouseId,
+              articleCode,
+              token
+            );
+
+            stockOptions = normalizeStockResponse(rawStock)
+              .filter((option: any) => Number(option.stock) > 0);
+
+            if (!stockOptions.length) {
+              statusBox.innerHTML = `<span class="text-rose-600 font-semibold">❌ No se encontró stock disponible para este código.</span>`;
+              productInfo.innerHTML = `<span class="text-rose-500 italic">Sin existencias registradas.</span>`;
+              sizeSelect.innerHTML = `<option value="">Sin stock disponible</option>`;
+              sizeSelect.disabled = true;
+              return;
+            }
+
+            statusBox.innerHTML = `<span class="text-emerald-600 font-semibold">✓ Producto encontrado exitosamente.</span>`;
+            renderSizeOptions();
+
+          } catch (error: any) {
+            console.error(error);
+            statusBox.innerHTML = `<span class="text-rose-600 font-semibold">${escapeHtml(error.message || 'Error consultando stock')}</span>`;
+            productInfo.innerHTML = `<span class="text-rose-500 italic">Error al consultar el producto.</span>`;
+            sizeSelect.innerHTML = `<option value="">Error de consulta</option>`;
+            sizeSelect.disabled = true;
+
+          } finally {
+            btnSearch.disabled = false;
+            btnSearch.textContent = 'Buscar';
+          }
+        });
+      },
+
+      preConfirm: () => {
+        const popup = Swal.getPopup();
+        if (!popup) return false;
+
+        const sizeSelect = popup.querySelector('#newSizeSelect') as HTMLSelectElement;
+        const quantityInput = popup.querySelector('#quantity') as HTMLInputElement;
+        const priceInput = popup.querySelector('#newSalePrice') as HTMLInputElement;
+        const reasonInput = popup.querySelector('#reason') as HTMLTextAreaElement;
+
+        const selectedIndex = Number(sizeSelect.value);
+        const selectedStock = stockOptions[selectedIndex];
+
+        const quantity = Number(quantityInput?.value);
+        const newSalePrice = Number(priceInput?.value);
+        const reason = reasonInput?.value?.trim();
+
+        if (!selectedStock) {
+          Swal.showValidationMessage('Debes buscar un producto y seleccionar una talla disponible');
+          return false;
+        }
+
+        if (!quantity || quantity <= 0) {
+          Swal.showValidationMessage('La cantidad debe ser mayor a 0');
+          return false;
+        }
+
+        if (quantity > Number(selectedStock.stock || 0)) {
+          Swal.showValidationMessage(
+            `La cantidad solicitada supera el stock disponible. Stock actual: ${selectedStock.stock}`
+          );
+          return false;
+        }
+
+        if (!Number.isFinite(newSalePrice) || newSalePrice < 0) {
+          Swal.showValidationMessage('Ingresa un precio de venta válido');
+          return false;
+        }
+
+        return {
+          detail_id: item.id,
+          new_product_id: Number(selectedStock.product_id),
+          new_product_size_id: Number(selectedStock.product_size_id),
+          new_size: selectedStock.size,
+          quantity,
+          new_sale_price: Number(newSalePrice.toFixed(2)),
+          reason:
+            reason ||
+            `Cambio de producto. Anterior: ${item.article_code || '-'} (Talla ${item.size || '-'})`,
+        };
+      },
+    });
+
+    if (!result.isConfirmed || !result.value) return;
+
+    try {
+      Swal.fire({
+        title: 'Registrando cambio...',
+        text: 'Por favor espere mientras se actualiza el stock y el pedido.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await exchangeWebSaleProduct(
+        selectedSale.id,
+        result.value as any,
+        token
+      );
+
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Cambio Registrado!',
+        text: response.message || 'El cambio de producto fue procesado correctamente.',
+        confirmButtonColor: '#4f46e5',
+        timer: 2000
+      });
+
+      await loadSales();
+      handleCloseModal();
+
+    } catch (error: any) {
+      console.error(error);
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error en la operación',
+        text: error.message || 'No se pudo realizar el cambio del producto.',
+        confirmButtonColor: '#ef4444',
+      });
+    }
+  };
 
   // Complete KPI live state computations
   const stats = useMemo(() => {
@@ -1092,6 +1536,11 @@ export default function ListaPedidosPage() {
                           <th className="px-4 py-2.5 text-[10px] font-bold uppercase text-center">Cantidad</th>
                           <th className="px-4 py-2.5 text-[10px] font-bold uppercase text-right">Precio Unitario</th>
                           {role === 'Delivery' && <th className="px-4 py-2.5 text-[10px] font-bold uppercase">Acción Física</th>}
+                          {isWebSeller && selectedSale.status === 'ENTREGADO' && (
+                            <th className="px-4 py-2.5 text-[10px] font-bold uppercase text-center">
+                              Cambio
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
@@ -1118,6 +1567,21 @@ export default function ListaPedidosPage() {
                                   <option value="VENDIDO">📦 VENDIDO</option>
                                   <option value="DEVUELTO">↩ RECHAZADO</option>
                                 </select>
+                              </td>
+                            )}
+                            {isWebSeller && selectedSale.status === 'ENTREGADO' && (
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  onClick={() =>
+                                    runAction(`exchange-${item.id}`, async () => {
+                                      await handleExchangeProduct(item);
+                                    })
+                                  }
+                                  disabled={actionLoading === `exchange-${item.id}`}
+                                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                                >
+                                  Cambiar
+                                </button>
                               </td>
                             )}
                           </tr>

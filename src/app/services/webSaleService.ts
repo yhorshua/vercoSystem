@@ -287,3 +287,48 @@ export async function openWebSaleBoletaPdf(
 
   window.open(url, '_blank');
 }
+
+export interface ExchangeWebSaleDto {
+  detail_id: number;
+
+  new_product_id: number;
+  new_product_size_id: number;
+
+  new_size?: string;
+
+  quantity?: number;
+
+  new_sale_price: number;
+
+  reason?: string;
+}
+
+export interface ExchangeWebSaleResponse {
+  message: string;
+  sale_id: number;
+  old_detail_id: number;
+  new_detail_id: number;
+  total_amount: number;
+}
+
+export async function exchangeWebSaleProduct(
+  id: number,
+  data: ExchangeWebSaleDto,
+  token: string
+): Promise<ExchangeWebSaleResponse> {
+  const res = await fetch(`${API_URL}/websales/${id}/exchange`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Error al realizar el cambio de producto');
+  }
+
+  return res.json();
+}

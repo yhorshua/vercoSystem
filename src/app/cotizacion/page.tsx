@@ -12,6 +12,9 @@ import { base64Img } from '../utils/logobase64';
 import type { Ubigeo } from '../utils/types/ubigeo';
 import rawUbigeo from '../utils/ubigeo-peru-optimizado.json';
 import SelectTailwind from '../components/ui/SelectTailwind';
+import { Capacitor } from '@capacitor/core';
+import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 
 // --- TIPOS ---
@@ -300,6 +303,44 @@ export default function CotizadorPage() {
         });
     };
 
+    const guardarPdf = async (
+        doc: jsPDF,
+        fileName: string
+    ): Promise<void> => {
+        try {
+            if (!Capacitor.isNativePlatform()) {
+                doc.save(fileName);
+                return;
+            }
+
+            const dataUri = doc.output('datauristring');
+            const base64Data = dataUri.substring(
+                dataUri.indexOf(',') + 1
+            );
+
+            if (!base64Data) {
+                throw new Error('El contenido del PDF está vacío');
+            }
+
+            const result = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data,
+                directory: Directory.Cache,
+                recursive: true,
+            });
+
+            await Share.share({
+                title: fileName,
+                text: 'Nota de pedido generada desde VERCO',
+                files: [result.uri],
+                dialogTitle: 'Guardar, abrir o compartir PDF',
+            });
+        } catch (error) {
+            console.error('Error guardando PDF:', error);
+            throw new Error('No se pudo guardar o compartir el PDF');
+        }
+    };
+
     const waitNextPaint = () => {
         return new Promise<void>((resolve) => {
             requestAnimationFrame(() => {
@@ -519,7 +560,9 @@ export default function CotizadorPage() {
                 ? cliente.nombre.trim().replace(/\s+/g, '_')
                 : 'Nuevo';
 
-            doc.save(`Pedido_${safeName}.pdf`);
+            const fileName = `Pedido_${safeName}.pdf`;
+
+            await guardarPdf(doc, fileName);
         } catch (error) {
             console.error(error);
             alert('No se pudo generar el PDF');
