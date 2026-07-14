@@ -373,6 +373,9 @@ const Navbar = () => {
           <NavItem href="/user" icon={Users} mobile={mobile}>
             Usuarios
           </NavItem>
+          <NavItem href="/movements" icon={Users} mobile={mobile}>
+            Reporte de Movimientos
+          </NavItem>
         </>
       )}
 

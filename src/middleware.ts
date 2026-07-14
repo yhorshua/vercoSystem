@@ -115,6 +115,7 @@ const ROUTE_ROLES: Record<string, string[]> = {
   "/dashboardPedido": ["Emprendedor", "Administrador"],
   "/detailPedido": ["Emprendedor", "Administrador"],
   "/listPedidos": ["Emprendedor", "Administrador"],
+  "/movements": ["Administrador"],
 };
 
 function normalizePath(pathname: string) {

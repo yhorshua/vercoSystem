@@ -120,3 +120,49 @@ export async function adjustInventory(
 
   return res.json();
 }
+
+export interface StockMovementReportParams {
+  warehouseId: number;
+  startDate: string;
+  endDate: string;
+}
+
+export async function getStockMovementReport(
+  params: StockMovementReportParams,
+  token: string,
+) {
+  const query = new URLSearchParams({
+    warehouseId:
+      String(params.warehouseId),
+
+    startDate:
+      params.startDate,
+
+    endDate:
+      params.endDate,
+  });
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/stock/movements/report?${query.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    const text =
+      await response.text();
+
+    throw new Error(
+      text ||
+      'No se pudo obtener el reporte de movimientos',
+    );
+  }
+
+  return response.json();
+}

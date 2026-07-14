@@ -17,6 +17,7 @@ import { Pedido } from '../utils/types/pedidos';
 import { createGuiaFromOrder } from '../services/guiaService';
 import { getSellersByWarehouse, SellerOption } from '../services/userServices';
 import { buildPedidoHtmlFormal, buildPedidoPdfBlobFormal } from '../utils/guiainterna';
+import { buildPedidoPdfBlobOfi, buildPedidoPdfMakeDefinitionOfi } from '../utils/guiainternaOfi';
 
 
 const JEFEVEN = 'Jefe Ventas';
@@ -258,7 +259,7 @@ export default function OrderListPage() {
       if (!guia) throw new Error('No se obtuvo información de la guía de remisión');
 
       const jefeVentas = user?.full_name || 'Jefe de Ventas';
-      const pdfBlob = await buildPedidoPdfBlobFormal(pedido, jefeVentas);
+      const pdfBlob = await buildPedidoPdfBlobOfi(pedido, jefeVentas);
       const message = response?.message ?? '';
       const isReimpresion =
         message.toLowerCase().includes('ya generada') ||
@@ -292,7 +293,7 @@ export default function OrderListPage() {
   const handleVerPdf = async (pedido: Pedido) => {
     try {
       const jefeVentas = user?.full_name || 'Jefe de Ventas';
-      const pdfBlob = await buildPedidoPdfBlobFormal(pedido, jefeVentas);
+      const pdfBlob = await buildPedidoPdfBlobOfi(pedido, jefeVentas);
 
       const filename = `GUIA_${pedido.id}_${pedido.cliente.nombre.replace(/\s+/g, '_')}.pdf`;
 
