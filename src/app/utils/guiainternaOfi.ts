@@ -27,12 +27,12 @@ export function buildPedidoPdfMakeDefinitionOfi(pedido: Pedido, jefeVentas: stri
     const tallasStr = item.tallas.map(t => `${t.talla}/${t.cantidad}`).join('  ');
 
     return [
-      { text: item.codigo, fontSize: 10 },
-      { text: item.nombre.toUpperCase(), fontSize: 9 },
-      { text: tallasStr, fontSize: 10 },
-      { text: itemUnits.toString(), fontSize: 10, alignment: 'right' },
-      { text: moneyFormatter(item.precio), fontSize: 10, alignment: 'right' },
-      { text: moneyFormatter(subtotal), fontSize: 10, alignment: 'right' }
+      { text: item.codigo, fontSize: 8 },
+      { text: item.nombre.toUpperCase(), fontSize: 8 },
+      { text: tallasStr, fontSize: 8 },
+      { text: itemUnits.toString(), fontSize: 8, alignment: 'right' },
+      { text: moneyFormatter(item.precio), fontSize: 8, alignment: 'right' },
+      { text: moneyFormatter(subtotal), fontSize: 8, alignment: 'right' }
     ];
   });
 
@@ -41,13 +41,14 @@ export function buildPedidoPdfMakeDefinitionOfi(pedido: Pedido, jefeVentas: stri
     pageMargins: [40, 40, 40, 40],
     defaultStyle: {
       font: 'Roboto',
+      fontSize: 8,
       color: '#000000',
     },
     content: [
       // HEADER: NOMBRE EMPRESA Y FECHA
       {
         columns: [
-          { text: 'VERCO', fontSize: 16, bold: true, decoration: 'underline', width: 'auto' },
+          { text: 'VERCO', fontSize: 12, bold: true, decoration: 'underline', width: 'auto' },
           { text: formattedDate, alignment: 'right', fontSize: 11 }
         ]
       },
@@ -55,16 +56,16 @@ export function buildPedidoPdfMakeDefinitionOfi(pedido: Pedido, jefeVentas: stri
       // TIPO DE DOCUMENTO Y VENDEDOR
       {
         columns: [
-          { text: `Guia Interna #${pedido.id}`, fontSize: 11, margin: [0, 8, 0, 0] },
-          { text: `Vendedor: ${pedido.vendedor.toUpperCase()}`, alignment: 'right', fontSize: 11, margin: [0, 8, 0, 0] }
+          { text: `Guia Interna #${pedido.id}`, fontSize: 9, margin: [0, 8, 0, 0] },
+          { text: `Vendedor: ${pedido.vendedor.toUpperCase()}`, alignment: 'right', fontSize: 8, margin: [0, 8, 0, 0] }
         ]
       },
 
       // DATOS DEL CLIENTE
       {
         columns: [
-          { text: `Cliente: ${clienteDoc}`, fontSize: 11, width: 120 },
-          { text: (pedido.cliente.nombre || '').toUpperCase(), fontSize: 11, width: '*' }
+          { text: `Cliente: ${clienteDoc}`, fontSize: 9, width: 120 },
+          { text: (pedido.cliente.nombre || '').toUpperCase(), fontSize: 9, width: '*' }
         ],
         margin: [0, 8, 0, 20]
       },
@@ -101,13 +102,13 @@ export function buildPedidoPdfMakeDefinitionOfi(pedido: Pedido, jefeVentas: stri
           widths: ['*', 40, 60, 60],
           body: [
             [
-              { text: 'Total General', alignment: 'right', bold: true, fontSize: 11, margin: [0, 5, 0, 0] },
+              { text: 'Total General', alignment: 'right', bold: true, fontSize: 9, margin: [0, 5, 0, 0] },
               {
                 text: pedido.items.reduce((acc, item) => acc + item.tallas.reduce((s, t) => s + t.cantidad, 0), 0).toString(),
-                alignment: 'right', bold: true, fontSize: 11, margin: [0, 5, 0, 0]
+                alignment: 'right', bold: true, fontSize: 9, margin: [0, 5, 0, 0]
               },
-              { text: 'S/', alignment: 'right', fontSize: 11, margin: [0, 5, 0, 0] },
-              { text: moneyFormatter(pedido.totalMonto || pedido.totalPrecio), alignment: 'right', bold: true, fontSize: 11, margin: [0, 5, 0, 0] }
+              { text: 'S/', alignment: 'right', fontSize: 9, margin: [0, 5, 0, 0] },
+              { text: moneyFormatter(pedido.totalMonto || pedido.totalPrecio), alignment: 'right', bold: true, fontSize: 9, margin: [0, 5, 0, 0] }
             ]
           ]
         },
@@ -124,7 +125,7 @@ export function buildPedidoPdfMakeDefinitionOfi(pedido: Pedido, jefeVentas: stri
         columns: [
           {
             stack: [
-              { text: 'AUTORIZADO POR', fontSize: 10, bold: true },
+              { text: 'AUTORIZADO POR', fontSize: 9, bold: true },
               {
                 canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 0.5, dash: { length: 3 } }],
                 margin: [0, 40, 0, 0]
