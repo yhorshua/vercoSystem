@@ -280,11 +280,11 @@ const Navbar = () => {
             <NavItem href="/productUpdate" icon={RotateCwSquare} mobile={mobile}>
               Actualizar Productos
             </NavItem>
-           
-           //// <NavItem href="/inventorySystem" icon={Box} mobile={mobile}>
-           ////   Ajustar inventario
-           ///// </NavItem>
-          </Dropdown>
+           {/*
+            <NavItem href="/inventorySystem" icon={Box} mobile={mobile}>
+              Ajustar inventario
+            </NavItem>*/} 
+                     </Dropdown>
 
           <Dropdown id="reporte" label="Reporte" icon={BarChart3} mobile={mobile}>
             <NavItem href="/reportWebPage" icon={Users} mobile={mobile}>

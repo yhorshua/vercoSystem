@@ -60,6 +60,18 @@ interface ItemCotizacion {
     subtotal: number;
 }
 
+const CLIENTE_INICIAL: Cliente = {
+    nombre: '',
+    tipoDoc: 'DNI',
+    numDoc: '',
+    direccion: '',
+    departamento: '',
+    provincia: '',
+    distrito: '',
+    telefono: '',
+    metodoPago: 'Efectivo',
+    agencia: '',
+};
 
 
 export default function CotizadorPage() {
@@ -80,10 +92,7 @@ export default function CotizadorPage() {
 
     // Estados de Cliente
     const [cliente, setCliente] = useState<Cliente>({
-        nombre: '', tipoDoc: 'DNI', numDoc: '', direccion: '',
-        departamento: '', provincia: '', distrito: '', telefono: '',
-        metodoPago: 'Efectivo',
-        agencia: ''
+        ...CLIENTE_INICIAL,
     });
     const { user } = useUser();
     // Estados de Selección
@@ -438,6 +447,7 @@ export default function CotizadorPage() {
 
         try {
             const persisted = await persistQuotation();
+
             await waitNextPaint();
 
             const logoImg = await getCompressedLogo();
@@ -451,7 +461,10 @@ export default function CotizadorPage() {
                 putOnlyUsedFonts: true,
             });
 
-            const date = String(persisted.quotation.business_date);
+            const date = String(
+                persisted.quotation.business_date,
+            );
+
             const pageWidth = doc.internal.pageSize.getWidth();
             const headerHeight = 40;
 
@@ -465,7 +478,7 @@ export default function CotizadorPage() {
                 pageWidth,
                 headerHeight,
                 undefined,
-                'FAST'
+                'FAST',
             );
 
             const logoWidth = 50;
@@ -480,7 +493,7 @@ export default function CotizadorPage() {
                 logoWidth,
                 logoHeight,
                 undefined,
-                'FAST'
+                'FAST',
             );
 
             doc.setTextColor(255, 255, 255);
@@ -490,7 +503,11 @@ export default function CotizadorPage() {
             const title = 'COTIZACIÓN';
             const titleWidth = doc.getTextWidth(title);
 
-            doc.text(title, pageWidth - titleWidth - 14, 22);
+            doc.text(
+                title,
+                pageWidth - titleWidth - 14,
+                22,
+            );
 
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
@@ -498,12 +515,21 @@ export default function CotizadorPage() {
             const dateText = `${persisted.quotation.quote_number} | Fecha: ${date}`;
             const dateWidth = doc.getTextWidth(dateText);
 
-            doc.text(dateText, pageWidth - dateWidth - 14, 30);
+            doc.text(
+                dateText,
+                pageWidth - dateWidth - 14,
+                30,
+            );
 
             doc.setTextColor(50, 50, 50);
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text('INFORMACIÓN DEL CLIENTE', 14, 55);
+
+            doc.text(
+                'INFORMACIÓN DEL CLIENTE',
+                14,
+                55,
+            );
 
             doc.setDrawColor(220, 220, 220);
             doc.line(14, 57, 196, 57);
@@ -511,43 +537,187 @@ export default function CotizadorPage() {
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
 
-            doc.text(`Cliente: ${cliente.nombre || '---'}`, 14, 66);
-            doc.text(`${cliente.tipoDoc}: ${cliente.numDoc || '---'}`, 14, 72);
-            doc.text(`Teléfono: ${cliente.telefono || '---'}`, 14, 78);
+            doc.text(
+                `Cliente: ${cliente.nombre || '---'}`,
+                14,
+                66,
+            );
 
-            doc.text(`Departamento: ${cliente.departamento || '-'}`, 110, 66);
-            doc.text(`Provincia: ${cliente.provincia || '-'}`, 110, 72);
-            doc.text(`Distrito: ${cliente.distrito || '-'}`, 110, 78);
-            doc.text(`Dirección: ${cliente.direccion || '---'}`, 110, 84);
+            doc.text(
+                `${cliente.tipoDoc}: ${cliente.numDoc || '---'}`,
+                14,
+                72,
+            );
 
-            doc.text(`Método de Pago: ${cliente.metodoPago || '---'}`, 14, 88);
-            doc.text(`Agencia: ${cliente.agencia || '---'}`, 110, 88);
+            doc.text(
+                `Teléfono: ${cliente.telefono || '---'}`,
+                14,
+                78,
+            );
 
-            const tableBody = persisted.details.map(item => [
-                item.sku_snapshot,
-                item.description_snapshot,
-                `S/ ${Number(item.unit_price).toFixed(2)}`,
-                `${item.size_snapshot}(${item.quantity})`,
-                String(item.quantity),
-                `S/ ${Number(item.line_total).toFixed(2)}`
-            ]);
+            doc.text(
+                `Departamento: ${cliente.departamento || '-'}`,
+                110,
+                66,
+            );
+
+            doc.text(
+                `Provincia: ${cliente.provincia || '-'}`,
+                110,
+                72,
+            );
+
+            doc.text(
+                `Distrito: ${cliente.distrito || '-'}`,
+                110,
+                78,
+            );
+
+            doc.text(
+                `Dirección: ${cliente.direccion || '---'}`,
+                110,
+                84,
+            );
+
+            doc.text(
+                `Método de Pago: ${cliente.metodoPago || '---'}`,
+                14,
+                88,
+            );
+
+            doc.text(
+                `Agencia: ${cliente.agencia || '---'}`,
+                110,
+                88,
+            );
+
+            /*
+             * Agrupación únicamente para mostrar el PDF.
+             *
+             * La información original de persisted.details
+             * no se modifica y los servicios tampoco cambian.
+             */
+            type PdfProductGroup = {
+                productKey: string;
+                sku: string;
+                description: string;
+                unitPrice: number;
+                sizes: Map<string, number>;
+                totalQuantity: number;
+                subtotal: number;
+            };
+
+            const groupedDetails = new Map<
+                string,
+                PdfProductGroup
+            >();
+
+            persisted.details.forEach((item) => {
+                const productKey = String(
+                    item.product_id ?? item.sku_snapshot,
+                );
+
+                const sizeKey = String(
+                    item.size_snapshot ?? '',
+                );
+
+                const quantity = Number(
+                    item.quantity ?? 0,
+                );
+
+                const lineTotal = Number(
+                    item.line_total ?? 0,
+                );
+
+                const existing = groupedDetails.get(productKey);
+
+                if (!existing) {
+                    const sizes = new Map<string, number>();
+
+                    sizes.set(sizeKey, quantity);
+
+                    groupedDetails.set(productKey, {
+                        productKey,
+                        sku: String(
+                            item.sku_snapshot ?? '',
+                        ),
+                        description: String(
+                            item.description_snapshot ?? '',
+                        ),
+                        unitPrice: Number(
+                            item.unit_price ?? 0,
+                        ),
+                        sizes,
+                        totalQuantity: quantity,
+                        subtotal: lineTotal,
+                    });
+
+                    return;
+                }
+
+                const currentSizeQuantity =
+                    existing.sizes.get(sizeKey) ?? 0;
+
+                existing.sizes.set(
+                    sizeKey,
+                    currentSizeQuantity + quantity,
+                );
+
+                existing.totalQuantity += quantity;
+                existing.subtotal += lineTotal;
+            });
+
+            /*
+             * Ahora existe una fila por artículo,
+             * no una fila por cada talla.
+             */
+            const tableBody = Array.from(
+                groupedDetails.values(),
+            ).map((product) => {
+                const sizesText = Array.from(
+                    product.sizes.entries(),
+                )
+                    .sort(
+                        ([sizeA], [sizeB]) =>
+                            Number(sizeA) - Number(sizeB),
+                    )
+                    .map(
+                        ([size, quantity]) =>
+                            `T.${size} × ${quantity}`,
+                    )
+                    .join(' | ');
+
+                return [
+                    product.sku,
+                    product.description,
+                    `S/ ${product.unitPrice.toFixed(2)}`,
+                    sizesText,
+                    String(product.totalQuantity),
+                    `S/ ${product.subtotal.toFixed(2)}`,
+                ];
+            });
 
             autoTable(doc, {
                 startY: 96,
+
                 head: [[
                     'ARTÍCULO',
                     'DESCRIPCIÓN',
                     'P. UNITARIO',
-                    'TALLAS',
+                    'TALLAS Y CANTIDADES',
                     'PARES',
-                    'SUBTOTAL'
+                    'SUBTOTAL',
                 ]],
+
                 body: tableBody,
+
                 theme: 'striped',
+
                 margin: {
                     left: 14,
                     right: 14,
                 },
+
                 headStyles: {
                     fillColor: [30, 41, 59],
                     textColor: [255, 255, 255],
@@ -555,33 +725,40 @@ export default function CotizadorPage() {
                     fontStyle: 'bold',
                     halign: 'center',
                 },
+
                 styles: {
                     fontSize: 8,
                     cellPadding: 3,
                     valign: 'middle',
                     overflow: 'linebreak',
                 },
+
                 columnStyles: {
                     0: {
                         halign: 'left',
                         fontStyle: 'bold',
                         cellWidth: 24,
                     },
+
                     1: {
                         cellWidth: 48,
                     },
+
                     2: {
                         halign: 'right',
                         cellWidth: 24,
                     },
+
                     3: {
                         halign: 'left',
                         cellWidth: 45,
                     },
+
                     4: {
                         halign: 'center',
                         cellWidth: 17,
                     },
+
                     5: {
                         halign: 'right',
                         fontStyle: 'bold',
@@ -590,72 +767,185 @@ export default function CotizadorPage() {
                 },
             });
 
-            const finalY = (doc as any).lastAutoTable.finalY + 10;
+            const finalY =
+                (doc as any).lastAutoTable.finalY + 10;
 
             doc.setDrawColor(220, 220, 220);
             doc.line(14, finalY, 196, finalY);
 
             doc.setFillColor(248, 250, 252);
-            doc.roundedRect(130, finalY, 66, 35, 2, 2, 'F');
+            doc.roundedRect(
+                130,
+                finalY,
+                66,
+                35,
+                2,
+                2,
+                'F',
+            );
 
             doc.setFontSize(9);
             doc.setTextColor(100);
             doc.setFont('helvetica', 'normal');
 
-            doc.text('Total Pares:', 135, finalY + 10);
-            doc.text(`${persisted.details.reduce((sum, item) => sum + Number(item.quantity), 0)}`, 190, finalY + 10, {
-                align: 'right',
-            });
+            doc.text(
+                'Total Pares:',
+                135,
+                finalY + 10,
+            );
+
+            doc.text(
+                `${persisted.details.reduce(
+                    (sum, item) =>
+                        sum + Number(item.quantity || 0),
+                    0,
+                )}`,
+                190,
+                finalY + 10,
+                {
+                    align: 'right',
+                },
+            );
 
             doc.setTextColor(220, 38, 38);
-            doc.text('Descuento:', 135, finalY + 18);
-            doc.text(`- S/ ${Number(persisted.quotation.discount_total).toFixed(2)}`, 190, finalY + 18, {
-                align: 'right',
-            });
+
+            doc.text(
+                'Descuento:',
+                135,
+                finalY + 18,
+            );
+
+            doc.text(
+                `- S/ ${Number(
+                    persisted.quotation.discount_total || 0,
+                ).toFixed(2)}`,
+                190,
+                finalY + 18,
+                {
+                    align: 'right',
+                },
+            );
 
             doc.setTextColor(30, 41, 59);
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text('TOTAL FINAL:', 135, finalY + 28);
-            doc.text(`S/ ${Number(persisted.quotation.total).toFixed(2)}`, 190, finalY + 28, {
-                align: 'right',
-            });
+
+            doc.text(
+                'TOTAL FINAL:',
+                135,
+                finalY + 28,
+            );
+
+            doc.text(
+                `S/ ${Number(
+                    persisted.quotation.total || 0,
+                ).toFixed(2)}`,
+                190,
+                finalY + 28,
+                {
+                    align: 'right',
+                },
+            );
 
             doc.setFontSize(9);
             doc.setTextColor(100);
             doc.setFont('helvetica', 'normal');
 
-            doc.text('Método de Pago:', 14, finalY + 10);
-            doc.text(`${cliente.metodoPago || '-'}`, 60, finalY + 10);
+            doc.text(
+                'Método de Pago:',
+                14,
+                finalY + 10,
+            );
 
-            doc.text('Agencia:', 14, finalY + 18);
-            doc.text(`${cliente.agencia || '-'}`, 60, finalY + 18);
+            doc.text(
+                `${cliente.metodoPago || '-'}`,
+                60,
+                finalY + 10,
+            );
+
+            doc.text(
+                'Agencia:',
+                14,
+                finalY + 18,
+            );
+
+            doc.text(
+                `${cliente.agencia || '-'}`,
+                60,
+                finalY + 18,
+            );
 
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
+
             doc.text(
                 'Esta cotización tiene una validez de 7 días hábiles.',
                 14,
-                finalY + 40
+                finalY + 40,
             );
 
             const safeName = cliente.nombre.trim()
-                ? cliente.nombre.trim().replace(/\s+/g, '_')
+                ? cliente.nombre
+                    .trim()
+                    .replace(/\s+/g, '_')
                 : 'Nuevo';
 
-            const fileName = `Cotizacion_${persisted.quotation.quote_number}_${safeName}.pdf`;
+            const fileName =
+                `Cotizacion_${persisted.quotation.quote_number}_${safeName}.pdf`;
 
             await guardarPdf(doc, fileName);
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'Cotización registrada',
+                text: 'La cotización fue registrada correctamente y el PDF fue generado.',
+                confirmButtonColor: '#4f46e5',
+            });
+
+            limpiarFormularioCotizacion();
         } catch (error) {
             console.error(error);
+
             await Swal.fire({
                 icon: 'error',
                 title: 'No se pudo emitir la cotización',
-                text: error instanceof Error ? error.message : 'Ocurrió un error inesperado',
+                text:
+                    error instanceof Error
+                        ? error.message
+                        : 'Ocurrió un error inesperado',
+                confirmButtonColor: '#4f46e5',
             });
         } finally {
             setGeneratingPdf(false);
         }
+    };
+
+    const limpiarFormularioCotizacion = () => {
+        setSelectedClient(null);
+        setSavedQuotation(null);
+
+        setCliente({
+            ...CLIENTE_INICIAL,
+        });
+
+        setSearch('');
+        setSelectedProduct(null);
+        setTempPrice(0);
+        setSelectedSizes({});
+        setItems([]);
+        setTempDiscount(0);
+
+        setDepId('');
+        setProvId('');
+        setDistId('');
+
+        setShowClienteModal(false);
+
+        /*
+         * Permite que la siguiente cotización
+         * utilice una nueva clave de idempotencia.
+         */
+        idempotencyKeyRef.current = null;
     };
 
 
