@@ -284,6 +284,7 @@ export default function ClienteModal({ open, token, onClose, onSelect }: Cliente
 
         {/* Footer */}
         <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-slate-100 bg-slate-50 p-3">
+          {/*
           <button
             type="button"
             onClick={() => setCreating((value) => !value)}
@@ -291,6 +292,7 @@ export default function ClienteModal({ open, token, onClose, onSelect }: Cliente
           >
             {creating ? 'Volver a buscar' : 'Nuevo cliente'}
           </button>
+          */}
           <button 
             type="button"
             onClick={onClose}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,18 +8,22 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import Swal from 'sweetalert2';
+
 import {
   ShoppingBag,
   Trash2,
-  Layers,
   DollarSign,
   FileCheck,
   AlertTriangle,
   Activity,
-  Boxes
+  Boxes,
 } from 'lucide-react';
+
 import type { ItemUI } from '../components/types';
-import { createOrder, CreateOrderPayload } from '../services/ordersService';
+import {
+  createOrder,
+  CreateOrderPayload,
+} from '../services/ordersService';
 
 interface ClienteUI {
   id: number;
@@ -39,6 +43,104 @@ interface PedidoTablaProps {
   quotationId?: number | null;
 }
 
+type DisplayItem = ItemUI & {
+  sourceIndexes: number[];
+};
+
+/*
+ * Agrupa las líneas del carrito por artículo.
+ *
+ * Ejemplo:
+ *
+ * A1324NY - talla 38 - 2 pares
+ * A1324NY - talla 39 - 3 pares
+ *
+ * Se convierte visualmente en:
+ *
+ * A1324NY | T.38 x 2 | T.39 x 3
+ */
+const groupItemsByProduct = (
+  items: ItemUI[],
+): DisplayItem[] => {
+  const grouped = new Map<string, DisplayItem>();
+
+  items.forEach((item, index) => {
+    const source = item.source ?? 'MANUAL';
+
+    const key = [
+      source,
+      Number(item.product_id),
+      item.quotation_id ?? '',
+      item.codigo,
+    ].join('|');
+
+    const existing = grouped.get(key);
+
+    if (!existing) {
+      const quantities: Record<number, number> = {};
+      const sizeIds: Record<number, number> = {};
+
+      Object.entries(item.cantidades).forEach(
+        ([size, quantity]) => {
+          const sizeNumber = Number(size);
+
+          quantities[sizeNumber] =
+            Number(quantity) || 0;
+
+          const sizeId =
+            item.sizeIdBySizeNumber?.[sizeNumber];
+
+          if (sizeId !== undefined && sizeId !== null) {
+            sizeIds[sizeNumber] = Number(sizeId);
+          }
+        },
+      );
+
+      grouped.set(key, {
+        ...item,
+        cantidades: quantities,
+        sizeIdBySizeNumber: sizeIds,
+        total: Object.values(quantities).reduce(
+          (sum, quantity) => sum + Number(quantity || 0),
+          0,
+        ),
+        sourceIndexes: [index],
+      });
+
+      return;
+    }
+
+    existing.sourceIndexes.push(index);
+
+    Object.entries(item.cantidades).forEach(
+      ([size, quantity]) => {
+        const sizeNumber = Number(size);
+
+        existing.cantidades[sizeNumber] =
+          Number(existing.cantidades[sizeNumber] || 0) +
+          Number(quantity || 0);
+
+        const sizeId =
+          item.sizeIdBySizeNumber?.[sizeNumber];
+
+        if (sizeId !== undefined && sizeId !== null) {
+          existing.sizeIdBySizeNumber[sizeNumber] =
+            Number(sizeId);
+        }
+      },
+    );
+
+    existing.total = Object.values(
+      existing.cantidades,
+    ).reduce(
+      (sum, quantity) => sum + Number(quantity || 0),
+      0,
+    );
+  });
+
+  return Array.from(grouped.values());
+};
+
 export default function PedidoTabla({
   items,
   cliente,
@@ -47,73 +149,124 @@ export default function PedidoTabla({
   onPedidoCreado,
   quotationId,
 }: PedidoTablaProps) {
+  const [isCreatingOrder, setIsCreatingOrder] =
+    useState(false);
 
-  /* ======================
-     TOTALES
-  ====================== */
-  const totalPares = items.reduce((sum, item) => sum + item.total, 0);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const totalPares = items.reduce(
+    (sum, item) => sum + Number(item.total || 0),
+    0,
+  );
+
   const totalCompra = items.reduce((sum, item) => {
-    const totalItem = Object.entries(item.cantidades)
-      .reduce((s, [, qty]) => s + qty * item.precio, 0);
+    const totalItem = Object.entries(item.cantidades).reduce(
+      (subtotal, [, quantity]) =>
+        subtotal +
+        Number(quantity || 0) * Number(item.precio || 0),
+      0,
+    );
+
     return sum + totalItem;
   }, 0);
 
-  /* ======================
-     COLUMNAS TABLA (WITH TAILWIND DESIGN)
-  ====================== */
-  const columns: ColumnDef<ItemUI>[] = [
+  /*
+   * Esta es la información que se muestra en pantalla.
+   * El payload continúa utilizando items originales.
+   */
+  const displayItems = useMemo(
+    () => groupItemsByProduct(items),
+    [items],
+  );
+
+  /*
+   * El componente padre solamente elimina por índice.
+   * Por eso se eliminan los índices agrupados de mayor a menor,
+   * evitando que el índice cambie durante el proceso.
+   */
+  const deleteDisplayItem = (sourceIndexes: number[]) => {
+    [...sourceIndexes]
+      .sort((a, b) => b - a)
+      .forEach((index) => onDeleteItem(index));
+  };
+
+  const columns: ColumnDef<DisplayItem>[] = [
     {
       accessorKey: 'codigo',
       header: 'Código',
       cell: ({ row }) => (
-        <span className="px-2 py-0.5 bg-slate-100 text-slate-800 font-extrabold text-[10px] rounded font-mono border border-slate-200 uppercase">
+        <span className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-extrabold uppercase text-slate-800">
           {String(row.original.codigo)}
         </span>
-      )
+      ),
     },
     {
       accessorKey: 'descripcion',
       header: 'Descripción',
       cell: ({ row }) => (
         <div>
-          <span className="font-extrabold text-slate-900 text-xs tracking-tight block">{row.original.descripcion}</span>
+          <span className="block text-xs font-extrabold tracking-tight text-slate-900">
+            {row.original.descripcion}
+          </span>
+
           {row.original.source === 'QUOTATION' && (
             <span className="mt-1 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[8px] font-black text-emerald-700">
               {row.original.quotation_number}
             </span>
           )}
         </div>
-      )
+      ),
     },
     {
       accessorKey: 'serie',
       header: 'Serie',
       cell: ({ row }) => (
-        <span className="text-[10px] font-semibold text-slate-500 font-mono">
+        <span className="font-mono text-[10px] font-semibold text-slate-500">
           {row.original.serie}
         </span>
-      )
+      ),
     },
     {
-      header: 'Cantidades',
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          {Object.entries(row.original.cantidades)
-            .filter(([, qty]) => qty > 0)
-            .map(([talla, qty]) => (
-              <span key={talla} className="inline-flex items-center gap-1 bg-indigo-50 border border-indigo-100 rounded-md px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 font-mono">
-                T.{talla} × <span className="font-black text-slate-800">{qty}</span>
+      header: 'Tallas y cantidades',
+      cell: ({ row }) => {
+        const quantities = Object.entries(
+          row.original.cantidades,
+        )
+          .filter(([, quantity]) => Number(quantity) > 0)
+          .sort(
+            ([sizeA], [sizeB]) =>
+              Number(sizeA) - Number(sizeB),
+          );
+
+        return (
+          <div className="flex min-w-[220px] flex-wrap gap-1">
+            {quantities.map(([size, quantity]) => (
+              <span
+                key={size}
+                className="inline-flex items-center gap-1 rounded-md border border-indigo-100 bg-indigo-50 px-1.5 py-0.5 font-mono text-[9px] font-bold text-indigo-700"
+              >
+                T.{size} ×{' '}
+                <span className="font-black text-slate-800">
+                  {quantity}
+                </span>
               </span>
             ))}
-        </div>
-      )
+          </div>
+        );
+      },
     },
     {
-      header: 'Precio Unit.',
+      header: 'Total pares',
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-slate-600 font-bold">
-          S/ {row.original.precio.toFixed(2)}
+        <span className="font-mono text-xs font-black text-slate-900">
+          {row.original.total}
+        </span>
+      ),
+    },
+    {
+      header: 'Precio unit.',
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-bold text-slate-600">
+          S/{' '}
+          {Number(row.original.precio || 0).toFixed(2)}
         </span>
       ),
     },
@@ -121,11 +274,19 @@ export default function PedidoTabla({
       header: 'Total S/',
       cell: ({ row }) => {
         const item = row.original;
-        const totalItem = Object.entries(item.cantidades)
-          .reduce((s, [, qty]) => s + qty * item.precio, 0);
+
+        const totalItem = Object.entries(
+          item.cantidades,
+        ).reduce(
+          (sum, [, quantity]) =>
+            sum +
+            Number(quantity || 0) *
+              Number(item.precio || 0),
+          0,
+        );
 
         return (
-          <span className="font-mono font-black text-xs text-slate-900">
+          <span className="font-mono text-xs font-black text-slate-900">
             S/ {totalItem.toFixed(2)}
           </span>
         );
@@ -135,9 +296,12 @@ export default function PedidoTabla({
       header: 'Acción',
       cell: ({ row }) => (
         <button
-          className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-all cursor-pointer border border-transparent hover:border-rose-100 shadow-3xs flex items-center justify-center mx-auto"
-          onClick={() => onDeleteItem(row.index)}
-          title="Eliminar calzado de la lista"
+          type="button"
+          className="mx-auto flex items-center justify-center rounded-lg border border-transparent p-1.5 text-slate-400 transition-all hover:border-rose-100 hover:bg-rose-50 hover:text-rose-600"
+          onClick={() =>
+            deleteDisplayItem(row.original.sourceIndexes)
+          }
+          title="Eliminar artículo completo"
         >
           <Trash2 size={14} />
         </button>
@@ -146,290 +310,450 @@ export default function PedidoTabla({
   ];
 
   const table = useReactTable({
-    data: items,
+    data: displayItems,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
 
-  /* ======================
-     REGISTRAR PEDIDO
-  ====================== */
   const handleRegistrarPedido = async () => {
-
     if (isCreatingOrder) return;
 
     if (!cliente || !user) {
-      Swal.fire({
+      await Swal.fire({
         icon: 'warning',
         title: 'Datos incompletos',
-        text: 'Por favor, asigne un cliente en la parte superior antes de registrar el pedido.',
-        confirmButtonColor: '#4f46e5'
+        text: 'Por favor, asigne un cliente antes de registrar el pedido.',
+        confirmButtonColor: '#4f46e5',
       });
+
       return;
     }
 
     if (!items.length) {
-      Swal.fire({
+      await Swal.fire({
         icon: 'warning',
         title: 'Pedido vacío',
-        text: 'Agrega por lo menos un producto al carrito de compras.',
-        confirmButtonColor: '#4f46e5'
+        text: 'Agrega por lo menos un producto al pedido.',
+        confirmButtonColor: '#4f46e5',
       });
+
       return;
     }
 
     const payload: CreateOrderPayload = {
-      user_id: user.id,
-      client_id: cliente.id,
-      warehouse_id: user.warehouseId,
-      quotation_id: quotationId ?? undefined,
+      user_id: Number(user.id),
+      client_id: Number(cliente.id),
+      warehouse_id: Number(user.warehouseId),
+      quotation_id:
+        quotationId == null ? null : Number(quotationId),
       order_type: 'NORMAL',
 
+      /*
+       * Se utilizan los items originales, no displayItems,
+       * porque cada talla cotizada conserva su quotation_detail_id.
+       */
       items: items.flatMap((item: ItemUI) => {
-        const entries = Object.entries(item.cantidades) as [string, number][];
+        const entries = Object.entries(
+          item.cantidades,
+        ) as [string, number][];
 
         return entries
-          .filter(([, cantidad]) => cantidad > 0)
-          .map(([talla, cantidad]) => ({
-            product_id: item.product_id,
-            product_size_id: item.sizeIdBySizeNumber[Number(talla)],
-            size: String(talla),
-            quantity: cantidad,
-            unit_price: item.precio,
-            quotation_detail_id: item.quotation_detail_id,
-          }));
+          .filter(([, quantity]) => Number(quantity) > 0)
+          .map(([size, quantity]) => {
+            const sizeNumber = Number(size);
+
+            const productSizeId =
+              item.sizeIdBySizeNumber?.[sizeNumber];
+
+            return {
+              product_id: Number(item.product_id),
+              product_size_id:
+                productSizeId == null
+                  ? null
+                  : Number(productSizeId),
+              size: String(size),
+              quantity: Number(quantity),
+              unit_price: Number(item.precio),
+              quotation_detail_id:
+                item.quotation_detail_id == null
+                  ? null
+                  : Number(item.quotation_detail_id),
+            };
+          });
       }),
     };
 
+    if (!payload.items.length) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Cantidades inválidas',
+        text: 'Debe existir al menos una talla con cantidad mayor que cero.',
+        confirmButtonColor: '#4f46e5',
+      });
+
+      return;
+    }
+
     const confirm = await Swal.fire({
       title: 'Confirmar registro',
-      html: `¿Deseas enviar este pedido?<br/><span class="text-xs text-slate-500 font-semibold uppercase mt-2 block">Resumen: <b class="font-bold text-indigo-700">${totalPares} pares</b> • Total: <b class="font-bold text-emerald-700">S/ ${totalCompra.toFixed(2)}</b></span>`,
+      html: `
+        ¿Deseas enviar este pedido?
+        <br />
+        <span class="mt-2 block text-xs font-semibold uppercase text-slate-500">
+          Resumen:
+          <b class="font-bold text-indigo-700">
+            ${totalPares} pares
+          </b>
+          • Total:
+          <b class="font-bold text-emerald-700">
+            S/ ${totalCompra.toFixed(2)}
+          </b>
+        </span>
+      `,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Registrar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#4f46e5',
-      cancelButtonColor: '#64748b'
+      cancelButtonColor: '#64748b',
     });
 
     if (!confirm.isConfirmed) return;
 
     try {
-
       setIsCreatingOrder(true);
+
       await createOrder(payload, user.token);
-      Swal.fire({
+
+      await Swal.fire({
         icon: 'success',
         title: 'Pedido creado',
-        text: 'Stock reservado correctamente en el sistema',
-        confirmButtonColor: '#4f46e5'
+        text: 'Stock reservado correctamente en el sistema.',
+        confirmButtonColor: '#4f46e5',
       });
+
       onPedidoCreado?.();
     } catch (error: any) {
-      Swal.fire({
+      await Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: error?.message || 'Error al registrar pedido',
-        confirmButtonColor: '#4f46e5'
+        text:
+          error?.message || 'Error al registrar pedido',
+        confirmButtonColor: '#4f46e5',
       });
     } finally {
-      setIsCreatingOrder(false); // 🔥 STOP LOADING
+      setIsCreatingOrder(false);
     }
   };
 
   return (
     <div className="space-y-6">
-
-      {/* SECCIÓN RESUMEN METRICAS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        {/* Card Total Pares */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3.5 shadow-3xs hover:border-slate-300 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 text-orange-650 text-orange-600 flex items-center justify-center shrink-0">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-3xs transition-all hover:border-slate-300">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-orange-100 bg-orange-50 text-orange-600">
             <Boxes size={18} />
           </div>
+
           <div>
-            <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Surtido</span>
-            <span className="text-base font-extrabold text-slate-800 tracking-tight block mt-0.5 font-mono">
+            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">
+              Total surtido
+            </span>
+
+            <span className="mt-0.5 block font-mono text-base font-extrabold tracking-tight text-slate-800">
               {totalPares} pares
             </span>
           </div>
         </div>
 
-        {/* Card Importe Total */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3.5 shadow-3xs hover:border-slate-300 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-650 text-emerald-650 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-3xs transition-all hover:border-slate-300">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600">
             <DollarSign size={18} />
           </div>
+
           <div>
-            <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Importe General</span>
-            <span className="text-base font-black text-emerald-700 tracking-tight block mt-0.5 font-mono">
+            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">
+              Importe general
+            </span>
+
+            <span className="mt-0.5 block font-mono text-base font-black tracking-tight text-emerald-700">
               S/ {totalCompra.toFixed(2)}
             </span>
           </div>
         </div>
 
-        {/* Card Cliente Vinculado */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center gap-3.5 shadow-3xs text-white">
-          <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 text-indigo-300 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-3.5 rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white shadow-3xs">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-indigo-300">
             <ShoppingBag size={18} />
           </div>
+
           <div className="min-w-0 flex-1">
-            <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Adquirente Activo</span>
-            <span className="text-xs font-extrabold block truncate mt-0.5" title={cliente?.razonSocial || 'Ninguno asignado'}>
-              {cliente ? cliente.razonSocial : 'Por favor vincular'}
+            <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">
+              Adquirente activo
+            </span>
+
+            <span
+              className="mt-0.5 block truncate text-xs font-extrabold"
+              title={cliente?.razonSocial || 'Ninguno asignado'}
+            >
+              {cliente
+                ? cliente.razonSocial
+                : 'Por favor vincular'}
             </span>
           </div>
         </div>
-
       </div>
 
-      {/* COMPOSICIÓN DEL CARRO / DATA GRID */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+        <div className="flex flex-col justify-between gap-2 border-b border-slate-100 bg-slate-50/50 px-5 py-3.5 sm:flex-row sm:items-center">
+          <span className="block text-xs font-black uppercase tracking-wider text-slate-700">
+            Artículos en proceso de despacho
+          </span>
 
-        {/* Cabecera Interna */}
-        <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-          <div>
-            <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">Artículos en Proceso de Despacho</span>
-          </div>
-          <span className="self-start sm:self-center text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-lg font-mono">
-            Modelos: {items.length}
+          <span className="self-start rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-0.5 font-mono text-[10px] font-bold text-indigo-700 sm:self-center">
+            Artículos: {displayItems.length}
           </span>
         </div>
 
-        {items.length === 0 ? (
+        {displayItems.length === 0 ? (
           <div className="py-16 text-center text-slate-400">
-            <p className="text-3xl mb-2">📥</p>
-            <p className="text-xs font-bold text-slate-700">La canasta de ventas está vacía</p>
-            <p className="text-[10px] text-slate-400 mt-0.5 max-w-xs mx-auto px-4 leading-normal">
-              Ingresa el código SKU del calzado arriba, consulta la disponibilidad de inventario y agrega tallas.
+            <p className="mb-2 text-3xl">📥</p>
+
+            <p className="text-xs font-bold text-slate-700">
+              La canasta de ventas está vacía
+            </p>
+
+            <p className="mx-auto mt-0.5 max-w-xs px-4 text-[10px] leading-normal text-slate-400">
+              Ingresa el código SKU del calzado y agrega las
+              tallas requeridas.
             </p>
           </div>
         ) : (
           <>
-          {/* Responsive Table Wrapper with proper grid control */}
-          <div className="hidden w-full overflow-x-auto custom-scrollbar md:block">
-            <table className="w-full text-left border-collapse min-w-[700px]">
+            <div className="hidden w-full overflow-x-auto md:block">
+              <table className="w-full min-w-[950px] border-collapse text-left">
+                <thead className="border-b border-slate-150 bg-slate-50">
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <th
+                          key={header.id}
+                          className="border-b border-slate-200 p-3 text-[10px] font-black uppercase tracking-wider text-slate-500"
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
 
-              {/* Header */}
-              <thead className="bg-[#FAFBFD] border-b border-slate-150 select-none">
-                {table.getHeaderGroups().map((hg) => (
-                  <tr key={hg.id}>
-                    {hg.headers.map((h) => (
-                      <th
-                        key={h.id}
-                        className="p-3 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider font-sans border-b border-slate-200"
-                        style={{ textAlign: h.id === 'Acción' ? 'center' : 'left' }}
+                <tbody className="divide-y divide-slate-150 bg-white">
+                  {table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="transition-colors hover:bg-slate-50/40"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="p-3 text-xs leading-normal"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+
+                <tfoot className="border-t-2 border-slate-200 bg-slate-50 text-xs">
+                  <tr className="border-b border-slate-200/50">
+                    <td
+                      colSpan={5}
+                      className="p-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                    >
+                      Total pares acumulados:
+                    </td>
+
+                    <td
+                      colSpan={3}
+                      className="p-3 font-mono text-sm font-black text-slate-800"
+                    >
+                      {totalPares} pares
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="p-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                    >
+                      Importe bruto total:
+                    </td>
+
+                    <td
+                      colSpan={3}
+                      className="p-3 font-mono text-sm font-black text-indigo-700"
+                    >
+                      S/ {totalCompra.toFixed(2)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div className="divide-y divide-slate-100 md:hidden">
+              {displayItems.map((item) => {
+                const totalItem = Object.entries(
+                  item.cantidades,
+                ).reduce(
+                  (sum, [, quantity]) =>
+                    sum +
+                    Number(quantity || 0) *
+                      Number(item.precio || 0),
+                  0,
+                );
+
+                const sizes = Object.entries(
+                  item.cantidades,
+                )
+                  .filter(([, quantity]) => quantity > 0)
+                  .sort(
+                    ([sizeA], [sizeB]) =>
+                      Number(sizeA) - Number(sizeB),
+                  );
+
+                return (
+                  <article
+                    key={`${item.codigo}-${item.product_id}-${item.sourceIndexes.join('-')}`}
+                    className="min-w-0 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="inline-block max-w-full break-all rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-extrabold uppercase text-slate-800">
+                          {String(item.codigo)}
+                        </span>
+
+                        <p className="mt-2 break-words text-xs font-extrabold text-slate-900">
+                          {item.descripcion}
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-slate-500">
+                          Serie: {item.serie || '—'}
+                        </p>
+
+                        {item.source === 'QUOTATION' && (
+                          <span className="mt-1 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[8px] font-black text-emerald-700">
+                            {item.quotation_number}
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        aria-label={`Eliminar ${item.descripcion}`}
+                        className="shrink-0 rounded-lg border border-rose-100 p-2 text-rose-600"
+                        onClick={() =>
+                          deleteDisplayItem(item.sourceIndexes)
+                        }
                       >
-                        {flexRender(h.column.columnDef.header, h.getContext())}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-
-              {/* Body */}
-              <tbody className="divide-y divide-slate-150 bg-white">
-                {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/40 transition-colors">
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="p-3 text-xs leading-normal">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-
-              {/* Footer */}
-              <tfoot className="bg-[#FAFBFD] border-t-2 border-slate-200 text-xs font-sans">
-                <tr className="border-b border-slate-200/50">
-                  <td colSpan={4} className="p-3 font-bold text-right text-slate-500 uppercase tracking-wider text-[10px]">
-                    Total Pares Acumulados:
-                  </td>
-                  <td colSpan={3} className="p-3 font-black text-slate-800 font-mono text-sm">
-                    {totalPares} pares
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={4} className="p-3 font-bold text-right text-slate-500 uppercase tracking-wider text-[10px]">
-                    Importe Bruto Total:
-                  </td>
-                  <td colSpan={3} className="p-3 font-black text-indigo-700 font-mono text-sm">
-                    S/ {totalCompra.toFixed(2)}
-                  </td>
-                </tr>
-              </tfoot>
-
-            </table>
-          </div>
-          <div className="divide-y divide-slate-100 md:hidden">
-            {items.map((item, index) => {
-              const totalItem = Object.entries(item.cantidades).reduce((sum, [, quantity]) => sum + quantity * item.precio, 0);
-              return (
-                <article key={`${item.codigo}-${index}`} className="min-w-0 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <span className="inline-block max-w-full break-all rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-extrabold uppercase text-slate-800">{String(item.codigo)}</span>
-                      <p className="mt-2 break-words text-xs font-extrabold text-slate-900">{item.descripcion}</p>
-                      <p className="mt-1 text-[10px] text-slate-500">Serie: {item.serie || '—'}</p>
-                      {item.source === 'QUOTATION' && <span className="mt-1 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[8px] font-black text-emerald-700">{item.quotation_number}</span>}
+                        <Trash2 size={15} />
+                      </button>
                     </div>
-                    <button aria-label={`Eliminar ${item.descripcion}`} className="shrink-0 rounded-lg border border-rose-100 p-2 text-rose-600" onClick={() => onDeleteItem(index)}><Trash2 size={15} /></button>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {Object.entries(item.cantidades).filter(([, quantity]) => quantity > 0).map(([size, quantity]) => <span key={size} className="rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 font-mono text-[10px] font-bold text-indigo-700">T.{size} × {quantity}</span>)}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs"><span>Unitario: <b>S/ {item.precio.toFixed(2)}</b></span><span>Total: <b className="text-indigo-700">S/ {totalItem.toFixed(2)}</b></span></div>
-                </article>
-              );
-            })}
-          </div>
+
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {sizes.map(([size, quantity]) => (
+                        <span
+                          key={size}
+                          className="rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 font-mono text-[10px] font-bold text-indigo-700"
+                        >
+                          T.{size} × {quantity}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs">
+                      <span>
+                        Pares:{' '}
+                        <b>{item.total}</b>
+                      </span>
+
+                      <span>
+                        Total:{' '}
+                        <b className="text-indigo-700">
+                          S/ {totalItem.toFixed(2)}
+                        </b>
+                      </span>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </>
         )}
-
       </div>
 
-      {/* FOOTER ACTIONS - BOTÓN PRINCIPAL */}
-      <div className="flex flex-col sm:flex-row justify-between items-center bg-white border border-slate-200 rounded-2xl p-4 gap-4 shadow-3xs">
-
-        {/* Dynamic Warning Alert */}
+      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-3xs sm:flex-row">
         {!cliente && items.length > 0 ? (
-          <div className="flex items-center gap-2 text-[10px] text-amber-700 bg-amber-50 rounded-xl px-3.5 py-2.5 border border-amber-150">
-            <AlertTriangle size={13} className="shrink-0 animate-pulse text-amber-500" />
+          <div className="flex items-center gap-2 rounded-xl border border-amber-150 bg-amber-50 px-3.5 py-2.5 text-[10px] text-amber-700">
+            <AlertTriangle
+              size={13}
+              className="shrink-0 animate-pulse text-amber-500"
+            />
+
             <span className="font-semibold italic">
-              Recuerda deslizarte hacia arriba y hacer clic en <b>"Vincular"</b> para registrar un cliente en la venta.
+              Recuerda vincular un cliente antes de registrar
+              el pedido.
             </span>
           </div>
         ) : items.length === 0 ? (
-          <div className="flex items-center gap-2 text-[10px] text-slate-500 bg-slate-50 rounded-xl px-3.5 py-2.5 border border-slate-200">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[10px] text-slate-500">
             <Activity size={13} className="shrink-0" />
-            <span>Agrega artículos para habilitar el botón de envío.</span>
+
+            <span>
+              Agrega artículos para habilitar el botón de envío.
+            </span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-[10px] text-indigo-700 bg-indigo-50 rounded-xl px-3.5 py-2.5 border border-indigo-150">
+          <div className="flex items-center gap-2 rounded-xl border border-indigo-150 bg-indigo-50 px-3.5 py-2.5 text-[10px] text-indigo-700">
             <FileCheck size={13} className="shrink-0" />
-            <span className="font-semibold">{totalPares} productos listos para despacho.</span>
+
+            <span className="font-semibold">
+              {totalPares} productos listos para despacho.
+            </span>
           </div>
         )}
 
         <button
+          type="button"
           onClick={handleRegistrarPedido}
-          disabled={!items.length || !cliente || isCreatingOrder}
+          disabled={
+            !items.length ||
+            !cliente ||
+            isCreatingOrder
+          }
           className={`
-    w-full sm:w-auto inline-flex items-center justify-center gap-2
-    font-black uppercase tracking-widest text-[10px] px-6 py-3 rounded-xl
-    transition-all border cursor-pointer
-    ${isCreatingOrder
-              ? 'bg-indigo-400 text-white cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-150 border-indigo-700'
+            inline-flex w-full items-center justify-center gap-2
+            rounded-xl border px-6 py-3 text-[10px] font-black
+            uppercase tracking-widest transition-all sm:w-auto
+            ${
+              isCreatingOrder
+                ? 'cursor-not-allowed border-indigo-400 bg-indigo-400 text-white'
+                : 'border-indigo-700 bg-indigo-600 text-white shadow-lg shadow-indigo-150 hover:bg-indigo-700'
             }
-    disabled:opacity-40 disabled:shadow-none
-  `}
+            disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none
+          `}
         >
           {isCreatingOrder ? (
             <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4 animate-spin"
+                viewBox="0 0 24 24"
+              >
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -439,24 +763,24 @@ export default function PedidoTabla({
                   strokeWidth="4"
                   fill="none"
                 />
+
                 <path
                   className="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                 />
               </svg>
+
               Procesando...
             </>
           ) : (
             <>
               <FileCheck size={14} />
-              Registrar Pedido
+              Registrar pedido
             </>
           )}
         </button>
-
       </div>
-
     </div>
   );
 }

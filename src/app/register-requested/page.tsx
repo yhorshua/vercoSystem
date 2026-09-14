@@ -304,8 +304,8 @@ export default function RegisterPedidoPage() {
         unit_of_measure: 'PAR',
         sizeIdBySizeNumber: { [size]: line.product_size_id },
         source: 'QUOTATION',
-        quotation_id: quotation.id,
-        quotation_detail_id: line.id,
+        quotation_id: Number(quotation.id),
+        quotation_detail_id: Number(line.id),
         quotation_number: quotation.quote_number,
       };
     });
@@ -500,7 +500,7 @@ export default function RegisterPedidoPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                          <span className="break-words text-sm font-extrabold leading-tight text-slate-800">
+                        <span className="break-words text-sm font-extrabold leading-tight text-slate-800">
                           {descripcion || 'Completa la búsqueda para ver el nombre'}
                         </span>
                         {descripcion ? (
@@ -562,8 +562,8 @@ export default function RegisterPedidoPage() {
                           <div
                             key={talla}
                             className={`border rounded-xl p-3 text-center transition-all ${qty > 0
-                                ? 'bg-indigo-50/40 border-indigo-550 border-indigo-400 ring-2 ring-indigo-50'
-                                : 'bg-[#FAFBFD] border-slate-200'
+                              ? 'bg-indigo-50/40 border-indigo-550 border-indigo-400 ring-2 ring-indigo-50'
+                              : 'bg-[#FAFBFD] border-slate-200'
                               }`}
                           >
                             <span className="block text-xs font-black text-slate-700 font-sans">Talla {talla}</span>

@@ -715,7 +715,7 @@ export default function CotizadorPage() {
                                     onClick={() => setShowClienteModal(true)}
                                     className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black text-white hover:bg-indigo-700 sm:w-auto"
                                 >
-                                    {selectedClient ? 'CAMBIAR CLIENTE' : 'BUSCAR O CREAR CLIENTE'}
+                                    {selectedClient ? 'CAMBIAR CLIENTE' : 'BUSCAR CLIENTE'}
                                 </button>
                             </div>
 
