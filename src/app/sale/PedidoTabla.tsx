@@ -42,14 +42,7 @@ interface PedidoTablaProps {
   onSaleRegistered?: () => void;
 }
 
-type MetodoPago =
-  | 'efectivo'
-  | 'yape'
-  | 'plin'
-  | 'tarjetaDebito'
-  | 'tarjetaCredito'
-  | 'yapeEfectivo'
-  | 'obsequio';
+type MetodoPago = PaymentMethod;
 
 export default function PedidoTabla({
   items,
@@ -70,6 +63,17 @@ export default function PedidoTabla({
     const n = Number(efectivoEntregado);
     return Number.isFinite(n) ? n : 0;
   }, [efectivoEntregado]);
+
+  // ====== CREDITO ======
+
+  const [montoInicialCredito, setMontoInicialCredito] = useState<string>('0');
+  const [metodoPagoAdelanto, setMetodoPagoAdelanto] = useState<'efectivo' | 'yape'>('efectivo');
+  const [fechaPagoCredito, setFechaPagoCredito] = useState<string>('');
+
+  const montoInicialCreditoNum = useMemo(() => {
+    const monto = Number(montoInicialCredito);
+    return Number.isFinite(monto) ? monto : NaN;
+  }, [montoInicialCredito]);
 
   const vueltoEfectivo = useMemo(() => {
     if (metodoPago !== 'efectivo') return 0;
@@ -92,7 +96,7 @@ export default function PedidoTabla({
 
   const operacionInvalida = useMemo(() => {
     if (!requiereOperacion) return false;
-    return numeroOperacion.trim().length < 4; // Reduje a 4 por flexibilidad
+    return numeroOperacion.trim().length < 6;
   }, [requiereOperacion, numeroOperacion]);
 
   // ====== MIXTO (Yape + Efectivo) ======
@@ -125,7 +129,7 @@ export default function PedidoTabla({
   const mixtoInvalido = useMemo(() => {
     if (metodoPago !== 'yapeEfectivo') return false;
     if (montoYapeNum <= 0 || montoYapeNum >= totalPrecio) return true;
-    if (operacionYape.trim().length < 4) return true;
+    if (operacionYape.trim().length < 6) return true;
     if (efectivoEntregadoMixtoNum < montoEfectivoMixto) return true;
     return false;
   }, [metodoPago, montoYapeNum, totalPrecio, operacionYape, efectivoEntregadoMixtoNum, montoEfectivoMixto]);
@@ -136,16 +140,58 @@ export default function PedidoTabla({
 
   const obsequioInvalido = useMemo(() => {
     if (metodoPago !== 'obsequio') return false;
-    return motivoObsequio.trim().length < 3;
+    return motivoObsequio.trim().length < 5;
   }, [metodoPago, motivoObsequio]);
+
+  const saldoCredito = useMemo(() => {
+
+    if (metodoPago !== 'credito')
+      return 0;
+
+    const entregado = Number.isFinite(montoInicialCreditoNum)
+      ? montoInicialCreditoNum
+      : 0;
+
+    const saldo = Number((totalPrecio - entregado).toFixed(2));
+
+    return saldo > 0 ? saldo : 0;
+
+  }, [
+    metodoPago,
+    montoInicialCreditoNum,
+    totalPrecio
+  ]);
+
+  const creditoInvalido = useMemo(() => {
+    if (metodoPago !== 'credito') return false;
+
+    if (
+      montoInicialCredito.trim() === '' ||
+      !Number.isFinite(montoInicialCreditoNum) ||
+      montoInicialCreditoNum < 0 ||
+      montoInicialCreditoNum > totalPrecio
+    ) {
+      return true;
+    }
+
+    return saldoCredito > 0 && !fechaPagoCredito;
+  }, [
+    metodoPago,
+    montoInicialCredito,
+    montoInicialCreditoNum,
+    totalPrecio,
+    saldoCredito,
+    fechaPagoCredito,
+  ]);
 
   const isPagoValido = useMemo(() => {
     if (metodoPago === 'efectivo') return !efectivoInvalido;
     if (requiereOperacion) return !operacionInvalida;
     if (metodoPago === 'yapeEfectivo') return !mixtoInvalido;
     if (metodoPago === 'obsequio') return !obsequioInvalido;
+    if (metodoPago === 'credito') return !creditoInvalido;
     return true;
-  }, [metodoPago, efectivoInvalido, requiereOperacion, operacionInvalida, mixtoInvalido, obsequioInvalido]);
+  }, [metodoPago, efectivoInvalido, requiereOperacion, operacionInvalida, mixtoInvalido, obsequioInvalido, creditoInvalido]);
 
   const resetPagoStates = () => {
     setEfectivoEntregado('');
@@ -155,6 +201,9 @@ export default function PedidoTabla({
     setEfectivoEntregadoMixto('');
     setMotivoObsequio('');
     setAutorizadoPor('');
+    setMontoInicialCredito('0');
+    setMetodoPagoAdelanto('efectivo');
+    setFechaPagoCredito('');
   };
 
   // =======================
@@ -216,8 +265,6 @@ export default function PedidoTabla({
       return;
     }
 
-    setIsSubmitting(true); 
-
     const payloadItems: CreateSalePayload['items'] = [];
     for (const it of items) {
       for (const [talla, qty] of Object.entries(it.cantidades)) {
@@ -263,13 +310,27 @@ export default function PedidoTabla({
       user_id: user.userId,
       payment_method,
       payment,
+      ...(payment_method === 'credito'
+        ? {
+          monto_adelanto: Number(montoInicialCreditoNum.toFixed(2)),
+          metodo_pago_adelanto: montoInicialCreditoNum > 0
+            ? metodoPagoAdelanto
+            : null,
+          monto_restante: saldoCredito,
+          fecha_proximo_pago: saldoCredito > 0
+            ? fechaPagoCredito
+            : null,
+        }
+        : {}),
       items: payloadItems,
     };
 
     const confirm = await Swal.fire({
       icon: 'question',
       title: 'Confirmar Venta',
-      text: `Total: S/ ${totalPrecio.toFixed(2)}`,
+      text: metodoPago === 'credito'
+        ? `Total: S/ ${totalPrecio.toFixed(2)} | Saldo pendiente: S/ ${saldoCredito.toFixed(2)}`
+        : `Total: S/ ${totalPrecio.toFixed(2)}`,
       showCancelButton: true,
       confirmButtonColor: '#10b981',
       confirmButtonText: 'Registrar',
@@ -278,12 +339,19 @@ export default function PedidoTabla({
 
     if (!confirm.isConfirmed) return;
 
+    setIsSubmitting(true);
+
     try {
       const res = await registerSale(payload, user.token);
+      if (payment_method === 'credito') {
+        window.dispatchEvent(new Event('pending-credits:refresh'));
+      }
       await Swal.fire({
         icon: 'success',
         title: '¡Venta Exitosa!',
-        text: `Código: ${res?.sale?.sale_code ?? ''}`,
+        text: payment_method === 'credito'
+          ? `Código: ${res?.sale?.sale_code ?? ''} | Saldo guardado: S/ ${Number(res?.sale?.monto_restante ?? 0).toFixed(2)}`
+          : `Código: ${res?.sale?.sale_code ?? ''}`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -293,8 +361,8 @@ export default function PedidoTabla({
       Swal.fire({ icon: 'error', text: e?.message || 'Error al registrar' });
     }
     finally {
-    setIsSubmitting(false); // 🔓 desbloquea
-  }
+      setIsSubmitting(false); // 🔓 desbloquea
+    }
   };
 
   if (items.length === 0) {
@@ -362,6 +430,7 @@ export default function PedidoTabla({
               <option value="tarjetaCredito">💳 Tarjeta Crédito</option>
               <option value="yapeEfectivo">🔀 Mixto (Yape + Efectivo)</option>
               <option value="obsequio">🎁 Obsequio</option>
+              <option value="credito">📅 Crédito</option>
             </select>
           </div>
 
@@ -432,6 +501,62 @@ export default function PedidoTabla({
                 placeholder="Justificación..."
               />
             </div>
+          )}
+
+          {metodoPago === 'credito' && (
+            <>
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Monto de adelanto</label>
+                <input
+                  type="number"
+                  min="0"
+                  max={totalPrecio}
+                  step="0.01"
+                  className={styles.input}
+                  value={montoInicialCredito}
+                  onChange={(e) => setMontoInicialCredito(e.target.value)}
+                  placeholder="S/ 0.00"
+                />
+                {montoInicialCreditoNum > totalPrecio && (
+                  <span className={styles.errorText}>El adelanto no puede superar el total.</span>
+                )}
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Método del adelanto</label>
+                <select
+                  className={styles.select}
+                  value={metodoPagoAdelanto}
+                  onChange={(e) => setMetodoPagoAdelanto(e.target.value as 'efectivo' | 'yape')}
+                  disabled={montoInicialCreditoNum <= 0}
+                >
+                  <option value="efectivo">Efectivo</option>
+                  <option value="yape">Yape</option>
+                </select>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Saldo pendiente</label>
+                <input
+                  className={`${styles.input} ${styles.inputReadOnly}`}
+                  value={`S/ ${saldoCredito.toFixed(2)}`}
+                  readOnly
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>
+                  Próximo pago {saldoCredito > 0 ? '*' : '(opcional)'}
+                </label>
+                <input
+                  type="date"
+                  className={styles.input}
+                  value={fechaPagoCredito}
+                  onChange={(e) => setFechaPagoCredito(e.target.value)}
+                  required={saldoCredito > 0}
+                />
+              </div>
+            </>
           )}
         </div>
 

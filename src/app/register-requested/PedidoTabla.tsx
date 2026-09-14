@@ -36,6 +36,7 @@ interface PedidoTablaProps {
   } | null;
   onDeleteItem: (index: number) => void;
   onPedidoCreado?: () => void;
+  quotationId?: number | null;
 }
 
 export default function PedidoTabla({
@@ -44,6 +45,7 @@ export default function PedidoTabla({
   user,
   onDeleteItem,
   onPedidoCreado,
+  quotationId,
 }: PedidoTablaProps) {
 
   /* ======================
@@ -74,9 +76,14 @@ export default function PedidoTabla({
       accessorKey: 'descripcion',
       header: 'Descripción',
       cell: ({ row }) => (
-        <span className="font-extrabold text-slate-900 text-xs tracking-tight block">
-          {row.original.descripcion}
-        </span>
+        <div>
+          <span className="font-extrabold text-slate-900 text-xs tracking-tight block">{row.original.descripcion}</span>
+          {row.original.source === 'QUOTATION' && (
+            <span className="mt-1 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[8px] font-black text-emerald-700">
+              {row.original.quotation_number}
+            </span>
+          )}
+        </div>
       )
     },
     {
@@ -175,6 +182,7 @@ export default function PedidoTabla({
       user_id: user.id,
       client_id: cliente.id,
       warehouse_id: user.warehouseId,
+      quotation_id: quotationId ?? undefined,
       order_type: 'NORMAL',
 
       items: items.flatMap((item: ItemUI) => {
@@ -188,6 +196,7 @@ export default function PedidoTabla({
             size: String(talla),
             quantity: cantidad,
             unit_price: item.precio,
+            quotation_detail_id: item.quotation_detail_id,
           }));
       }),
     };
@@ -297,8 +306,9 @@ export default function PedidoTabla({
             </p>
           </div>
         ) : (
-          /* Responsive Table Wrapper with proper grid control */
-          <div className="w-full overflow-x-auto custom-scrollbar">
+          <>
+          {/* Responsive Table Wrapper with proper grid control */}
+          <div className="hidden w-full overflow-x-auto custom-scrollbar md:block">
             <table className="w-full text-left border-collapse min-w-[700px]">
 
               {/* Header */}
@@ -353,6 +363,29 @@ export default function PedidoTabla({
 
             </table>
           </div>
+          <div className="divide-y divide-slate-100 md:hidden">
+            {items.map((item, index) => {
+              const totalItem = Object.entries(item.cantidades).reduce((sum, [, quantity]) => sum + quantity * item.precio, 0);
+              return (
+                <article key={`${item.codigo}-${index}`} className="min-w-0 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="inline-block max-w-full break-all rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-extrabold uppercase text-slate-800">{String(item.codigo)}</span>
+                      <p className="mt-2 break-words text-xs font-extrabold text-slate-900">{item.descripcion}</p>
+                      <p className="mt-1 text-[10px] text-slate-500">Serie: {item.serie || '—'}</p>
+                      {item.source === 'QUOTATION' && <span className="mt-1 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[8px] font-black text-emerald-700">{item.quotation_number}</span>}
+                    </div>
+                    <button aria-label={`Eliminar ${item.descripcion}`} className="shrink-0 rounded-lg border border-rose-100 p-2 text-rose-600" onClick={() => onDeleteItem(index)}><Trash2 size={15} /></button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {Object.entries(item.cantidades).filter(([, quantity]) => quantity > 0).map(([size, quantity]) => <span key={size} className="rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1 font-mono text-[10px] font-bold text-indigo-700">T.{size} × {quantity}</span>)}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3 text-xs"><span>Unitario: <b>S/ {item.precio.toFixed(2)}</b></span><span>Total: <b className="text-indigo-700">S/ {totalItem.toFixed(2)}</b></span></div>
+                </article>
+              );
+            })}
+          </div>
+          </>
         )}
 
       </div>

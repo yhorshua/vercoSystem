@@ -8,6 +8,7 @@ import StockTable from './StockTable';
 import { exportToExcel } from './exportUtils';
 import styles from './page.module.css';
 import { Search, Download, Filter, Package } from 'lucide-react';
+import { generateLabelsPDF } from '../utils/generateLabels';
 
 interface Tallas {
   [talla: string]: number;
@@ -33,7 +34,7 @@ export default function StockPage() {
   const { user } = useUser();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number>(1); 
+  const [selectedCategory, setSelectedCategory] = useState<number>(1);
   const [search, setSearch] = useState('');
   const [tallasDisponibles, setTallasDisponibles] = useState<string[]>([]);
   const [selectedSerie, setSelectedSerie] = useState<string>('');
@@ -46,7 +47,23 @@ export default function StockPage() {
     // Asumimos que ID 1 es Zapatillas
     setIsShoeCategory(selectedCategoryId === 1);
   };
-
+const handleGenerateLabels = () => {
+      const labels: any[] = [];
+      filtered.forEach(product => {
+        Object.entries(product.tallas)
+          .forEach(([talla, cantidad]) => {
+            if (cantidad > 0) {
+              for (let i = 0; i < cantidad; i++) {
+                labels.push({
+                  codigo: product.codigo,
+                  talla: talla
+                });
+              }
+            }
+          })
+      });
+      generateLabelsPDF(labels);
+    };
   useEffect(() => {
     const fetchStock = async () => {
       try {
@@ -67,7 +84,7 @@ export default function StockPage() {
             const size = s.productSize?.size;
             const qty = Number(s.quantity || 0);
             saldo += qty;
-            
+
             if (size) {
               // Limpiamos la talla (quitamos espacios)
               const cleanSize = size.trim();
@@ -159,7 +176,7 @@ export default function StockPage() {
 
           {/* Categoría */}
           <div className={styles.selectWrapper}>
-             <Filter className={styles.inputIcon} size={18} />
+            <Filter className={styles.inputIcon} size={18} />
             <select
               value={selectedCategory || ''}
               onChange={handleCategoryChange}
@@ -176,7 +193,7 @@ export default function StockPage() {
           {/* Serie (Condicional) */}
           {isShoeCategory && (
             <div className={styles.selectWrapper}>
-               <Filter className={styles.inputIcon} size={18} />
+              <Filter className={styles.inputIcon} size={18} />
               <select
                 value={selectedSerie}
                 onChange={(e) => setSelectedSerie(e.target.value)}
@@ -195,6 +212,15 @@ export default function StockPage() {
           <button onClick={() => exportToExcel(filtered)} className={styles.exportButton}>
             <Download size={18} />
             <span>Exportar Excel</span>
+          </button>
+          <button
+            onClick={handleGenerateLabels}
+            className={styles.exportButton}
+          >
+            <Package size={18} />
+            <span>
+              Generar Etiquetas
+            </span>
           </button>
         </div>
       </div>

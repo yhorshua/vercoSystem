@@ -35,6 +35,14 @@ const ROUTE_ROLES: Record<string, string[]> = {
     "Vendedor Web",
   ],
 
+  "/quotation-list": [
+    "Administrador",
+    "Jefe Ventas",
+    "Vendedor",
+    "Tienda",
+    "Vendedor Web",
+  ],
+
   "/stock": [
     "Administrador",
     "Jefe Ventas",
@@ -90,7 +98,7 @@ const ROUTE_ROLES: Record<string, string[]> = {
   "/production": ["Administrador"],
   "/listproducts": ["Administrador"],
   "/register-product": ["Administrador"],
-  "/inventorySystem": ["Administrador"],
+  "/inventorySystem": ["Administrador", "Jefe Ventas"],
   "/actualizarStock": ["Administrador"],
 
   "/register-stock": [
@@ -110,12 +118,14 @@ const ROUTE_ROLES: Record<string, string[]> = {
   "/reportsale": ["Tienda", "Administrador"],
   "/asistencia": ["Tienda", "Administrador"],
   "/change": ["Tienda", "Administrador"],
+  "/pendientes-pago": ["Tienda", "Administrador"],
 
   "/pedidos": ["Emprendedor", "Administrador"],
   "/dashboardPedido": ["Emprendedor", "Administrador"],
   "/detailPedido": ["Emprendedor", "Administrador"],
   "/listPedidos": ["Emprendedor", "Administrador"],
   "/movements": ["Administrador"],
+  "/crm": ["Administrador", "Jefe Ventas", "Vendedor Web"],
 };
 
 function normalizePath(pathname: string) {

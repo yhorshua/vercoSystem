@@ -163,7 +163,7 @@ export default function OrderListPage() {
     });
     if (result.isConfirmed) {
       try {
-        await approveOrder(Number(id), user.id || 1, user.token || token);
+        await approveOrder(Number(id), user.token || token);
         Swal.fire({
           icon: 'success',
           title: 'Pedido Aprobado',
@@ -197,7 +197,7 @@ export default function OrderListPage() {
     });
     if (isConfirmed) {
       try {
-        await rejectOrder(Number(id), user.id || 1, motivo, user.token || token);
+        await rejectOrder(Number(id), motivo, user.token || token);
         Swal.fire({
           icon: 'success',
           title: 'Pedido Anulado',

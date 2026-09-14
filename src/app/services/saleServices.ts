@@ -7,13 +7,18 @@ export type PaymentMethod =
   | 'tarjetaDebito'
   | 'tarjetaCredito'
   | 'yapeEfectivo'
-  | 'obsequio';
+  | 'obsequio'
+  | 'credito';
 
 export type CreateSalePayload = {
   warehouse_id: number;
   user_id: number;
   customer_id?: number;
   payment_method: PaymentMethod;
+  monto_adelanto?: number;
+  metodo_pago_adelanto?: 'efectivo' | 'yape' | null;
+  monto_restante?: number;
+  fecha_proximo_pago?: string | null;
 
   payment?: {
     efectivoEntregado?: number;

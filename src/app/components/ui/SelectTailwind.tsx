@@ -23,7 +23,7 @@ export default function SelectTailwind({
   disabled
 }: Props) {
   return (
-    <div className="relative w-full group"> 
+    <div className="group relative min-w-0 w-full max-w-full">
       {/* 
         1. "w-full" asegura que ocupe todo el ancho de su contenedor.
         2. "text-[16px]" es CLAVE: evita que el iPhone haga zoom automático al abrirlo.
@@ -33,7 +33,7 @@ export default function SelectTailwind({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         className="
-          w-full appearance-none
+          block min-w-0 w-full max-w-full appearance-none truncate
           bg-white/80 backdrop-blur-md
           border border-slate-200
           hover:border-indigo-400

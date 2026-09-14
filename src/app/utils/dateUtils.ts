@@ -48,3 +48,21 @@ export const getTimezoneComparison = (isoString: string) => {
     localTimePeru: formatToPeruTime(isoString),
   };
 };
+
+export const getPeruBusinessDate = (instant: Date = new Date()): string => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: PERU_CONFIG.timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
+
+export const addCalendarDays = (dateOnly: string, days: number): string => {
+  const date = new Date(`${dateOnly}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};

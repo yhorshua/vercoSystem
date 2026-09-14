@@ -15,6 +15,14 @@ import SelectTailwind from '../components/ui/SelectTailwind';
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import Swal from 'sweetalert2';
+import ClienteModal, { ClienteUI } from '../register-requested/ClienteModal';
+import {
+    createQuotation,
+    QuotationResponse,
+} from '../services/quotationService';
+import { addCalendarDays, getPeruBusinessDate } from '../utils/dateUtils';
+import { resolveUbigeoSelection } from '../utils/ubigeoLookup';
 
 
 // --- TIPOS ---
@@ -32,18 +40,20 @@ interface Cliente {
 }
 
 interface Producto {
-    id: string;
+    id: number;
     codigo: string;
     nombre: string;
     precioBase: number;
+    sizeIdByName: Record<string, number>;
 }
 
 interface ItemCotizacion {
     id: string;
+    productId: number;
     codigo: string;
     nombre: string;
     precio: number;
-    tallas: { talla: string; cantidad: number }[];
+    tallas: { talla: string; cantidad: number; productSizeId: number }[];
     totalPares: number;
     descuento: number;
     totalSinDescuento: number;
@@ -56,6 +66,10 @@ export default function CotizadorPage() {
 
 
     const [generatingPdf, setGeneratingPdf] = useState(false);
+    const [showClienteModal, setShowClienteModal] = useState(false);
+    const [selectedClient, setSelectedClient] = useState<ClienteUI | null>(null);
+    const [savedQuotation, setSavedQuotation] = useState<QuotationResponse | null>(null);
+    const idempotencyKeyRef = useRef<string | null>(null);
 
     const gradientCacheRef = useRef<string | null>(null);
 
@@ -86,7 +100,20 @@ export default function CotizadorPage() {
     const ubigeo = rawUbigeo as Ubigeo;
     const [depId, setDepId] = useState<keyof Ubigeo | ''>('');
     const [provId, setProvId] = useState<string>('');
-    const [distId, setDistId] = useState<string>('');;
+    const [distId, setDistId] = useState<string>('');
+
+    const applyClientLocation = (selected: ClienteUI) => {
+        const location = resolveUbigeoSelection(ubigeo, {
+            department: selected.departamento,
+            province: selected.provincia,
+            district: selected.distrito,
+        });
+
+        setDepId(location.departmentId);
+        setProvId(location.provinceId);
+        setDistId(location.districtId);
+        return location;
+    };
 
     const departamentos = useMemo(() => {
         return Object.entries(ubigeo).map(([id, dep]: any) => ({
@@ -132,10 +159,13 @@ export default function CotizadorPage() {
 
             // Mapear producto
             setSelectedProduct({
-                id: producto.product_id,
+                id: Number(producto.product_id),
                 codigo: producto.article_code,
                 nombre: producto.article_description,
-                precioBase: Number(producto.price)
+                precioBase: Number(producto.wholesale_price ?? producto.unit_price ?? producto.price),
+                sizeIdByName: Object.fromEntries(
+                    (producto.sizes ?? []).map((size: any) => [String(size.size), Number(size.id)]),
+                ),
             });
 
             // 🔥 TALLAS DINÁMICAS DESDE API
@@ -145,7 +175,7 @@ export default function CotizadorPage() {
             });
 
             setSelectedSizes(tallasIniciales);
-            setTempPrice(Number(producto.price));
+            setTempPrice(Number(producto.wholesale_price ?? producto.unit_price ?? producto.price));
             setSearch('');
 
         } catch (error: any) {
@@ -168,11 +198,30 @@ export default function CotizadorPage() {
     const agregarItem = () => {
         if (!selectedProduct) return;
 
+        if (!Number.isFinite(tempPrice) || tempPrice <= 0 || !Number.isFinite(tempDiscount) || tempDiscount < 0 || tempDiscount > tempPrice) {
+            void Swal.fire({ icon: 'warning', text: 'Revisa el precio y el descuento por par.' });
+            return;
+        }
+
         const tallasFiltradas = Object.entries(selectedSizes)
             .filter(([_, qty]) => qty > 0)
-            .map(([talla, cantidad]) => ({ talla, cantidad }));
+            .map(([talla, cantidad]) => ({
+                talla,
+                cantidad,
+                productSizeId: selectedProduct.sizeIdByName[talla],
+            }));
 
-        if (tallasFiltradas.length === 0) return;
+        if (tallasFiltradas.length === 0 || tallasFiltradas.some((size) => !size.productSizeId)) {
+            void Swal.fire({ icon: 'error', text: 'No se pudo identificar una de las tallas seleccionadas.' });
+            return;
+        }
+        const duplicate = tallasFiltradas.some((size) =>
+            items.some((item) => item.productId === selectedProduct.id && item.tallas.some((current) => current.productSizeId === size.productSizeId)),
+        );
+        if (duplicate) {
+            void Swal.fire({ icon: 'warning', text: 'El mismo producto y talla ya está incluido en la cotización.' });
+            return;
+        }
 
         const totalPares = tallasFiltradas.reduce((acc, curr) => acc + curr.cantidad, 0);
 
@@ -183,6 +232,7 @@ export default function CotizadorPage() {
 
         const newItem: ItemCotizacion = {
             id: `${selectedProduct.id}-${Date.now()}`,
+            productId: selectedProduct.id,
             codigo: selectedProduct.codigo,
             nombre: selectedProduct.nombre,
             precio: tempPrice,
@@ -194,6 +244,8 @@ export default function CotizadorPage() {
         };
 
         setItems([...items, newItem]);
+        setSavedQuotation(null);
+        idempotencyKeyRef.current = null;
         setSelectedProduct(null);
         setSelectedSizes({});
         setTempDiscount(0);
@@ -201,6 +253,8 @@ export default function CotizadorPage() {
 
     const eliminarItem = (id: string) => {
         setItems(items.filter(item => item.id !== id));
+        setSavedQuotation(null);
+        idempotencyKeyRef.current = null;
     };
 
     const totalGeneralPares = items.reduce((acc, curr) => acc + curr.totalPares, 0);
@@ -349,12 +403,41 @@ export default function CotizadorPage() {
         });
     };
 
+    const persistQuotation = async () => {
+        if (savedQuotation) return savedQuotation;
+        if (!selectedClient) throw new Error('Selecciona un cliente registrado antes de emitir la cotización');
+        if (!user?.token || !user.id || !user.warehouse_id) throw new Error('La sesión no es válida');
+        if (!idempotencyKeyRef.current) idempotencyKeyRef.current = crypto.randomUUID();
+
+        const response = await createQuotation({
+            client_id: selectedClient.id,
+            seller_id: user.id,
+            warehouse_id: user.warehouse_id,
+            idempotency_key: idempotencyKeyRef.current,
+            expires_on: addCalendarDays(getPeruBusinessDate(), 7),
+            observations: [cliente.metodoPago && `Método de pago propuesto: ${cliente.metodoPago}`, cliente.agencia && `Agencia: ${cliente.agencia}`]
+                .filter(Boolean)
+                .join(' | ') || undefined,
+            items: items.flatMap((item) => item.tallas.map((size) => ({
+                product_id: item.productId,
+                product_size_id: size.productSizeId,
+                quantity: size.cantidad,
+                unit_price: item.precio.toFixed(2),
+                discount_amount: (item.descuento * size.cantidad).toFixed(2),
+                tax_amount: '0.00',
+            }))),
+        }, user.token);
+        setSavedQuotation(response);
+        return response;
+    };
+
     const generarPDF = async () => {
         if (items.length === 0 || generatingPdf) return;
 
         setGeneratingPdf(true);
 
         try {
+            const persisted = await persistQuotation();
             await waitNextPaint();
 
             const logoImg = await getCompressedLogo();
@@ -368,7 +451,7 @@ export default function CotizadorPage() {
                 putOnlyUsedFonts: true,
             });
 
-            const date = new Date().toLocaleDateString();
+            const date = String(persisted.quotation.business_date);
             const pageWidth = doc.internal.pageSize.getWidth();
             const headerHeight = 40;
 
@@ -404,7 +487,7 @@ export default function CotizadorPage() {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
 
-            const title = 'NOTA DE PEDIDO';
+            const title = 'COTIZACIÓN';
             const titleWidth = doc.getTextWidth(title);
 
             doc.text(title, pageWidth - titleWidth - 14, 22);
@@ -412,7 +495,7 @@ export default function CotizadorPage() {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
 
-            const dateText = `Fecha: ${date}`;
+            const dateText = `${persisted.quotation.quote_number} | Fecha: ${date}`;
             const dateWidth = doc.getTextWidth(dateText);
 
             doc.text(dateText, pageWidth - dateWidth - 14, 30);
@@ -440,13 +523,13 @@ export default function CotizadorPage() {
             doc.text(`Método de Pago: ${cliente.metodoPago || '---'}`, 14, 88);
             doc.text(`Agencia: ${cliente.agencia || '---'}`, 110, 88);
 
-            const tableBody = items.map(item => [
-                item.codigo,
-                item.nombre,
-                `S/ ${Number(item.precio).toFixed(2)}`,
-                item.tallas.map(t => `${t.talla}(${t.cantidad})`).join(', '),
-                String(item.totalPares),
-                `S/ ${item.subtotal.toFixed(2)}`
+            const tableBody = persisted.details.map(item => [
+                item.sku_snapshot,
+                item.description_snapshot,
+                `S/ ${Number(item.unit_price).toFixed(2)}`,
+                `${item.size_snapshot}(${item.quantity})`,
+                String(item.quantity),
+                `S/ ${Number(item.line_total).toFixed(2)}`
             ]);
 
             autoTable(doc, {
@@ -520,13 +603,13 @@ export default function CotizadorPage() {
             doc.setFont('helvetica', 'normal');
 
             doc.text('Total Pares:', 135, finalY + 10);
-            doc.text(`${totalGeneralPares}`, 190, finalY + 10, {
+            doc.text(`${persisted.details.reduce((sum, item) => sum + Number(item.quantity), 0)}`, 190, finalY + 10, {
                 align: 'right',
             });
 
             doc.setTextColor(220, 38, 38);
             doc.text('Descuento:', 135, finalY + 18);
-            doc.text(`- S/ ${totalDescuento.toFixed(2)}`, 190, finalY + 18, {
+            doc.text(`- S/ ${Number(persisted.quotation.discount_total).toFixed(2)}`, 190, finalY + 18, {
                 align: 'right',
             });
 
@@ -534,7 +617,7 @@ export default function CotizadorPage() {
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
             doc.text('TOTAL FINAL:', 135, finalY + 28);
-            doc.text(`S/ ${totalGeneralMonto.toFixed(2)}`, 190, finalY + 28, {
+            doc.text(`S/ ${Number(persisted.quotation.total).toFixed(2)}`, 190, finalY + 28, {
                 align: 'right',
             });
 
@@ -560,12 +643,16 @@ export default function CotizadorPage() {
                 ? cliente.nombre.trim().replace(/\s+/g, '_')
                 : 'Nuevo';
 
-            const fileName = `Pedido_${safeName}.pdf`;
+            const fileName = `Cotizacion_${persisted.quotation.quote_number}_${safeName}.pdf`;
 
             await guardarPdf(doc, fileName);
         } catch (error) {
             console.error(error);
-            alert('No se pudo generar el PDF');
+            await Swal.fire({
+                icon: 'error',
+                title: 'No se pudo emitir la cotización',
+                text: error instanceof Error ? error.message : 'Ocurrió un error inesperado',
+            });
         } finally {
             setGeneratingPdf(false);
         }
@@ -574,19 +661,19 @@ export default function CotizadorPage() {
 
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4 lg:p-8 font-sans">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="min-h-screen bg-slate-50 p-3 font-sans sm:p-4 lg:p-8">
+            <div className="mx-auto min-w-0 max-w-7xl space-y-6 lg:space-y-8">
 
                 {/* ENCABEZADO */}
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tighter">GENERAR COTIZACIÓN</h1>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="break-words text-2xl font-black tracking-tighter text-slate-900 sm:text-3xl">GENERAR COTIZACIÓN</h1>
                         <p className="text-slate-500 font-medium">Crea presupuestos para tus clientes</p>
                     </div>
                     <button
                         onClick={generarPDF}
-                        disabled={items.length === 0 || generatingPdf}
-                        className="bg-slate-900 hover:bg-indigo-600 disabled:bg-slate-300 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all shadow-lg active:scale-95"
+                        disabled={items.length === 0 || !selectedClient || generatingPdf}
+                        className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-4 py-3 font-bold text-white shadow-lg transition-all hover:bg-indigo-600 active:scale-95 disabled:bg-slate-300 sm:w-auto sm:px-8 sm:py-4"
                     >
                         {generatingPdf ? (
                             <>
@@ -602,21 +689,37 @@ export default function CotizadorPage() {
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8">
 
                     {/* COLUMNA IZQUIERDA: FORMULARIOS */}
-                    <div className="lg:col-span-8 space-y-8">
+                    <div className="min-w-0 space-y-5 lg:col-span-8 lg:space-y-8">
 
                         {/* 1. DATOS DEL CLIENTE */}
-                        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
-                                    <User size={20} />
+                        <div className="min-w-0 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                                        <User size={20} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h2 className="font-black text-slate-800 uppercase tracking-widest text-sm">Datos del Cliente</h2>
+                                        {savedQuotation && (
+                                            <p className="text-xs font-bold text-emerald-600 mt-1">
+                                                Guardada como {savedQuotation.quotation.quote_number}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                                <h2 className="font-black text-slate-800 uppercase tracking-widest text-sm">Datos del Cliente</h2>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowClienteModal(true)}
+                                    className="w-full rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black text-white hover:bg-indigo-700 sm:w-auto"
+                                >
+                                    {selectedClient ? 'CAMBIAR CLIENTE' : 'BUSCAR O CREAR CLIENTE'}
+                                </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
 
                                 {/* NOMBRE */}
                                 <div className="md:col-span-2">
@@ -627,7 +730,8 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.nombre}
-                                        onChange={e => setCliente({ ...cliente, nombre: e.target.value })}
+                                        readOnly
+                                        placeholder="Selecciona un cliente registrado"
                                     />
                                 </div>
 
@@ -639,7 +743,7 @@ export default function CotizadorPage() {
                                     <select
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.tipoDoc}
-                                        onChange={e => setCliente({ ...cliente, tipoDoc: e.target.value })}
+                                        disabled
                                     >
                                         <option>DNI</option>
                                         <option>RUC</option>
@@ -655,7 +759,7 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.numDoc}
-                                        onChange={e => setCliente({ ...cliente, numDoc: e.target.value })}
+                                        readOnly
                                     />
                                 </div>
 
@@ -668,12 +772,12 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.telefono}
-                                        onChange={e => setCliente({ ...cliente, telefono: e.target.value })}
+                                        readOnly
                                     />
                                 </div>
 
                                 {/* ESPACIO VACÍO PARA ALINEAR */}
-                                <div></div>
+                                <div className="hidden md:block"></div>
 
                                 {/* DEPARTAMENTO */}
                                 <div>
@@ -691,12 +795,12 @@ export default function CotizadorPage() {
                                             setProvId('');
                                             setDistId('');
 
-                                            setCliente({
-                                                ...cliente,
-                                                departamento: ubigeo[value].nombre,
+                                            setCliente((current) => ({
+                                                ...current,
+                                                departamento: value ? ubigeo[value].nombre : '',
                                                 provincia: '',
                                                 distrito: ''
-                                            });
+                                            }));
                                         }}
                                     />
                                 </div>
@@ -717,11 +821,11 @@ export default function CotizadorPage() {
                                             setProvId(value);
                                             setDistId('');
 
-                                            setCliente({
-                                                ...cliente,
-                                                provincia: ubigeo[depId].provincias[value].nombre,
+                                            setCliente((current) => ({
+                                                ...current,
+                                                provincia: value ? ubigeo[depId].provincias[value].nombre : '',
                                                 distrito: ''
-                                            });
+                                            }));
                                         }}
                                     />
                                 </div>
@@ -741,10 +845,10 @@ export default function CotizadorPage() {
                                         onChange={(value) => {
                                             setDistId(value);
 
-                                            setCliente({
-                                                ...cliente,
-                                                distrito: ubigeo[depId].provincias[provId].distritos[value]
-                                            });
+                                            setCliente((current) => ({
+                                                ...current,
+                                                distrito: value ? ubigeo[depId].provincias[provId].distritos[value] : ''
+                                            }));
                                         }}
                                     />
                                 </div>
@@ -758,7 +862,7 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.direccion}
-                                        onChange={e => setCliente({ ...cliente, direccion: e.target.value })}
+                                        readOnly
                                     />
                                 </div>
 
@@ -795,7 +899,7 @@ export default function CotizadorPage() {
                         </div>
 
                         {/* 2. BÚSQUEDA Y SELECCIÓN */}
-                        <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200">
+                        <div className="min-w-0 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
                                     <ShoppingBag size={20} />
@@ -826,13 +930,13 @@ export default function CotizadorPage() {
 
                             {/* Área de Configuración si hay producto seleccionado */}
                             {selectedProduct && (
-                                <div className="bg-slate-50 rounded-[2rem] p-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                                <div className="min-w-0 animate-in rounded-[2rem] bg-slate-50 p-4 fade-in slide-in-from-top-4 duration-300 sm:p-6">
                                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                                        <div>
+                                        <div className="min-w-0">
                                             <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Producto Seleccionado</span>
-                                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">{selectedProduct.nombre}</h3>
+                                            <h3 className="break-words text-xl font-black uppercase tracking-tighter text-slate-800">{selectedProduct.nombre}</h3>
                                         </div>
-                                        <div className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-6">
+                                        <div className="grid w-full grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-3 sm:w-auto sm:gap-6 sm:p-4">
 
                                             {/* PRECIO */}
                                             <div className="flex flex-col items-center">
@@ -841,7 +945,7 @@ export default function CotizadorPage() {
                                                 </span>
                                                 <input
                                                     type="number"
-                                                    className="w-24 bg-slate-100 rounded-xl p-2 font-black text-indigo-600 text-center outline-none"
+                                                    className="w-full min-w-0 rounded-xl bg-slate-100 p-2 text-center font-black text-indigo-600 outline-none sm:w-24"
                                                     value={tempPrice}
                                                     onChange={e => setTempPrice(Number(e.target.value))}
                                                 />
@@ -854,7 +958,7 @@ export default function CotizadorPage() {
                                                 </span>
                                                 <input
                                                     type="number"
-                                                    className="w-24 bg-red-50 rounded-xl p-2 font-black text-red-500 text-center outline-none"
+                                                    className="w-full min-w-0 rounded-xl bg-red-50 p-2 text-center font-black text-red-500 outline-none sm:w-24"
                                                     value={tempDiscount}
                                                     onChange={e => setTempDiscount(Number(e.target.value))}
                                                 />
@@ -897,10 +1001,10 @@ export default function CotizadorPage() {
                     </div>
 
                     {/* COLUMNA DERECHA: RESUMEN Y TABLA */}
-                    <div className="lg:col-span-4 space-y-6">
+                    <div className="min-w-0 space-y-6 lg:col-span-4">
 
                         {/* RESUMEN TOTALES */}
-                        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-200 overflow-hidden relative">
+                        <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-5 text-white shadow-xl shadow-slate-200 sm:p-8">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
 
                             <h3 className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-8">Resumen de Cotización</h3>
@@ -926,13 +1030,13 @@ export default function CotizadorPage() {
                                 </div>
                                 <div className="pt-6 border-t border-white/10 flex flex-col">
                                     <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Total General (S/)</span>
-                                    <p className="text-5xl font-black tracking-tighter">S/ {totalGeneralMonto.toFixed(2)}</p>
+                                    <p className="break-all text-4xl font-black tracking-tighter sm:text-5xl">S/ {totalGeneralMonto.toFixed(2)}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* LISTA DE ITEMS */}
-                        <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-200 min-h-[400px]">
+                        <div className="min-h-[400px] min-w-0 rounded-[2.5rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Detalle de Productos</h3>
 
                             <div className="space-y-4">
@@ -950,12 +1054,12 @@ export default function CotizadorPage() {
                                             >
                                                 <Trash2 size={16} />
                                             </button>
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <p className="font-black text-slate-800 text-xs uppercase">{item.nombre}</p>
+                                            <div className="mb-2 flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="break-words text-xs font-black uppercase text-slate-800">{item.nombre}</p>
                                                     <p className="text-[10px] font-bold text-indigo-500">{item.codigo}</p>
                                                 </div>
-                                                <p className="font-black text-slate-800 text-sm italic">S/ {item.subtotal.toFixed(2)}</p>
+                                                <p className="shrink-0 text-sm font-black italic text-slate-800">S/ {item.subtotal.toFixed(2)}</p>
                                             </div>
                                             <div className="flex flex-wrap gap-1">
                                                 {item.tallas.map(t => (
@@ -973,6 +1077,32 @@ export default function CotizadorPage() {
                     </div>
                 </div>
             </div>
+
+            {user?.token && (
+                <ClienteModal
+                    open={showClienteModal}
+                    token={user.token}
+                    onClose={() => setShowClienteModal(false)}
+                    onSelect={(selected) => {
+                        const location = applyClientLocation(selected);
+                        setSelectedClient(selected);
+                        setCliente((current) => ({
+                            ...current,
+                            nombre: selected.razonSocial,
+                            tipoDoc: selected.codigo,
+                            numDoc: selected.ruc,
+                            direccion: selected.direccion,
+                            departamento: location.departmentName,
+                            provincia: location.provinceName,
+                            distrito: location.districtName,
+                            telefono: selected.telefono,
+                        }));
+                        setSavedQuotation(null);
+                        idempotencyKeyRef.current = null;
+                        setShowClienteModal(false);
+                    }}
+                />
+            )}
 
             <style jsx global>{`
         input[type=number]::-webkit-inner-spin-button, 

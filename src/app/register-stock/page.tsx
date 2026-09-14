@@ -26,7 +26,7 @@ import {
 import { getProductsByCodeOrDescription } from '../services/productsService';
 import { registerStockForMultipleItems } from '../services/stockServices';
 import { useUser } from '../context/UserContext';
-
+import { generateLabelsPDF } from '../utils/generateLabels';
 import styles from './page-register.module.css';
 
 interface StockItem {
@@ -196,6 +196,43 @@ export default function StockPage() {
 
   const handleRemoveItem = (index: number) => {
     setStockData((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // ===============================
+  // GENERAR ETIQUETAS
+  // ===============================
+
+  const handleGenerateLabels = () => {
+
+    const labels: any[] = [];
+
+    stockData.forEach((product) => {
+      product.sizes.forEach((size) => {
+        const cantidad = Number(size.quantity || 0);
+        if (cantidad > 0) {
+          for (let i = 0; i < cantidad; i++) {
+            labels.push({
+              codigo: product.article_code,
+              talla: size.size
+
+            });
+          }
+        }
+      });
+    });
+
+    if (labels.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin etiquetas',
+
+        text: 'No existen cantidades para generar etiquetas.'
+
+      });
+      return;
+    }
+
+    generateLabelsPDF(labels);
   };
 
   // ===============================
@@ -608,17 +645,30 @@ export default function StockPage() {
               </tbody>
             </table>
           </div>
+          <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 mt-5">
 
-          <button
-            onClick={handleRegisterStock}
-            className={styles.registerStockBtn}
-            disabled={isSubmitting || !guideNumber.trim()}
-          >
-            <Save size={24} />{' '}
-            {isSubmitting
-              ? 'Registrando...'
-              : 'Registrar Ingreso en Almacén'}
-          </button>
+            <button
+              onClick={handleGenerateLabels}
+              className={styles.registerStockBtn}
+              disabled={isSubmitting}
+            >
+              <Tag size={24} />
+              Generar Etiquetas
+            </button>
+
+
+            <button
+              onClick={handleRegisterStock}
+              className={styles.registerStockBtn}
+              disabled={isSubmitting || !guideNumber.trim()}
+            >
+              <Save size={24} />
+              {isSubmitting
+                ? 'Registrando...'
+                : 'Registrar Ingreso en Almacén'}
+            </button>
+
+          </div>
         </div>
       )}
     </div>

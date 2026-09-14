@@ -23,11 +23,13 @@ import {
   ClipboardPen,
   type LucideIcon,
   RotateCwSquare,
+  HandCoins,
+  FileText,
 } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useUser();
-  const { counters } = useDashboardSocket();
+  const { counters, pendingCreditsLoading, pendingCreditsError } = useDashboardSocket();
   const router = useRouter();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,6 +43,7 @@ const Navbar = () => {
 
   const ordersNew = counters?.ordersNew ?? 0;
   const webSalesNew = counters?.webSalesNew ?? 0;
+  const pendingCredits = counters?.pendingCredits ?? 0;
 
   const handleLogout = () => {
     setIsMenuOpen(false);
@@ -48,6 +51,7 @@ const Navbar = () => {
     setOpenMenu(null);
     logout();
     router.replace('/login');
+    router.refresh();
   };
 
   const toggleMenus = (menu: string) => {
@@ -202,7 +206,10 @@ const Navbar = () => {
             </NavItem>
 
             <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
-              Nota de Pedido
+              Cotizaciones
+            </NavItem>
+            <NavItem href="/quotation-list" icon={FileText} mobile={mobile}>
+              Consultar Cotizaciones
             </NavItem>
           </Dropdown>
 
@@ -224,7 +231,10 @@ const Navbar = () => {
             </NavItem>
 
             <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
-              Nota de Pedido
+              Cotizaciones
+            </NavItem>
+            <NavItem href="/quotation-list" icon={FileText} mobile={mobile}>
+              Consultar Cotizaciones
             </NavItem>
 
             <NavItem href="/registerweb" icon={ClipboardList} mobile={mobile}>
@@ -270,6 +280,10 @@ const Navbar = () => {
             <NavItem href="/productUpdate" icon={RotateCwSquare} mobile={mobile}>
               Actualizar Productos
             </NavItem>
+           
+           //// <NavItem href="/inventorySystem" icon={Box} mobile={mobile}>
+           ////   Ajustar inventario
+           ///// </NavItem>
           </Dropdown>
 
           <Dropdown id="reporte" label="Reporte" icon={BarChart3} mobile={mobile}>
@@ -296,7 +310,10 @@ const Navbar = () => {
             </NavItem>
 
             <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
-              Nota de Pedido
+              Cotizaciones
+            </NavItem>
+            <NavItem href="/quotation-list" icon={FileText} mobile={mobile}>
+              Consultar Cotizaciones
             </NavItem>
 
             <NavItem href="/registerweb" icon={ClipboardList} mobile={mobile}>
@@ -376,6 +393,12 @@ const Navbar = () => {
           <NavItem href="/movements" icon={Users} mobile={mobile}>
             Reporte de Movimientos
           </NavItem>
+
+          <NavItem href="/pendientes-pago" icon={HandCoins} mobile={mobile} badge={pendingCredits}>
+            <span title={pendingCreditsError || undefined}>
+              Pendientes de pago{pendingCreditsLoading ? ' · actualizando' : ''}
+            </span>
+          </NavItem>
         </>
       )}
 
@@ -387,6 +410,12 @@ const Navbar = () => {
 
           <NavItem href="/sale" icon={LayoutDashboard} mobile={mobile}>
             Venta
+          </NavItem>
+
+          <NavItem href="/pendientes-pago" icon={HandCoins} mobile={mobile} badge={pendingCredits}>
+            <span title={pendingCreditsError || undefined}>
+              Pendientes de pago{pendingCreditsLoading ? ' · actualizando' : ''}
+            </span>
           </NavItem>
 
           <NavItem href="/caja" icon={Box} mobile={mobile}>
@@ -418,7 +447,10 @@ const Navbar = () => {
           </NavItem>
 
           <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
-            Nota de Pedido
+            Cotizaciones
+          </NavItem>
+          <NavItem href="/quotation-list" icon={FileText} mobile={mobile}>
+            Consultar Cotizaciones
           </NavItem>
         </>
       )}
@@ -459,7 +491,10 @@ const Navbar = () => {
             </NavItem>
 
             <NavItem href="/cotizacion" icon={Users} mobile={mobile}>
-              Nota de Pedido
+              Cotizaciones
+            </NavItem>
+            <NavItem href="/quotation-list" icon={FileText} mobile={mobile}>
+              Consultar Cotizaciones
             </NavItem>
 
             <NavItem href="/registerweb" icon={ClipboardList} mobile={mobile}>

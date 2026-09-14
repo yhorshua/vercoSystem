@@ -10,6 +10,7 @@ export type CreateOrderItemPayload = {
   size?: string;
   quantity: number;
   unit_price: number;
+  quotation_detail_id?: number | null;
   
 };
 
@@ -17,6 +18,7 @@ export type CreateOrderPayload = {
   client_id: number;
   user_id: number;
   warehouse_id: number;
+  quotation_id?: number | null;
 
   order_type?: 'NORMAL' | 'DROPSHIPPING'; // 👈 NUEVO
   payment_reference?: string | null;            // 👈 NUEVO
@@ -115,16 +117,13 @@ export async function getOrderById(
 ================================ */
 export async function approveOrder(
   orderId: number,
-  approvedBy: number,
   token: string,
 ) {
   const res = await fetch(`${API_URL}/orders/${orderId}/approve`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ approved_by: approvedBy }),
   });
 
   if (!res.ok) {
@@ -139,7 +138,6 @@ export async function approveOrder(
 ================================ */
 export async function rejectOrder(
   orderId: number,
-  rejectedBy: number,
   reason: string | undefined,
   token: string,
 ) {
@@ -150,7 +148,6 @@ export async function rejectOrder(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      rejected_by: rejectedBy,
       reason,
     }),
   });

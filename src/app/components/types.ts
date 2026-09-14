@@ -12,6 +12,11 @@ export interface ItemUI {
   unit_of_measure: string;
 
   sizeIdBySizeNumber: Record<number, number>; // 👈 CAMBIAR
+
+  source?: 'MANUAL' | 'QUOTATION';
+  quotation_id?: number;
+  quotation_detail_id?: number;
+  quotation_number?: string;
 }
 
 

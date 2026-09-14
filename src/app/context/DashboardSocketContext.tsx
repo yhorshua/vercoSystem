@@ -19,7 +19,9 @@ import {
   DashboardCounters,
   WebSaleNotification,
   OrderNotification,
+  OrderUpdateNotification,
 } from '../services/dashboardSocketService';
+import { getPendingPaymentCount } from '../services/pendingPaymentService';
 
 type DashboardSocketContextValue = {
   counters: DashboardCounters;
@@ -27,11 +29,15 @@ type DashboardSocketContextValue = {
   lastOrder: OrderNotification | null;
   refreshKey: number;
   isConnected: boolean;
+  pendingCreditsLoading: boolean;
+  pendingCreditsError: string | null;
+  refreshPendingCredits: () => Promise<void>;
 };
 
 const initialCounters: DashboardCounters = {
   webSalesNew: 0,
   ordersNew: 0,
+  pendingCredits: 0,
   totalNew: 0,
 };
 
@@ -58,12 +64,53 @@ export function DashboardSocketProvider({
     useState<OrderNotification | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [pendingCreditsLoading, setPendingCreditsLoading] = useState(false);
+  const [pendingCreditsError, setPendingCreditsError] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasShownPendingOnLoadRef = useRef(false);
 
   const canReceiveDashboardNotifications =
-    roleName === 'Jefe Ventas' || roleName === 'Administrador';
+    roleName === 'Jefe Ventas' ||
+    roleName === 'Administrador' ||
+    roleName === 'Vendedor' ||
+    roleName === 'Vendedor Web';
+  const canReceiveCounters = roleName === 'Jefe Ventas' || roleName === 'Administrador';
+  const canReadPendingCredits = roleName === 'Tienda' || roleName === 'Administrador';
+
+  const refreshPendingCredits = useCallback(async () => {
+    if (!token || !canReadPendingCredits) {
+      setCounters((current) => ({ ...current, pendingCredits: 0 }));
+      setPendingCreditsError(null);
+      return;
+    }
+    setPendingCreditsLoading(true);
+    try {
+      const result = await getPendingPaymentCount(token);
+      setCounters((current) => ({
+        ...current,
+        pendingCredits: Math.max(0, Number(result.pendingCredits || 0)),
+      }));
+      setPendingCreditsError(null);
+    } catch (error) {
+      setPendingCreditsError(
+        error instanceof Error ? error.message : 'No se pudo actualizar el contador de créditos',
+      );
+    } finally {
+      setPendingCreditsLoading(false);
+    }
+  }, [canReadPendingCredits, token]);
+
+  useEffect(() => {
+    void refreshPendingCredits();
+    const refresh = () => { void refreshPendingCredits(); };
+    window.addEventListener('pending-credits:refresh', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.removeEventListener('pending-credits:refresh', refresh);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [refreshPendingCredits]);
 
   const escapeHtml = (value?: unknown) => {
     return String(value ?? 'Sin nombre')
@@ -174,7 +221,10 @@ export function DashboardSocketProvider({
     if (!token || !canReceiveDashboardNotifications) {
       disconnectDashboardSocket();
       setIsConnected(false);
-      setCounters(initialCounters);
+      setCounters((current) => ({
+        ...initialCounters,
+        pendingCredits: canReadPendingCredits ? current.pendingCredits : 0,
+      }));
       setLastWebSale(null);
       setLastOrder(null);
       hasShownPendingOnLoadRef.current = false;
@@ -187,6 +237,7 @@ export function DashboardSocketProvider({
     });
 
     const joinDashboardRoom = () => {
+      if (!canReceiveCounters) return;
       socket.emit('dashboard:join', { roleName }, (response: any) => {
         console.log('Respuesta dashboard:join:', response);
       });
@@ -209,10 +260,14 @@ export function DashboardSocketProvider({
       const safeCounters: DashboardCounters = {
         webSalesNew: Number(data?.webSalesNew || 0),
         ordersNew: Number(data?.ordersNew || 0),
+        pendingCredits: Number(data?.pendingCredits || 0),
         totalNew: Number(data?.totalNew || 0),
       };
 
-      setCounters(safeCounters);
+      setCounters((current) => ({
+        ...safeCounters,
+        pendingCredits: current.pendingCredits,
+      }));
 
       const hasPending =
         safeCounters.totalNew > 0 ||
@@ -273,11 +328,22 @@ export function DashboardSocketProvider({
       });
     };
 
+    const handleOrderUpdated = (data: OrderUpdateNotification) => {
+      setRefreshKey((previous) => previous + 1);
+      const approved = data.status === 'APROBADO';
+      showToast({
+        icon: approved ? 'success' : 'warning',
+        title: approved ? 'Pedido aprobado' : 'Pedido rechazado',
+        html: `<b>Proforma: ${escapeHtml(data.proforma)}</b><br/>${escapeHtml(data.message)}`,
+      });
+    };
+
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
     socket.on('dashboard:counters', handleCounters);
     socket.on('websale:new', handleNewWebSale);
     socket.on('order:new', handleNewOrder);
+    socket.on('order:updated', handleOrderUpdated);
 
     if (!socket.connected) {
       socket.connect();
@@ -294,11 +360,14 @@ export function DashboardSocketProvider({
       socket.off('dashboard:counters', handleCounters);
       socket.off('websale:new', handleNewWebSale);
       socket.off('order:new', handleNewOrder);
+      socket.off('order:updated', handleOrderUpdated);
     };
   }, [
     token,
     roleName,
     canReceiveDashboardNotifications,
+    canReceiveCounters,
+    canReadPendingCredits,
     showToast,
   ]);
 
@@ -309,8 +378,20 @@ export function DashboardSocketProvider({
       lastOrder,
       refreshKey,
       isConnected,
+      pendingCreditsLoading,
+      pendingCreditsError,
+      refreshPendingCredits,
     }),
-    [counters, lastWebSale, lastOrder, refreshKey, isConnected],
+    [
+      counters,
+      lastWebSale,
+      lastOrder,
+      refreshKey,
+      isConnected,
+      pendingCreditsLoading,
+      pendingCreditsError,
+      refreshPendingCredits,
+    ],
   );
 
   return (

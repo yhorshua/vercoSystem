@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useReactTable, createColumnHelper, getCoreRowModel, getSortedRowModel, flexRender } from '@tanstack/react-table';
 import styles from './page-table.module.css';
 
+import Swal from 'sweetalert2';
+
 const tallasOrdenadas = Array.from({ length: 18 }, (_, i) => (27 + i).toString()); // Tallas 27, 28, ..., 44
 
 interface Tallas {

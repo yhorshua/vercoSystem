@@ -1,0 +1,566 @@
+{
+  "generatedAt": "2026-09-14T11:48:07.053Z",
+  "baseUrl": "http://127.0.0.1:3011",
+  "results": [
+    {
+      "route": "/cotizacion",
+      "width": 320,
+      "pass": true,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/cotizacion",
+      "width": 360,
+      "pass": true,
+      "viewport": 360,
+      "documentWidth": 360,
+      "bodyWidth": 360,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/cotizacion",
+      "width": 375,
+      "pass": true,
+      "viewport": 375,
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/cotizacion",
+      "width": 390,
+      "pass": true,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/cotizacion",
+      "width": 414,
+      "pass": true,
+      "viewport": 414,
+      "documentWidth": 414,
+      "bodyWidth": 414,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/cotizacion",
+      "width": 768,
+      "pass": true,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/cotizacion",
+      "width": 1024,
+      "pass": true,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/cotizacion",
+      "width": 1440,
+      "pass": true,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 320,
+      "pass": true,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 360,
+      "pass": true,
+      "viewport": 360,
+      "documentWidth": 360,
+      "bodyWidth": 360,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 375,
+      "pass": true,
+      "viewport": 375,
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 390,
+      "pass": true,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 414,
+      "pass": true,
+      "viewport": 414,
+      "documentWidth": 414,
+      "bodyWidth": 414,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 768,
+      "pass": true,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 1024,
+      "pass": true,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/quotation-list",
+      "width": 1440,
+      "pass": true,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 320,
+      "pass": true,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 360,
+      "pass": true,
+      "viewport": 360,
+      "documentWidth": 360,
+      "bodyWidth": 360,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 375,
+      "pass": true,
+      "viewport": 375,
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 390,
+      "pass": true,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 414,
+      "pass": true,
+      "viewport": 414,
+      "documentWidth": 414,
+      "bodyWidth": 414,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 768,
+      "pass": true,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 1024,
+      "pass": true,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/register-requested",
+      "width": 1440,
+      "pass": true,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 320,
+      "pass": true,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 360,
+      "pass": true,
+      "viewport": 360,
+      "documentWidth": 360,
+      "bodyWidth": 360,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 375,
+      "pass": true,
+      "viewport": 375,
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 390,
+      "pass": true,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 414,
+      "pass": true,
+      "viewport": 414,
+      "documentWidth": 414,
+      "bodyWidth": 414,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 768,
+      "pass": true,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 1024,
+      "pass": true,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/crm",
+      "width": 1440,
+      "pass": true,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 320,
+      "pass": true,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 360,
+      "pass": true,
+      "viewport": 360,
+      "documentWidth": 360,
+      "bodyWidth": 360,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 375,
+      "pass": true,
+      "viewport": 375,
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 390,
+      "pass": true,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 414,
+      "pass": true,
+      "viewport": 414,
+      "documentWidth": 414,
+      "bodyWidth": 414,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 768,
+      "pass": true,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 1024,
+      "pass": true,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago",
+      "width": 1440,
+      "pass": true,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 320,
+      "pass": true,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 360,
+      "pass": true,
+      "viewport": 360,
+      "documentWidth": 360,
+      "bodyWidth": 360,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 375,
+      "pass": true,
+      "viewport": 375,
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 390,
+      "pass": true,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 414,
+      "pass": true,
+      "viewport": 414,
+      "documentWidth": 414,
+      "bodyWidth": 414,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 768,
+      "pass": true,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 1024,
+      "pass": true,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/pendientes-pago/1",
+      "width": 1440,
+      "pass": true,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 320,
+      "pass": true,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 360,
+      "pass": true,
+      "viewport": 360,
+      "documentWidth": 360,
+      "bodyWidth": 360,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 375,
+      "pass": true,
+      "viewport": 375,
+      "documentWidth": 375,
+      "bodyWidth": 375,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 390,
+      "pass": true,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 414,
+      "pass": true,
+      "viewport": 414,
+      "documentWidth": 414,
+      "bodyWidth": 414,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 768,
+      "pass": true,
+      "viewport": 768,
+      "documentWidth": 768,
+      "bodyWidth": 768,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 1024,
+      "pass": true,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "bodyWidth": 1024,
+      "overflowing": [],
+      "selectValues": []
+    },
+    {
+      "route": "/inventorySystem",
+      "width": 1440,
+      "pass": true,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "bodyWidth": 1440,
+      "overflowing": [],
+      "selectValues": []
+    }
+  ]
+}

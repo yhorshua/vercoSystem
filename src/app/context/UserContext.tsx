@@ -1,11 +1,13 @@
 'use client';
 
 import React, {
+  useCallback,
   createContext,
   useContext,
   useState,
   useEffect,
 } from 'react';
+import { disconnectDashboardSocket } from '../services/dashboardSocketService';
 
 export interface Role {
   id: number;
@@ -139,15 +141,21 @@ export const UserProvider = ({
     setUserState(nextUser);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
+    // Notifica primero a módulos con peticiones, temporizadores o sockets propios.
+    window.dispatchEvent(new Event('auth:logout'));
+    disconnectDashboardSocket();
+
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_data');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('user_data');
 
     deleteCookie('access_token');
     deleteCookie('role');
 
     setUserState(null);
-  };
+  }, []);
 
   return (
     <UserContext.Provider

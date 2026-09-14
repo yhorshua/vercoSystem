@@ -5,6 +5,7 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL;
 export type DashboardCounters = {
   webSalesNew: number;
   ordersNew: number;
+  pendingCredits: number;
   totalNew: number;
 };
 
@@ -16,8 +17,14 @@ export type WebSaleNotification = {
 
 export type OrderNotification = {
   message: string;
-  proforma: number;
+  proforma: number | string;
   customerName: string;
+};
+
+export type OrderUpdateNotification = {
+  message: string;
+  proforma: number | string;
+  status: 'APROBADO' | 'RECHAZADO' | string;
 };
 
 let dashboardSocket: Socket | null = null;

@@ -4,6 +4,9 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import ClienteModal from './ClienteModal';
 import PedidoTabla from './PedidoTabla';
+import QuotationSelectionModal, { SelectedQuotationLine } from './QuotationSelectionModal';
+import type { QuotationHeader } from '../services/quotationService';
+import { getSellersByWarehouse, SellerOption } from '../services/userServices';
 import { getProductStockByWarehouseAndCode } from '../services/stockServices';
 import type { ItemUI } from '../components/types';
 import { useUser } from '../context/UserContext';
@@ -43,6 +46,10 @@ export default function RegisterPedidoPage() {
   const [isClientSide, setIsClientSide] = useState(false);
   const [cliente, setCliente] = useState<ClienteUI | null>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState<QuotationHeader | null>(null);
+  const [sellers, setSellers] = useState<SellerOption[]>([]);
+  const [selectedSellerId, setSelectedSellerId] = useState<number | null>(null);
 
   // Core Form states (Preserved exactly as requested)
   const [codigoArticulo, setCodigoArticulo] = useState('');
@@ -71,8 +78,17 @@ export default function RegisterPedidoPage() {
   useEffect(() => {
     if (isClientSide && user?.token) {
       setToken(user.token);
+      setSelectedSellerId((current) => current ?? user.id);
     }
   }, [isClientSide, user]);
+
+  useEffect(() => {
+    const role = user?.role?.name_role;
+    if (!user?.token || !user.warehouse_id || !['Administrador', 'Jefe Ventas'].includes(role || '')) return;
+    getSellersByWarehouse(user.warehouse_id, user.token)
+      .then(setSellers)
+      .catch(() => setSellers([]));
+  }, [user]);
 
   const toSizeNumber = (sizeStr: string): number | null => {
     const n = Number(sizeStr);
@@ -261,6 +277,47 @@ export default function RegisterPedidoPage() {
     setCodigoArticulo(code);
   };
 
+  const applyQuotation = (quotation: QuotationHeader, lines: SelectedQuotationLine[]) => {
+    const duplicateManualLine = lines.some((line) => items.some((item) =>
+      item.source !== 'QUOTATION' &&
+      item.product_id === line.product_id &&
+      item.sizeIdBySizeNumber[Number(line.size_snapshot)] === line.product_size_id,
+    ));
+    if (duplicateManualLine) {
+      void Swal.fire({
+        icon: 'warning',
+        title: 'Producto repetido',
+        text: 'Una línea seleccionada ya fue agregada manualmente. Elimínala o no la selecciones en la cotización.',
+      });
+      return;
+    }
+    const mapped: ItemUI[] = lines.map((line) => {
+      const size = Number(line.size_snapshot);
+      return {
+        codigo: line.sku_snapshot,
+        descripcion: line.description_snapshot,
+        serie: 'Cotización',
+        precio: Number(line.unit_price),
+        cantidades: { [size]: line.selectedQuantity },
+        total: line.selectedQuantity,
+        product_id: line.product_id,
+        unit_of_measure: 'PAR',
+        sizeIdBySizeNumber: { [size]: line.product_size_id },
+        source: 'QUOTATION',
+        quotation_id: quotation.id,
+        quotation_detail_id: line.id,
+        quotation_number: quotation.quote_number,
+      };
+    });
+    if (mapped.some((item) => Object.keys(item.cantidades).some((size) => !Number.isFinite(Number(size))))) {
+      void Swal.fire({ icon: 'error', text: 'La cotización contiene una talla no compatible con esta pantalla.' });
+      return;
+    }
+    setItems((current) => [...current.filter((item) => item.source !== 'QUOTATION'), ...mapped]);
+    setSelectedQuotation(quotation);
+    setShowQuotationModal(false);
+  };
+
   if (!isClientSide) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
@@ -279,17 +336,17 @@ export default function RegisterPedidoPage() {
   const inputStyles = "w-full px-3 py-2 bg-white border border-slate-200 focus:border-indigo-600 rounded-xl text-xs font-bold text-slate-705 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all duration-150 inline-flex items-center shadow-3xs";
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50/50 p-3 font-sans sm:p-4 md:p-8">
+      <div className="mx-auto min-w-0 max-w-7xl space-y-6">
 
         {/* TOP COMPONENT HEADER BRANDING */}
-        <div className="bg-white border border-slate-200/60 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs">
-          <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-col justify-between gap-4 rounded-2xl border border-slate-200/60 bg-white p-4 shadow-2xs sm:p-6 md:flex-row md:items-center md:gap-6">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600/5 flex items-center justify-center text-indigo-600 border border-indigo-100 shrink-0">
               <Layers size={22} />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <h1 className="text-xl lg:text-2xl font-extrabold text-slate-900 tracking-tight font-display">
                   Registrar Pedido
                 </h1>
@@ -310,6 +367,26 @@ export default function RegisterPedidoPage() {
               <p className="text-xs font-bold text-slate-700 mt-1 leading-none">{user?.full_name || 'Vendedor'}</p>
             </div>
           </div>
+          {['Administrador', 'Jefe Ventas'].includes(user?.role?.name_role || '') && (
+            <label className="min-w-0 w-full text-[10px] font-black uppercase text-slate-500 md:w-60">
+              Vendedor responsable
+              <select
+                value={selectedSellerId ?? ''}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (next === selectedSellerId) return;
+                  setSelectedSellerId(next);
+                  setCliente(null);
+                  setSelectedQuotation(null);
+                  setItems((current) => current.filter((item) => item.source !== 'QUOTATION'));
+                }}
+                className="mt-1 block w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-bold normal-case"
+              >
+                <option value={user?.id}>{user?.full_name}</option>
+                {sellers.filter((seller) => seller.id !== user?.id).map((seller) => <option key={seller.id} value={seller.id}>{seller.full_name}</option>)}
+              </select>
+            </label>
+          )}
         </div>
 
         {/* LAYOUT GRID DE BUSQUEDA Y ASIGNACIÓN */}
@@ -318,7 +395,7 @@ export default function RegisterPedidoPage() {
           {/* SECCIÓN CONFIGURACIÓN PRODUCTOS & CARGA (7 columnas) */}
           <div className="lg:col-span-12 space-y-6">
 
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
+            <div className="min-w-0 space-y-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs sm:p-5">
 
               {/* BLOQUE ASOCIAR ADQUIRENTE / CLIENTE */}
               <div className="pb-4 border-b border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
@@ -353,6 +430,14 @@ export default function RegisterPedidoPage() {
                     <span>Vincular</span>
                     <ArrowRight size={12} />
                   </button>
+                  <button
+                    type="button"
+                    disabled={!cliente || !selectedSellerId}
+                    onClick={() => setShowQuotationModal(true)}
+                    className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 text-emerald-700 text-xs font-black rounded-xl transition-all disabled:opacity-40"
+                  >
+                    {selectedQuotation ? selectedQuotation.quote_number : 'Ver cotizaciones'}
+                  </button>
                 </div>
 
               </div>
@@ -371,7 +456,7 @@ export default function RegisterPedidoPage() {
 
                 </div>
 
-                <div className="md:col-span-8 flex gap-2">
+                <div className="flex min-w-0 flex-col gap-2 md:col-span-8 sm:flex-row">
                   <div className="relative flex-grow">
                     <Tag className="absolute left-3 top-2.5 text-slate-400 shrink-0" size={14} />
                     <input
@@ -392,7 +477,7 @@ export default function RegisterPedidoPage() {
                     type="button"
                     disabled={searching || !codigoArticulo.trim()}
                     onClick={buscarProducto}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white border border-indigo-700 font-black rounded-xl text-xs cursor-pointer shadow-lg shadow-indigo-150 transition-all shrink-0 inline-flex items-center gap-1.5 disabled:opacity-50 disabled:shadow-none"
+                    className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl border border-indigo-700 bg-indigo-600 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-indigo-150 transition-all hover:bg-indigo-750 disabled:opacity-50 disabled:shadow-none sm:w-auto"
                   >
                     <Search size={14} className={searching ? 'animate-spin' : ''} />
                     <span>{searching ? 'Cargando...' : 'Consultar'}</span>
@@ -408,14 +493,14 @@ export default function RegisterPedidoPage() {
               <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-5 animate-in fade-in zoom-in-95 duration-100">
 
                 {/* Cabecera del Calzado Encontrado */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="w-25 h-10 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center font-mono text-xs font-black shrink-0 shadow-3xs">
                       {codigoArticulo.substring(0, 9).toUpperCase() || 'REF'}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-extrabold text-sm text-slate-800 leading-none">
+                          <span className="break-words text-sm font-extrabold leading-tight text-slate-800">
                           {descripcion || 'Completa la búsqueda para ver el nombre'}
                         </span>
                         {descripcion ? (
@@ -513,8 +598,8 @@ export default function RegisterPedidoPage() {
                     </div>
 
                     {/* Botón de Agregar Ficha de Artículos */}
-                    <div className="pt-4 border-t border-slate-50 flex justify-end gap-3 items-center">
-                      <div className="text-right">
+                    <div className="flex flex-col items-stretch justify-end gap-3 border-t border-slate-50 pt-4 sm:flex-row sm:items-center">
+                      <div className="text-left sm:text-right">
                         <span className="block text-[9px] font-black uppercase text-slate-400 tracking-wider">Total Selección</span>
                         <span className="block text-xs font-bold text-slate-700">
                           {Object.values(cantidades).reduce((s: number, v: any) => s + (Number(v) || 0), 0)} pares seleccionados
@@ -522,7 +607,7 @@ export default function RegisterPedidoPage() {
                       </div>
 
                       <button
-                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-750 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:scale-100 shadow-lg shadow-indigo-150 inline-flex items-center gap-1.5 border border-indigo-700"
+                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-indigo-700 bg-indigo-600 px-5 py-2.5 text-xs font-extrabold uppercase tracking-widest text-white shadow-lg shadow-indigo-150 transition-all hover:bg-indigo-750 disabled:scale-100 disabled:opacity-50 sm:w-auto"
                         onClick={agregarItem}
                         disabled={
                           !codigoArticulo ||
@@ -549,15 +634,17 @@ export default function RegisterPedidoPage() {
               cliente={cliente}
               user={{
                 token: user!.token,
-                id: user!.id,
+                id: selectedSellerId ?? user!.id,
                 warehouseId: user?.warehouse_id || 1,
               }}
+              quotationId={selectedQuotation?.id ?? null}
               onDeleteItem={(index) =>
                 setItems((prev) => prev.filter((_, i) => i !== index))
               }
               onPedidoCreado={() => {
                 setItems([]);
                 setCliente(null);
+                setSelectedQuotation(null);
               }}
             />
           </div>
@@ -572,10 +659,37 @@ export default function RegisterPedidoPage() {
         token={user!.token}
         onClose={() => setShowClienteModal(false)}
         onSelect={(clienteSeleccionado) => {
-          setCliente(clienteSeleccionado);
-          setShowClienteModal(false);
+          const changeClient = async () => {
+            if (selectedQuotation && clienteSeleccionado.id !== cliente?.id) {
+              const decision = await Swal.fire({
+                icon: 'warning',
+                title: 'Cambiar cliente',
+                text: 'La cotización vinculada se retirará; los productos agregados manualmente se conservarán.',
+                showCancelButton: true,
+                confirmButtonText: 'Cambiar',
+                cancelButtonText: 'Cancelar',
+              });
+              if (!decision.isConfirmed) return;
+              setItems((current) => current.filter((item) => item.source !== 'QUOTATION'));
+              setSelectedQuotation(null);
+            }
+            setCliente(clienteSeleccionado);
+            setShowClienteModal(false);
+          };
+          void changeClient();
         }}
       />
+
+      {cliente && user?.token && selectedSellerId && (
+        <QuotationSelectionModal
+          open={showQuotationModal}
+          clientId={cliente.id}
+          sellerId={selectedSellerId}
+          token={user.token}
+          onClose={() => setShowQuotationModal(false)}
+          onApply={applyQuotation}
+        />
+      )}
 
     </div>
   );
