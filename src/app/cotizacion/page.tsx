@@ -60,6 +60,25 @@ interface ItemCotizacion {
     subtotal: number;
 }
 
+interface PdfRow {
+    sku: string;
+    description: string;
+    unitPrice: number;
+    sizesText: string;
+    totalQuantity: number;
+    subtotal: number;
+}
+
+interface PdfData {
+    quoteNumber: string;
+    date: string;
+    cliente: Cliente;
+    rows: PdfRow[];
+    totalPares: number;
+    discountTotal: number;
+    total: number;
+}
+
 const CLIENTE_INICIAL: Cliente = {
     nombre: '',
     tipoDoc: 'DNI',
@@ -920,6 +939,161 @@ export default function CotizadorPage() {
         }
     };
 
+    const construirDocumentoPdf = async (data: PdfData): Promise<jsPDF> => {
+        const logoImg = await getCompressedLogo();
+
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true,
+            precision: 2,
+            putOnlyUsedFonts: true,
+        });
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const headerHeight = 40;
+        const gradientImg = getGradientHeader(320, 70);
+
+        doc.addImage(gradientImg, 'JPEG', 0, 0, pageWidth, headerHeight, undefined, 'FAST');
+
+        const logoWidth = 50, logoHeight = 20;
+        const logoY = (headerHeight - logoHeight) / 2;
+        doc.addImage(logoImg.data, logoImg.format, 7, logoY, logoWidth, logoHeight, undefined, 'FAST');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        const title = 'COTIZACIÓN';
+        doc.text(title, pageWidth - doc.getTextWidth(title) - 14, 22);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        const dateText = `${data.quoteNumber} | Fecha: ${data.date}`;
+        doc.text(dateText, pageWidth - doc.getTextWidth(dateText) - 14, 30);
+
+        doc.setTextColor(50, 50, 50);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INFORMACIÓN DEL CLIENTE', 14, 55);
+        doc.setDrawColor(220, 220, 220);
+        doc.line(14, 57, 196, 57);
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Cliente: ${data.cliente.nombre || '---'}`, 14, 66);
+        doc.text(`${data.cliente.tipoDoc}: ${data.cliente.numDoc || '---'}`, 14, 72);
+        doc.text(`Teléfono: ${data.cliente.telefono || '---'}`, 14, 78);
+        doc.text(`Departamento: ${data.cliente.departamento || '-'}`, 110, 66);
+        doc.text(`Provincia: ${data.cliente.provincia || '-'}`, 110, 72);
+        doc.text(`Distrito: ${data.cliente.distrito || '-'}`, 110, 78);
+        doc.text(`Dirección: ${data.cliente.direccion || '---'}`, 110, 84);
+        doc.text(`Método de Pago: ${data.cliente.metodoPago || '---'}`, 14, 88);
+        doc.text(`Agencia: ${data.cliente.agencia || '---'}`, 110, 88);
+
+        const tableBody = data.rows.map(r => [
+            r.sku,
+            r.description,
+            `S/ ${r.unitPrice.toFixed(2)}`,
+            r.sizesText,
+            String(r.totalQuantity),
+            `S/ ${r.subtotal.toFixed(2)}`,
+        ]);
+
+        autoTable(doc, {
+            startY: 96,
+            head: [['ARTÍCULO', 'DESCRIPCIÓN', 'P. UNITARIO', 'TALLAS Y CANTIDADES', 'PARES', 'SUBTOTAL']],
+            body: tableBody,
+            theme: 'striped',
+            margin: { left: 14, right: 14 },
+            headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center' },
+            styles: { fontSize: 8, cellPadding: 3, valign: 'middle', overflow: 'linebreak' },
+            columnStyles: {
+                0: { halign: 'left', fontStyle: 'bold', cellWidth: 24 },
+                1: { cellWidth: 48 },
+                2: { halign: 'right', cellWidth: 24 },
+                3: { halign: 'left', cellWidth: 45 },
+                4: { halign: 'center', cellWidth: 17 },
+                5: { halign: 'right', fontStyle: 'bold', cellWidth: 24 },
+            },
+        });
+
+        const finalY = (doc as any).lastAutoTable.finalY + 10;
+        doc.setDrawColor(220, 220, 220);
+        doc.line(14, finalY, 196, finalY);
+        doc.setFillColor(248, 250, 252);
+        doc.roundedRect(130, finalY, 66, 35, 2, 2, 'F');
+
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Total Pares:', 135, finalY + 10);
+        doc.text(`${data.totalPares}`, 190, finalY + 10, { align: 'right' });
+
+        doc.setTextColor(220, 38, 38);
+        doc.text('Descuento:', 135, finalY + 18);
+        doc.text(`- S/ ${data.discountTotal.toFixed(2)}`, 190, finalY + 18, { align: 'right' });
+
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('TOTAL FINAL:', 135, finalY + 28);
+        doc.text(`S/ ${data.total.toFixed(2)}`, 190, finalY + 28, { align: 'right' });
+
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Método de Pago:', 14, finalY + 10);
+        doc.text(`${data.cliente.metodoPago || '-'}`, 60, finalY + 10);
+        doc.text('Agencia:', 14, finalY + 18);
+        doc.text(`${data.cliente.agencia || '-'}`, 60, finalY + 18);
+
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Esta cotización tiene una validez de 7 días hábiles.', 14, finalY + 40);
+
+        return doc;
+    };
+
+    const generarPDFRapido = async () => {
+        if (items.length === 0 || generatingPdf) return;
+        setGeneratingPdf(true);
+        try {
+            await waitNextPaint();
+
+            const rows: PdfRow[] = items.map(item => ({
+                sku: item.codigo,
+                description: item.nombre,
+                unitPrice: item.precio,
+                sizesText: item.tallas.map(t => `T.${t.talla} × ${t.cantidad}`).join(' | '),
+                totalQuantity: item.totalPares,
+                subtotal: item.subtotal,
+            }));
+
+            const doc = await construirDocumentoPdf({
+                quoteNumber: 'VISTA PREVIA (SIN REGISTRAR)',
+                date: getPeruBusinessDate(),
+                cliente,
+                rows,
+                totalPares: totalGeneralPares,
+                discountTotal: totalDescuento,
+                total: totalGeneralMonto,
+            });
+
+            const safeName = cliente.nombre.trim() ? cliente.nombre.trim().replace(/\s+/g, '_') : 'Nuevo';
+            const fileName = `Cotizacion_Preliminar_${safeName}_${Date.now()}.pdf`;
+            await guardarPdf(doc, fileName);
+
+            await Swal.fire({ icon: 'success', title: 'PDF generado', text: 'Se generó el PDF sin registrar la cotización.', confirmButtonColor: '#4f46e5' });
+            // Nota: a propósito NO se llama limpiarFormularioCotizacion() aquí,
+            // porque el usuario puede querer seguir editando y luego sí registrarla.
+        } catch (error) {
+            await Swal.fire({ icon: 'error', title: 'No se pudo generar el PDF', text: error instanceof Error ? error.message : 'Error inesperado', confirmButtonColor: '#4f46e5' });
+        } finally {
+            setGeneratingPdf(false);
+        }
+    };
+
     const limpiarFormularioCotizacion = () => {
         setSelectedClient(null);
         setSavedQuotation(null);
@@ -960,23 +1134,24 @@ export default function CotizadorPage() {
                         <h1 className="break-words text-2xl font-black tracking-tighter text-slate-900 sm:text-3xl">GENERAR COTIZACIÓN</h1>
                         <p className="text-slate-500 font-medium">Crea presupuestos para tus clientes</p>
                     </div>
-                    <button
-                        onClick={generarPDF}
-                        disabled={items.length === 0 || !selectedClient || generatingPdf}
-                        className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-4 py-3 font-bold text-white shadow-lg transition-all hover:bg-indigo-600 active:scale-95 disabled:bg-slate-300 sm:w-auto sm:px-8 sm:py-4"
-                    >
-                        {generatingPdf ? (
-                            <>
-                                <Loader2 size={20} className="animate-spin" />
-                                GENERANDO PDF...
-                            </>
-                        ) : (
-                            <>
-                                <Printer size={20} />
-                                GENERAR PDF
-                            </>
-                        )}
-                    </button>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                            onClick={generarPDFRapido}
+                            disabled={items.length === 0 || generatingPdf}
+                            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 px-4 py-3 font-bold text-slate-900 transition-all hover:bg-slate-100 active:scale-95 disabled:border-slate-300 disabled:text-slate-300 sm:w-auto sm:px-8 sm:py-4"
+                        >
+                            <Printer size={20} />
+                            PDF SIN REGISTRAR
+                        </button>
+
+                        <button
+                            onClick={generarPDF}
+                            disabled={items.length === 0 || !selectedClient || generatingPdf}
+                            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-4 py-3 font-bold text-white shadow-lg transition-all hover:bg-indigo-600 active:scale-95 disabled:bg-slate-300 sm:w-auto sm:px-8 sm:py-4"
+                        >
+                            {generatingPdf ? (<><Loader2 size={20} className="animate-spin" /> GENERANDO PDF...</>) : (<><Printer size={20} /> GENERAR PDF (REGISTRAR)</>)}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8">
@@ -1020,8 +1195,8 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.nombre}
-                                        readOnly
-                                        placeholder="Selecciona un cliente registrado"
+                                        onChange={e => setCliente({ ...cliente, nombre: e.target.value })}
+                                        placeholder="Nombre del cliente"
                                     />
                                 </div>
 
@@ -1049,7 +1224,7 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.numDoc}
-                                        readOnly
+                                        onChange={e => setCliente({ ...cliente, numDoc: e.target.value })}
                                     />
                                 </div>
 
@@ -1062,7 +1237,7 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.telefono}
-                                        readOnly
+                                        onChange={e => setCliente({ ...cliente, telefono: e.target.value })}
                                     />
                                 </div>
 
@@ -1152,7 +1327,7 @@ export default function CotizadorPage() {
                                         type="text"
                                         className="w-full bg-slate-50 rounded-2xl p-4 font-bold"
                                         value={cliente.direccion}
-                                        readOnly
+                                        onChange={e => setCliente({ ...cliente, direccion: e.target.value })}
                                     />
                                 </div>
 
