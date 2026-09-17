@@ -101,7 +101,7 @@ const handleGenerateLabels = () => {
             saldo,
             origin: p.type_origin,
             precioventa: p.manufacturing_cost,
-            preciocompra: p.unit_price,
+            preciocompra: p.factory_price,
           };
         });
 
