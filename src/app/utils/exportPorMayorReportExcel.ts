@@ -580,9 +580,9 @@ export function exportWholesaleSalesReportExcel(data: any) {
         ],
     );
 
-    applyNumberFormat(wsGuias, [10, 11, 12, 13, 14], 3);
-    applyMoneyFormat(wsGuias, [15, 16, 17, 18, 19, 20, 22, 23], 3);
-    applyPercentFormat(wsGuias, [21], 3);
+    applyNumberFormat(wsGuias, [9, 10, 11, 12, 13], 3);
+    applyMoneyFormat(wsGuias, [14, 15, 16, 17, 18, 19, 21, 22], 3);
+    applyPercentFormat(wsGuias, [20], 3);
 
     // ========================
     // 4. DETALLE GENERAL DE ARTÍCULOS
@@ -639,9 +639,9 @@ export function exportWholesaleSalesReportExcel(data: any) {
         ],
     );
 
-    applyNumberFormat(wsDetalle, [16], 3);
-    applyMoneyFormat(wsDetalle, [17, 18, 19, 20, 21, 22, 23, 25, 26], 3);
-    applyPercentFormat(wsDetalle, [24], 3);
+    applyNumberFormat(wsDetalle, [12], 3);
+    applyMoneyFormat(wsDetalle, [13, 14, 15, 16, 17, 18, 19, 21, 22], 3);
+    applyPercentFormat(wsDetalle, [20], 3);
 
     // ========================
     // 5. HOJAS POR VENDEDOR
@@ -729,7 +729,7 @@ export function exportWholesaleSalesReportExcel(data: any) {
                     d.article_description || '',
                     d.talla || '',
                     cantidad,
-                    '',
+                    precioCompra,
                     precioVenta,
                     diferenciaUnitaria,
                     subtotalRegistrado,
@@ -875,9 +875,9 @@ export function exportWholesaleSalesReportExcel(data: any) {
         [14, 46, 16, 16, 16, 16, 18, 18, 16, 18, 18, 18, 16, 16, 12],
     );
 
-    applyNumberFormat(wsProductos, [7, 8, 9, 10], 3);
-    applyMoneyFormat(wsProductos, [5, 6, 11, 12, 13], 3);
-    applyPercentFormat(wsProductos, [14], 3);
+    applyNumberFormat(wsProductos, [4, 5, 6, 7], 3);
+applyMoneyFormat(wsProductos, [2, 3, 8, 9, 10], 3);
+applyPercentFormat(wsProductos, [11], 3);
 
     // ========================
     // 7. TALLAS
