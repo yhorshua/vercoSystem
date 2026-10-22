@@ -1,4 +1,4 @@
-import { TimezoneConfig } from '../components/types';
+import type { TimezoneConfig } from '../components/types';
 
 // Configuration for Peru
 export const PERU_CONFIG: TimezoneConfig = {
@@ -65,4 +65,46 @@ export const addCalendarDays = (dateOnly: string, days: number): string => {
   const date = new Date(`${dateOnly}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+};
+
+/**
+ * Extracts and validates the calendar portion of a date returned by the API.
+ * It intentionally avoids `new Date(value)` so an ISO timestamp cannot move to
+ * the previous or next day when rendered in a different time zone.
+ */
+export const getStableDateOnly = (
+  value: string | null | undefined,
+): string | null => {
+  const match = String(value ?? '')
+    .trim()
+    .match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (!match) return null;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${yearText}-${monthText}-${dayText}`;
+};
+
+export const formatStableDate = (
+  value: string | null | undefined,
+  fallback = '—',
+): string => {
+  const dateOnly = getStableDateOnly(value);
+  if (!dateOnly) return fallback;
+
+  const [year, month, day] = dateOnly.split('-');
+  return `${day}/${month}/${year}`;
 };
