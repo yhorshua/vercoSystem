@@ -35,7 +35,20 @@ export const loginService = async (email: string, password: string): Promise<Log
   });
 
   if (!response.ok) {
-    throw new Error("Credenciales incorrectas o error en el servidor");
+    let message = "Credenciales incorrectas o error en el servidor";
+
+    try {
+      const errorBody = await response.json();
+      if (typeof errorBody?.message === 'string') {
+        message = errorBody.message;
+      } else if (Array.isArray(errorBody?.message)) {
+        message = errorBody.message.join('. ');
+      }
+    } catch {
+      // Conserva el mensaje seguro cuando la API no devuelve JSON.
+    }
+
+    throw new Error(message);
   }
 
   const data: LoginResponse = await response.json();
