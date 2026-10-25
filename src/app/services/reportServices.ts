@@ -37,6 +37,8 @@ export type SalesReportRowDTO = {
   sale_date: string; // ISO
   user_id: number;
   user_name: string;
+  customer_name?: string | null;
+  notes?: string | null;
   warehouse_id: number;
   warehouse_name?: string | null;
   total_amount: number;

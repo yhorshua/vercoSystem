@@ -14,6 +14,8 @@ export type CreateSalePayload = {
   warehouse_id: number;
   user_id: number;
   customer_id?: number;
+  customer_name?: string;
+  notes?: string;
   payment_method: PaymentMethod;
   monto_adelanto?: number;
   metodo_pago_adelanto?: 'efectivo' | 'yape' | null;

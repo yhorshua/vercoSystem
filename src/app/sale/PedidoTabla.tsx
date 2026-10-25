@@ -34,6 +34,7 @@ interface PedidoTablaProps {
   items: ItemUI[];
   onDelete: (index: number) => void;
   cliente: Cliente | null;
+  observacion: string;
   user: {
     token: string;
     warehouseId: number;
@@ -48,6 +49,7 @@ export default function PedidoTabla({
   items,
   onDelete,
   cliente,
+  observacion,
   user,
   onSaleRegistered,
 }: PedidoTablaProps) {
@@ -308,6 +310,8 @@ export default function PedidoTabla({
     const payload: CreateSalePayload = {
       warehouse_id: user.warehouseId,
       user_id: user.userId,
+      customer_name: cliente?.razonSocial?.trim() || undefined,
+      notes: observacion.trim() || undefined,
       payment_method,
       payment,
       ...(payment_method === 'credito'
@@ -329,8 +333,8 @@ export default function PedidoTabla({
       icon: 'question',
       title: 'Confirmar Venta',
       text: metodoPago === 'credito'
-        ? `Total: S/ ${totalPrecio.toFixed(2)} | Saldo pendiente: S/ ${saldoCredito.toFixed(2)}`
-        : `Total: S/ ${totalPrecio.toFixed(2)}`,
+        ? `Cliente: ${cliente?.razonSocial?.trim() || 'Venta sin identificar'} | Total: S/ ${totalPrecio.toFixed(2)} | Saldo pendiente: S/ ${saldoCredito.toFixed(2)}`
+        : `Cliente: ${cliente?.razonSocial?.trim() || 'Venta sin identificar'} | Total: S/ ${totalPrecio.toFixed(2)}`,
       showCancelButton: true,
       confirmButtonColor: '#10b981',
       confirmButtonText: 'Registrar',

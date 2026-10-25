@@ -219,6 +219,116 @@
   background-color: var(--primary-dark);
 }
 
+/* --- Resumen del ingreso --- */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.summaryCard,
+.summaryCardPrimary,
+.summaryCardMoney {
+  min-height: 88px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.summaryCard {
+  background: #f8fafc;
+}
+
+.summaryCardPrimary {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.summaryCardMoney {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.summaryCard span,
+.summaryCardPrimary span,
+.summaryCardMoney span {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.summaryCard strong,
+.summaryCardPrimary strong,
+.summaryCardMoney strong {
+  margin-top: 4px;
+  color: var(--text-main);
+  font-size: 1.25rem;
+}
+
+.summaryCardPrimary strong {
+  color: #047857;
+}
+
+.summaryCardMoney strong {
+  color: #1d4ed8;
+}
+
+.sizeSummary {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.sizeSummaryTitle {
+  min-width: max-content;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #1e3a8a;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.sizeSummaryTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sizeSummaryTags span {
+  padding: 5px 9px;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  background: white;
+  color: #475569;
+  font-size: 0.78rem;
+}
+
+.sizeSummaryTags strong {
+  color: #1d4ed8;
+}
+
+.totalCell {
+  color: #047857;
+  font-size: 1rem;
+}
+
+.moneyCell {
+  white-space: nowrap;
+  color: #1d4ed8;
+}
+
 /* --- Tabla de Staging --- */
 .tableContainer {
   width: 100%;
@@ -327,5 +437,19 @@
   .searchButton {
     width: 100%;
     justify-content: center;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sizeSummary {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
   }
 }

@@ -88,6 +88,7 @@ export default function RegisterSalePage() {
   const [descuento, setDescuento] = useState<number>(0);
   const [totalConDescuento, setTotalConDescuento] = useState<number>(0);
   const [tipoDocumentoVenta, setTipoDocumentoVenta] = useState<string>('boleta');
+  const [observacionVenta, setObservacionVenta] = useState('');
 
   // Escaneo
   const [scanning, setScanning] = useState(false);
@@ -495,6 +496,38 @@ export default function RegisterSalePage() {
       {/* SECCIÓN 2: AGREGAR PRODUCTO */}
       <section className={styles.cardSection}>
         <h2 className={styles.cardTitle}>
+          <User size={20} /> Identificación de la Venta
+        </h2>
+
+        <div className={styles.gridTwo}>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Nombre del cliente (opcional)</label>
+            <input
+              className={styles.input}
+              value={nombres}
+              maxLength={150}
+              onChange={(e) => setNombres(e.target.value)}
+              placeholder="Ej: Juan Pérez o Empresa ABC"
+            />
+            <small>Se mostrará en el reporte para identificar esta venta.</small>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Descripción u observación (opcional)</label>
+            <input
+              className={styles.input}
+              value={observacionVenta}
+              maxLength={500}
+              onChange={(e) => setObservacionVenta(e.target.value)}
+              placeholder="Ej: Pedido de uniforme, entrega pendiente..."
+            />
+            <small>{observacionVenta.length}/500 caracteres</small>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.cardSection}>
+        <h2 className={styles.cardTitle}>
           <Tag size={20} /> Producto
         </h2>
 
@@ -600,6 +633,7 @@ export default function RegisterSalePage() {
         <PedidoTabla
           items={items}
           onDelete={handleDeleteItem}
+          observacion={observacionVenta}
           cliente={{
             tipoDocumento,
             numeroDocumento,
@@ -621,6 +655,8 @@ export default function RegisterSalePage() {
           }
           onSaleRegistered={() => {
             setItems([]);
+            setNombres('');
+            setObservacionVenta('');
             Swal.fire({ icon: 'success', title: 'Venta Registrada', timer: 2000, showConfirmButton: false });
           }}
         />

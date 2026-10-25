@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Download } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 import { useUser } from '../context/UserContext';
@@ -14,74 +15,13 @@ import {
     getWarehouses,
     WarehouseRow,
 } from '../services/warehouseServices';
+import type {
+    StockMovementRow,
+    StockReportResponse,
+} from './types';
+import { exportStockEntryReportExcel } from '../utils/stockMovementExcel';
 
 const MySwal = Swal;
-
-type StockMovementRow = {
-    id: number;
-    created_at: string;
-
-    warehouse?: {
-        id: number;
-        name: string;
-        location?: string;
-    };
-
-    user?: {
-        id: number | null;
-        full_name: string;
-        email?: string;
-    };
-
-    product?: {
-        id: number;
-        article_code: string;
-        article_description: string;
-        brand_name?: string;
-        model_code?: string;
-        color?: string;
-    };
-
-    size?: {
-        product_size_id: number | null;
-        value: string | null;
-    };
-
-    movement?: {
-        type: string;
-        direction: string;
-        quantity: number;
-        absolute_quantity: number;
-        unit_of_measure: string;
-        previous_quantity: number;
-        new_quantity: number;
-    };
-
-    reference?: {
-        reference_id: number | null;
-        reference_type: string | null;
-        reference: string | null;
-        notes: string | null;
-    };
-};
-
-type StockReportResponse = {
-    filters?: any;
-    warehouse?: any;
-    summary?: {
-        total_movements: number;
-        total_entries: number;
-        total_exits: number;
-        total_adjustments: number;
-        quantity_entered: number;
-        quantity_exited: number;
-        net_movement: number;
-    };
-    summary_by_type?: any[];
-    summary_by_user?: any[];
-    summary_by_product?: any[];
-    movements?: StockMovementRow[];
-};
 
 export default function StockMovementReportPage() {
     const { user } = useUser();
@@ -251,6 +191,38 @@ export default function StockMovementReportPage() {
         (warehouse) => warehouse.id === selectedWarehouseId
     );
 
+    const handleExportEntries = () => {
+        try {
+            exportStockEntryReportExcel({
+                movements: reportData,
+                warehouseName:
+                    selectedWarehouse?.warehouse_name || 'Almacén',
+                startDate,
+                endDate,
+            });
+
+            void MySwal.fire({
+                icon: 'success',
+                title: 'Excel generado',
+                text: 'El reporte de ingresos se descargó correctamente.',
+                toast: true,
+                position: 'top-end',
+                timer: 2500,
+                showConfirmButton: false,
+            });
+        } catch (error) {
+            void MySwal.fire({
+                icon: 'info',
+                title: 'Sin ingresos para exportar',
+                text:
+                    error instanceof Error
+                        ? error.message
+                        : 'No se pudo generar el archivo Excel.',
+                confirmButtonColor: '#3b82f6',
+            });
+        }
+    };
+
     return (
         <div className="p-6 max-w-7xl mx-auto">
             <div className="mb-8">
@@ -394,6 +366,27 @@ export default function StockMovementReportPage() {
             )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="flex flex-col gap-3 border-b border-gray-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 className="font-bold text-gray-800">
+                            Detalle de movimientos
+                        </h2>
+                        <p className="text-xs text-gray-500">
+                            Exporta únicamente los ingresos, consolidados por guía, artículo y talla.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleExportEntries}
+                        disabled={!reportData.length || loading}
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        <Download size={17} />
+                        Descargar ingresos Excel
+                    </button>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-gray-50 border-b border-gray-200">

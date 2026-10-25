@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   useReactTable,
   createColumnHelper,
@@ -21,6 +21,7 @@ import {
   PlusCircle,
   Trash2,
   FileText,
+  Boxes,
 } from 'lucide-react';
 
 import { getProductsByCodeOrDescription } from '../services/productsService';
@@ -73,6 +74,38 @@ export default function StockPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [stockData, setStockData] = useState<StockItem[]>([]);
+
+  const stockSummary = useMemo(() => {
+    const sizeTotals = new Map<string, number>();
+    let totalPairs = 0;
+    let estimatedValue = 0;
+    let sizeLines = 0;
+
+    stockData.forEach((product) => {
+      product.sizes.forEach((size) => {
+        const quantity = Math.max(0, Math.floor(Number(size.quantity || 0)));
+        if (!quantity) return;
+
+        totalPairs += quantity;
+        estimatedValue += quantity * Number(product.price || 0);
+        sizeLines += 1;
+        sizeTotals.set(
+          size.size,
+          (sizeTotals.get(size.size) || 0) + quantity,
+        );
+      });
+    });
+
+    return {
+      productCount: stockData.length,
+      sizeLines,
+      totalPairs,
+      estimatedValue,
+      sizeTotals: Array.from(sizeTotals.entries()).sort(([a], [b]) =>
+        a.localeCompare(b, 'es', { numeric: true }),
+      ),
+    };
+  }, [stockData]);
 
   // ===============================
   // BUSCAR PRODUCTO
@@ -180,7 +213,38 @@ export default function StockPage() {
         .filter((s) => s.quantity > 0),
     };
 
-    setStockData((prev) => [...prev, newProduct]);
+    setStockData((prev) => {
+      const existingIndex = prev.findIndex(
+        (item) => item.product_id === newProduct.product_id,
+      );
+
+      if (existingIndex < 0) return [...prev, newProduct];
+
+      const next = [...prev];
+      const existing = next[existingIndex];
+      const quantitiesBySizeId = new Map(
+        existing.sizes.map((size) => [size.id, Number(size.quantity || 0)]),
+      );
+
+      newProduct.sizes.forEach((size) => {
+        quantitiesBySizeId.set(
+          size.id,
+          (quantitiesBySizeId.get(size.id) || 0) + Number(size.quantity || 0),
+        );
+      });
+
+      next[existingIndex] = {
+        ...existing,
+        sizes: productData.sizes
+          .map((size) => ({
+            ...size,
+            quantity: quantitiesBySizeId.get(size.id) || 0,
+          }))
+          .filter((size) => size.quantity > 0),
+      };
+
+      return next;
+    });
     setProductData(null);
     setSearchQuery('');
     setCantidadTallas({});
@@ -424,6 +488,36 @@ export default function StockPage() {
     }),
 
     columnHelper.display({
+      id: 'total_pairs',
+      header: 'Total Pares',
+      cell: (info) => (
+        <strong className={styles.totalCell}>
+          {info.row.original.sizes.reduce(
+            (total, size) => total + Number(size.quantity || 0),
+            0,
+          )}
+        </strong>
+      ),
+    }),
+
+    columnHelper.display({
+      id: 'estimated_value',
+      header: 'Valor Referencial',
+      cell: (info) => {
+        const totalPairs = info.row.original.sizes.reduce(
+          (total, size) => total + Number(size.quantity || 0),
+          0,
+        );
+
+        return (
+          <strong className={styles.moneyCell}>
+            S/ {(totalPairs * Number(info.row.original.price || 0)).toFixed(2)}
+          </strong>
+        );
+      },
+    }),
+
+    columnHelper.display({
       id: 'actions',
       header: 'Acción',
       cell: (info) => (
@@ -617,6 +711,42 @@ export default function StockPage() {
             </span>
           </div>
 
+          <div className={styles.summaryGrid}>
+            <div className={styles.summaryCard}>
+              <span>Productos</span>
+              <strong>{stockSummary.productCount}</strong>
+            </div>
+
+            <div className={styles.summaryCard}>
+              <span>Registros por talla</span>
+              <strong>{stockSummary.sizeLines}</strong>
+            </div>
+
+            <div className={styles.summaryCardPrimary}>
+              <span>Total a ingresar</span>
+              <strong>{stockSummary.totalPairs} pares</strong>
+            </div>
+
+            <div className={styles.summaryCardMoney}>
+              <span>Valor referencial</span>
+              <strong>S/ {stockSummary.estimatedValue.toFixed(2)}</strong>
+            </div>
+          </div>
+
+          <div className={styles.sizeSummary}>
+            <div className={styles.sizeSummaryTitle}>
+              <Boxes size={17} />
+              Total consolidado por talla
+            </div>
+            <div className={styles.sizeSummaryTags}>
+              {stockSummary.sizeTotals.map(([size, quantity]) => (
+                <span key={size}>
+                  Talla {size}: <strong>{quantity}</strong>
+                </span>
+              ))}
+            </div>
+          </div>
+
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
@@ -625,6 +755,8 @@ export default function StockPage() {
                   <th>Descripción</th>
                   <th>Serie</th>
                   <th>Cantidades</th>
+                  <th>Total pares</th>
+                  <th>Valor referencial</th>
                   <th>Acción</th>
                 </tr>
               </thead>

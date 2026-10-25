@@ -365,12 +365,14 @@ export default function ReporteVentasPage() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-slate-50 text-slate-500 uppercase font-bold tracking-wider">
-                                    <tr><th className="px-6 py-4">Código</th><th className="px-6 py-4">Vendedor</th><th className="px-6 py-4">Total (S/)</th><th className="px-6 py-4">Método</th></tr>
+                                    <tr><th className="px-6 py-4">Código</th><th className="px-6 py-4">Cliente</th><th className="px-6 py-4">Descripción</th><th className="px-6 py-4">Vendedor</th><th className="px-6 py-4">Total (S/)</th><th className="px-6 py-4">Método</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {report.sales?.map((s: SalesReportRowDTO) => (
                                         <tr key={s.sale_id} className="hover:bg-indigo-50/40 transition-colors">
                                             <td className="px-6 py-4 font-bold text-indigo-600">#{s.sale_code}</td>
+                                            <td className="px-6 py-4 font-semibold text-slate-700">{s.customer_name || 'Sin identificar'}</td>
+                                            <td className="max-w-xs px-6 py-4 text-slate-500"><span className="line-clamp-2" title={s.notes || ''}>{s.notes || '—'}</span></td>
                                             <td className="px-6 py-4">{s.user_name}</td>
                                             <td className="px-6 py-4 font-bold">S/ {Number(s.total_amount).toFixed(2)}</td>
                                             <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 rounded-md text-xs font-semibold uppercase">{s.payment_method || 'Varios'}</span></td>
