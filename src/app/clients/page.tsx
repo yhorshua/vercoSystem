@@ -30,7 +30,13 @@ import {
 import { useUser } from '../context/UserContext';
 import type { Ubigeo } from '../utils/types/ubigeo';
 import rawUbigeo from '../utils/ubigeo-peru-optimizado.json';
-import { createClient, getMyClients, ClientRow, CreateClientPayload } from '../services/clientServices';
+import {
+  createClient,
+  getMyClients,
+  ClientRow,
+  CreateClientPayload,
+  isClientConflictError,
+} from '../services/clientServices';
 
 // Funciones de utilidad (se mantienen exactamente igual)
 function onlyDigits(s: string) { return s.replace(/\D/g, ''); }
@@ -194,10 +200,12 @@ export default function RegisterClientePage() {
         showConfirmButton: false 
       });
     } catch (err2: any) {
+      const isConflict = isClientConflictError(err2);
       Swal.fire({ 
         icon: 'error', 
-        title: 'Error Servidor', 
-        text: err2?.message ?? 'No se pudo guardar el cliente' 
+        title: isConflict ? 'Cliente ya registrado' : 'No se pudo registrar',
+        text: err2?.message ?? 'No se pudo guardar el cliente',
+        confirmButtonColor: '#4f46e5',
       });
     } finally {
       setLoading(false);
@@ -359,7 +367,7 @@ export default function RegisterClientePage() {
                 <div className="bg-indigo-50/40 p-3 rounded-xl border border-indigo-100/50 flex gap-2">
                   <Info size={14} className="text-indigo-650 text-indigo-600 shrink-0 mt-0.5" />
                   <p className="text-[10px] text-slate-500 font-medium leading-normal">
-                    La validación verifica que el número de caracteres coincida con el estándar de SUNAT (Perú) para evitar rechazos de comprobantes.
+                    Se validarán el DNI/RUC, nombre o razón social, teléfono y nombre comercial. Si alguno ya existe, no se permitirá registrar nuevamente al cliente ni asignarlo a otro vendedor.
                   </p>
                 </div>
 

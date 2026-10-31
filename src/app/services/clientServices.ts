@@ -45,6 +45,20 @@ function safeErrorMessage(text: string) {
   return text || 'Error en servicio de clientes';
 }
 
+export class ClientServiceError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ClientServiceError';
+  }
+}
+
+export function isClientConflictError(error: unknown): error is ClientServiceError {
+  return error instanceof ClientServiceError && error.status === 409;
+}
+
 export async function createClient(payload: CreateClientPayload, token: string) {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL no está definido');
 
@@ -60,7 +74,7 @@ export async function createClient(payload: CreateClientPayload, token: string) 
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(safeErrorMessage(text));
+    throw new ClientServiceError(safeErrorMessage(text), res.status);
   }
 
   return (await res.json()) as ClientRow;

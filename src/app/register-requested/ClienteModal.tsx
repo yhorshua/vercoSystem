@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import Swal from 'sweetalert2';
 import { 
   X, 
   Search, 
@@ -10,7 +11,12 @@ import {
   PlusCircle, 
   AlertCircle 
 } from 'lucide-react';
-import { createClient, getMyClients, ClientRow } from '../services/clientServices';
+import {
+  createClient,
+  getMyClients,
+  ClientRow,
+  isClientConflictError,
+} from '../services/clientServices';
 
 export type ClienteUI = {
   id: number;
@@ -99,7 +105,13 @@ export default function ClienteModal({ open, token, onClose, onSelect }: Cliente
       setCreating(false);
       setForm({ document_type_code: '01', document_number: '', business_name: '', phone: '', email: '', address: '' });
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'No se pudo registrar el cliente');
+      const isConflict = isClientConflictError(error);
+      await Swal.fire({
+        icon: 'error',
+        title: isConflict ? 'Cliente ya registrado' : 'No se pudo registrar',
+        text: error instanceof Error ? error.message : 'No se pudo registrar el cliente',
+        confirmButtonColor: '#4f46e5',
+      });
     } finally {
       setSaving(false);
     }
