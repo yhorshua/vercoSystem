@@ -11,8 +11,10 @@ export type SalesReportDetailDTO = {
   quantity: number;
   unit_price: number;
   purchase_price: number;
+  purchase_total?: number;
   line_total: number;
   profit: number;
+  category_name?: string;
 };
 
 export type GetSalesReportParams = {
@@ -49,15 +51,34 @@ export type SalesReportRowDTO = {
 
 export type SalesReportMetaDTO = {
   total_operating_expenses?: number;
+  total_quantity?: number;
+  total_purchase_amount?: number;
+  total_sales_amount?: number;
+  total_profit?: number;
+  net_profit?: number;
   warehouse_id: number;
   warehouse_name?: string | null;
   total_sales: number;
   total_amount: number;
 };
 
+export type WeeklyCategorySummary = {
+  category: string;
+  quantity: number;
+  purchase_amount: number;
+  sales_amount: number;
+  profit: number;
+};
+
 export type SalesReportResponse = {
   meta: SalesReportMetaDTO;
   sales: SalesReportRowDTO[];
+  categories?: WeeklyCategorySummary[];
+  total_quantity?: number;
+  total_profit?: number;
+  total_cost?: number;
+  total_cash_amount?: number;
+  total_virtual_amount?: number;
 };
 
 export type CashClosureDay = {
@@ -88,6 +109,10 @@ export type SellerSalesDetail = {
   sale_id: number;
   sale_code: string;
   sale_date: string;
+  customer_name?: string | null;
+  notes?: string | null;
+  payment_method?: string | null;
+  sale_total?: number;
 
   product_id: number;
   article_code: string;
@@ -96,24 +121,50 @@ export type SellerSalesDetail = {
   size: string | null;
 
   quantity: number;
+  commissionable_quantity: number;
   unit_price: number;
-
-  total: number;
-
-  counted_pairs: number;
+  purchase_price: number;
+  purchase_total: number;
+  sales_total: number;
+  profit: number;
+  commission: number;
 };
 
 export type SellerCategory = {
   category: string;
   pairs: number;
   amount: number;
+  quantity: number;
+  commissionable_quantity: number;
+  purchase_amount: number;
+  sales_amount: number;
+  profit: number;
+  commission: number;
   sales: SellerSalesDetail[];
+};
+
+export type SellerCommissionTotals = {
+  quantity: number;
+  commissionable_quantity: number;
+  purchase_amount: number;
+  sales_amount: number;
+  profit: number;
+  commission: number;
+};
+
+export type SellerCategorySummary = SellerCommissionTotals & {
+  category: string;
 };
 
 export type SellerSalesDetailReport = {
   seller_id: number;
   seller_name: string;
   total_pairs: number;
+  total_quantity: number;
+  total_commissionable_quantity: number;
+  total_purchase_amount: number;
+  total_sales_amount: number;
+  total_profit: number;
   total_commission: number;
   categories: SellerCategory[];
 };
@@ -125,9 +176,144 @@ export type SellerSalesDetailResponse = {
     start: string;
     end: string;
     sellers: number;
+    commission_per_unit?: number;
   };
+  totals: SellerCommissionTotals;
+  categories: SellerCategorySummary[];
   sellers: SellerSalesDetailReport[];
 };
+
+function numericValue(value: unknown) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeSellerCategory(value: any): SellerCategory {
+  const quantity = numericValue(value?.quantity ?? value?.pairs);
+  const commissionableQuantity = numericValue(
+    value?.commissionable_quantity ?? value?.pairs ?? quantity,
+  );
+  const purchaseAmount = numericValue(value?.purchase_amount);
+  const salesAmount = numericValue(value?.sales_amount ?? value?.amount);
+
+  return {
+    ...value,
+    category: String(value?.category || 'Sin categoría'),
+    pairs: numericValue(value?.pairs ?? commissionableQuantity),
+    amount: numericValue(value?.amount ?? salesAmount),
+    quantity,
+    commissionable_quantity: commissionableQuantity,
+    purchase_amount: purchaseAmount,
+    sales_amount: salesAmount,
+    profit: numericValue(value?.profit ?? salesAmount - purchaseAmount),
+    commission: numericValue(value?.commission),
+    sales: Array.isArray(value?.sales) ? value.sales : [],
+  };
+}
+
+function sumCommissionCategories(categories: SellerCategorySummary[]): SellerCommissionTotals {
+  return categories.reduce<SellerCommissionTotals>((totals, category) => ({
+    quantity: totals.quantity + numericValue(category.quantity),
+    commissionable_quantity: totals.commissionable_quantity + numericValue(category.commissionable_quantity),
+    purchase_amount: totals.purchase_amount + numericValue(category.purchase_amount),
+    sales_amount: totals.sales_amount + numericValue(category.sales_amount),
+    profit: totals.profit + numericValue(category.profit),
+    commission: totals.commission + numericValue(category.commission),
+  }), {
+    quantity: 0,
+    commissionable_quantity: 0,
+    purchase_amount: 0,
+    sales_amount: 0,
+    profit: 0,
+    commission: 0,
+  });
+}
+
+export function normalizeSellerSalesDetailResponse(input: any): SellerSalesDetailResponse {
+  const source = input && typeof input === 'object' ? input : {};
+  const rawSellers = Array.isArray(input)
+    ? input
+    : Array.isArray(source.sellers)
+      ? source.sellers
+      : [];
+
+  const sellers: SellerSalesDetailReport[] = rawSellers.map((seller: any, index: number) => {
+    const categories = Array.isArray(seller?.categories)
+      ? seller.categories.map(normalizeSellerCategory)
+      : [];
+    const derived = sumCommissionCategories(categories);
+
+    return {
+      ...seller,
+      seller_id: numericValue(seller?.seller_id ?? seller?.user_id ?? index),
+      seller_name: String(seller?.seller_name ?? seller?.user_name ?? 'Sin vendedor'),
+      total_pairs: numericValue(seller?.total_pairs ?? derived.commissionable_quantity),
+      total_quantity: numericValue(seller?.total_quantity ?? derived.quantity),
+      total_commissionable_quantity: numericValue(
+        seller?.total_commissionable_quantity ?? derived.commissionable_quantity,
+      ),
+      total_purchase_amount: numericValue(seller?.total_purchase_amount ?? derived.purchase_amount),
+      total_sales_amount: numericValue(seller?.total_sales_amount ?? derived.sales_amount),
+      total_profit: numericValue(seller?.total_profit ?? derived.profit),
+      total_commission: numericValue(seller?.total_commission ?? derived.commission),
+      categories,
+    };
+  });
+
+  let categories: SellerCategorySummary[];
+  if (Array.isArray(source.categories)) {
+    categories = source.categories.map((category: any) => normalizeSellerCategory(category));
+  } else {
+    const categoryMap = new Map<string, SellerCategorySummary>();
+    sellers.forEach((seller) => seller.categories.forEach((category) => {
+      const current = categoryMap.get(category.category) || {
+        category: category.category,
+        quantity: 0,
+        commissionable_quantity: 0,
+        purchase_amount: 0,
+        sales_amount: 0,
+        profit: 0,
+        commission: 0,
+      };
+      current.quantity += category.quantity;
+      current.commissionable_quantity += category.commissionable_quantity;
+      current.purchase_amount += category.purchase_amount;
+      current.sales_amount += category.sales_amount;
+      current.profit += category.profit;
+      current.commission += category.commission;
+      categoryMap.set(category.category, current);
+    }));
+    categories = Array.from(categoryMap.values());
+  }
+
+  const derivedTotals = sumCommissionCategories(categories);
+  const rawTotals = source.totals || {};
+
+  return {
+    meta: {
+      warehouse_id: numericValue(source.meta?.warehouse_id),
+      warehouse_name: String(source.meta?.warehouse_name || ''),
+      start: String(source.meta?.start || ''),
+      end: String(source.meta?.end || ''),
+      sellers: numericValue(source.meta?.sellers ?? sellers.length),
+      commission_per_unit: source.meta?.commission_per_unit == null
+        ? undefined
+        : numericValue(source.meta.commission_per_unit),
+    },
+    totals: {
+      quantity: numericValue(rawTotals.quantity ?? derivedTotals.quantity),
+      commissionable_quantity: numericValue(
+        rawTotals.commissionable_quantity ?? derivedTotals.commissionable_quantity,
+      ),
+      purchase_amount: numericValue(rawTotals.purchase_amount ?? derivedTotals.purchase_amount),
+      sales_amount: numericValue(rawTotals.sales_amount ?? derivedTotals.sales_amount),
+      profit: numericValue(rawTotals.profit ?? derivedTotals.profit),
+      commission: numericValue(rawTotals.commission ?? derivedTotals.commission),
+    },
+    categories,
+    sellers,
+  };
+}
 
 export type SneakersGoalResponse = {
   meta: {
@@ -462,7 +648,7 @@ export async function getSellerSalesDetailReport(
     throw new Error(text || 'Error consultando reporte de ventas por vendedor');
   }
 
-  return res.json();
+  return normalizeSellerSalesDetailResponse(await res.json());
 }
 
 export async function getSneakersGoal(

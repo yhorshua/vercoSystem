@@ -43,13 +43,19 @@ import {
     getCashClosureReport,
     SalesReportRowDTO,
     SalesPaymentDTO,
-    getSellerSalesDetailReport
+    getSellerSalesDetailReport,
+    SellerSalesDetailResponse,
+    WeeklyCategorySummary as WeeklyCategorySummaryDTO,
 } from '../services/reportServices';
 import { getSellersByWarehouse, SellerOption } from '../services/userServices';
 
 import { buildSalesReportPdfBlob } from '../utils/salesReportPdf';
 import { buildWeeklyProfitReportPdfBlob } from '../utils/weeklyReportPdf';
-import { buildWeeklyProfitExcel } from '../utils/weeklyReportExcel';
+import {
+    buildSellerCommissionExcel,
+    buildWeeklyProfitExcel,
+    CommissionRates,
+} from '../utils/weeklyReportExcel';
 import * as XLSX from 'xlsx';
 import { buildWeeklyProfitAdvancedPdf } from '../utils/weeklyProfitAdvancedPdf';
 
@@ -92,6 +98,13 @@ export default function ReporteVentasPage() {
 
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState<any | null>(null);
+    const [sneakersCommissionRate, setSneakersCommissionRate] = useState('1');
+    const [accessoriesCommissionRate, setAccessoriesCommissionRate] = useState('1');
+
+    const commissionRates = useMemo<CommissionRates>(() => ({
+        Zapatillas: Math.max(0, Number(sneakersCommissionRate) || 0),
+        Accesorios: Math.max(0, Number(accessoriesCommissionRate) || 0),
+    }), [sneakersCommissionRate, accessoriesCommissionRate]);
 
     const loadSellers = async () => {
         if (!canUse) return;
@@ -112,17 +125,20 @@ export default function ReporteVentasPage() {
 
     const stats = useMemo(() => {
         if (!report) return null;
-        const totalAmount = Number(report.meta?.total_amount || 0);
+        const totalAmount = Number(report.meta?.total_sales_amount ?? report.meta?.total_amount ?? 0);
         const totalSales = report.meta?.total_sales || 0;
         const avgTicket = totalSales > 0 ? totalAmount / totalSales : 0;
-        
-        let totalProfit = 0;
-        report.sales?.forEach((s: any) => {
-            s.details?.forEach((d: any) => { totalProfit += Number(d.profit || 0); });
-        });
+        const detailProfit = report.sales?.reduce((saleSum: number, sale: any) => (
+            saleSum + (sale.details || []).reduce((detailSum: number, detail: any) => (
+                detailSum + Number(detail.profit || 0)
+            ), 0)
+        ), 0) || 0;
+        const totalProfit = Number(report.meta?.total_profit ?? report.total_profit ?? detailProfit);
+        const totalCost = Number(report.meta?.total_purchase_amount ?? report.total_cost ?? 0);
+        const totalQuantity = Number(report.meta?.total_quantity ?? report.total_quantity ?? 0);
         const profitMargin = totalAmount > 0 ? (totalProfit / totalAmount) * 100 : 0;
 
-        return { totalAmount, totalSales, avgTicket, totalProfit, profitMargin };
+        return { totalAmount, totalSales, avgTicket, totalProfit, totalCost, totalQuantity, profitMargin };
     }, [report]);
 
     // --- 1. CATEGORÍAS (GRÁFICO SÓLO MONTOS S/) ---
@@ -224,10 +240,13 @@ export default function ReporteVentasPage() {
     function handleDownloadExcel() {
         if (!report) return;
         try {
-            if (reportType === 'WEEKLY_PROFIT' || reportType === 'SELLER_COMMISSION') {
+            if (reportType === 'SELLER_COMMISSION') {
+                const workbook = buildSellerCommissionExcel(report, commissionRates);
+                XLSX.writeFile(workbook, `comisiones_${warehouseName}.xlsx`);
+            } else if (reportType === 'WEEKLY_PROFIT' || reportType === 'DAY' || reportType === 'RANGE') {
                 const workbook = buildWeeklyProfitExcel(report);
                 XLSX.writeFile(workbook, `reporte_${warehouseName}.xlsx`);
-            } else { Swal.fire({ icon: 'info', title: 'Excel', text: 'Solo disponible para Utilidad y Comisiones.' }); }
+            } else { Swal.fire({ icon: 'info', title: 'Excel', text: 'Disponible para ventas, utilidad y comisiones.' }); }
         } catch (e) { Swal.fire({ icon: 'error', title: 'Excel', text: 'Error al generar.' }); }
     }
 
@@ -265,7 +284,7 @@ export default function ReporteVentasPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-bold text-slate-500 uppercase">Análisis</label>
-                        <select value={reportType} onChange={(e) => setReportType(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <select value={reportType} onChange={(e) => { setReportType(e.target.value); setReport(null); }} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                             <option value="DAY">📅 Ventas por Día</option>
                             <option value="RANGE">🗓️ Ventas por Rango</option>
                             <option value="CASH_CLOSURE">🔒 Cierre de Caja</option>
@@ -274,15 +293,13 @@ export default function ReporteVentasPage() {
                             <option value="WEEKLY_PROFIT">📈 Utilidad Semanal</option>
                         </select>
                     </div>
-                    {reportType !== 'SELLER_COMMISSION' && (
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Vendedor</label>
-                            <select value={sellerId} onChange={(e) => setSellerId(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none">
-                                <option value="">Todos</option>
-                                {sellers.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
-                            </select>
-                        </div>
-                    )}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Vendedor</label>
+                        <select value={sellerId} onChange={(e) => setSellerId(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 outline-none">
+                            <option value="">Todos</option>
+                            {sellers.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                        </select>
+                    </div>
                     <div className="md:col-span-2 grid grid-cols-2 gap-4">
                         {reportType === 'DAY' ? (
                             <div className="col-span-2 flex flex-col gap-2">
@@ -304,12 +321,30 @@ export default function ReporteVentasPage() {
                     </div>
                 </div>
 
+                {reportType === 'SELLER_COMMISSION' && (
+                    <div className="mt-6 grid grid-cols-1 gap-4 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-5 md:grid-cols-2">
+                        <CommissionInput
+                            label="Comisión por zapatilla"
+                            value={sneakersCommissionRate}
+                            onChange={setSneakersCommissionRate}
+                        />
+                        <CommissionInput
+                            label="Comisión por accesorio"
+                            value={accessoriesCommissionRate}
+                            onChange={setAccessoriesCommissionRate}
+                        />
+                        <p className="text-xs text-slate-500 md:col-span-2">
+                            El monto se multiplica por la cantidad comisionable consultada en cada categoría.
+                        </p>
+                    </div>
+                )}
+
                 <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-slate-100">
                     <button onClick={handleSearch} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-100 transition-all">
                         {loading ? <RefreshCw className="animate-spin" size={18} /> : <Search size={18} />}
                         Generar Reporte
                     </button>
-                    <button onClick={handleDownloadPdf} disabled={!report} className="bg-white border border-slate-200 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 shadow-sm">
+                    <button onClick={handleDownloadPdf} disabled={!report || reportType === 'SELLER_COMMISSION'} title={reportType === 'SELLER_COMMISSION' ? 'Use Excel para el reporte completo de comisiones' : undefined} className="bg-white border border-slate-200 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 shadow-sm disabled:cursor-not-allowed disabled:opacity-50">
                         <Download size={18} className="text-red-500" /> PDF
                     </button>
                     <button onClick={handleDownloadExcel} disabled={!report} className="bg-white border border-slate-200 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-slate-50 shadow-sm">
@@ -318,15 +353,23 @@ export default function ReporteVentasPage() {
                 </div>
             </div>
 
-            {report && (
+            {report && (reportType === 'SELLER_COMMISSION' ? (
+                <SellerCommissionView report={report as SellerSalesDetailResponse} commissionRates={commissionRates} />
+            ) : (
                 <div className="space-y-8 pb-10">
                     {/* KPIS */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className={`grid grid-cols-1 gap-6 md:grid-cols-2 ${reportType === 'WEEKLY_PROFIT' ? 'xl:grid-cols-6' : 'lg:grid-cols-4'}`}>
                         <KPICard title="Ventas Totales" value={`S/ ${stats?.totalAmount.toFixed(2)}`} icon={<DollarSign size={24}/>} color="blue" trend="Ingreso bruto" />
+                        {reportType === 'WEEKLY_PROFIT' && <KPICard title="Monto Compra" value={`S/ ${stats?.totalCost.toFixed(2)}`} icon={<Briefcase size={24}/>} color="amber" trend="Costo histórico" />}
                         <KPICard title="Utilidad Bruta" value={`S/ ${stats?.totalProfit.toFixed(2)}`} icon={<TrendingUp size={24}/>} color="emerald" trend={`${stats?.profitMargin.toFixed(1)}% margen`} />
+                        {reportType === 'WEEKLY_PROFIT' && <KPICard title="Cantidad Vendida" value={stats?.totalQuantity} icon={<PackageCheck size={24}/>} color="purple" trend="Unidades" />}
                         <KPICard title="Nro. Ventas" value={stats?.totalSales} icon={<ShoppingBag size={24}/>} color="purple" trend="Operaciones" />
                         <KPICard title="Ticket Promedio" value={`S/ ${stats?.avgTicket.toFixed(2)}`} icon={<Users size={24}/>} color="amber" trend="Por cliente" />
                     </div>
+
+                    {reportType === 'WEEKLY_PROFIT' && (
+                        <WeeklyCategorySummary categories={report.categories || []} />
+                    )}
 
                     {/* GRÁFICOS SEPARADOS */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -383,7 +426,246 @@ export default function ReporteVentasPage() {
                         </div>
                     </div>
                 </div>
+            )
             )}
+        </div>
+    );
+}
+
+function formatMoney(value: number) {
+    return `S/ ${Number(value || 0).toLocaleString('es-PE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+}
+
+function categoryCommissionRate(category: string, rates: CommissionRates) {
+    const normalized = String(category || '').toUpperCase();
+    if (normalized.includes('ZAPATILLA') || normalized.includes('CALZADO')) return rates.Zapatillas;
+    if (normalized.includes('ACCESORIO')) return rates.Accesorios;
+    return 0;
+}
+
+function categoryCommission(category: { category: string; commissionable_quantity: number }, rates: CommissionRates) {
+    return category.commissionable_quantity * categoryCommissionRate(category.category, rates);
+}
+
+function CommissionInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+    return (
+        <label className="flex flex-col gap-2">
+            <span className="text-xs font-black uppercase tracking-wide text-indigo-800">{label} (S/)</span>
+            <input
+                type="number"
+                min="0"
+                step="0.10"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                className="rounded-xl border border-indigo-200 bg-white p-3 font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="0.00"
+            />
+        </label>
+    );
+}
+
+function WeeklyCategorySummary({ categories }: { categories: WeeklyCategorySummaryDTO[] }) {
+    return (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
+                <h3 className="flex items-center gap-2 font-black text-slate-800">
+                    <Layers size={19} className="text-indigo-600" /> Resumen por categoría
+                </h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-sm">
+                    <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        <tr>
+                            <th className="px-5 py-3">Categoría</th>
+                            <th className="px-5 py-3 text-right">Cantidad</th>
+                            <th className="px-5 py-3 text-right">Compra</th>
+                            <th className="px-5 py-3 text-right">Venta</th>
+                            <th className="px-5 py-3 text-right">Utilidad</th>
+                            <th className="px-5 py-3 text-right">Margen</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {categories.length === 0 ? (
+                            <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-400">No hay ventas en el periodo seleccionado.</td></tr>
+                        ) : categories.map((category) => {
+                            const margin = category.sales_amount > 0 ? (category.profit / category.sales_amount) * 100 : 0;
+                            return (
+                                <tr key={category.category} className="hover:bg-indigo-50/30">
+                                    <td className="px-5 py-4 font-black text-slate-800">{category.category}</td>
+                                    <td className="px-5 py-4 text-right font-bold">{category.quantity}</td>
+                                    <td className="px-5 py-4 text-right">{formatMoney(category.purchase_amount)}</td>
+                                    <td className="px-5 py-4 text-right font-bold">{formatMoney(category.sales_amount)}</td>
+                                    <td className="px-5 py-4 text-right font-bold text-emerald-700">{formatMoney(category.profit)}</td>
+                                    <td className="px-5 py-4 text-right">{margin.toFixed(1)}%</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    );
+}
+
+function SellerCommissionView({ report, commissionRates }: { report: SellerSalesDetailResponse; commissionRates: CommissionRates }) {
+    const categories = Array.isArray(report?.categories) ? report.categories : [];
+    const sellers = Array.isArray(report?.sellers) ? report.sellers : [];
+    const totals = report?.totals || {
+        quantity: 0,
+        commissionable_quantity: 0,
+        purchase_amount: 0,
+        sales_amount: 0,
+        profit: 0,
+        commission: 0,
+    };
+    const totalCommission = categories.reduce(
+        (sum, category) => sum + categoryCommission(category, commissionRates),
+        0,
+    );
+
+    return (
+        <div className="space-y-8 pb-10">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                <KPICard
+                    title="Cantidad vendida"
+                    value={totals.quantity}
+                    icon={<ShoppingBag size={24} />}
+                    color="purple"
+                    trend="Unidades reales"
+                />
+                <KPICard
+                    title="Monto de compra"
+                    value={formatMoney(totals.purchase_amount)}
+                    icon={<Briefcase size={24} />}
+                    color="amber"
+                    trend="Costo histórico"
+                />
+                <KPICard
+                    title="Monto de venta"
+                    value={formatMoney(totals.sales_amount)}
+                    icon={<DollarSign size={24} />}
+                    color="blue"
+                    trend="Ingreso bruto"
+                />
+                <KPICard
+                    title="Utilidad"
+                    value={formatMoney(totals.profit)}
+                    icon={<TrendingUp size={24} />}
+                    color="emerald"
+                    trend="Venta menos compra"
+                />
+                <KPICard
+                    title="Comisión calculada"
+                    value={formatMoney(totalCommission)}
+                    icon={<Users size={24} />}
+                    color="emerald"
+                    trend={`Zapatillas S/ ${commissionRates.Zapatillas.toFixed(2)} · Accesorios S/ ${commissionRates.Accesorios.toFixed(2)}`}
+                />
+            </div>
+
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
+                    <h3 className="flex items-center gap-2 font-black text-slate-800">
+                        <Layers size={19} className="text-indigo-600" />
+                        Totales por categoría
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                        Zapatillas, accesorios y cualquier otra categoría registrada en productos.
+                    </p>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[850px] text-left text-sm">
+                        <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                            <tr>
+                                <th className="px-5 py-3">Categoría</th>
+                                <th className="px-5 py-3 text-right">Cantidad</th>
+                                <th className="px-5 py-3 text-right">Comisionable</th>
+                                <th className="px-5 py-3 text-right">Compra</th>
+                                <th className="px-5 py-3 text-right">Venta</th>
+                                <th className="px-5 py-3 text-right">Utilidad</th>
+                                <th className="px-5 py-3 text-right">Comisión</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {categories.length === 0 ? (
+                                <tr><td colSpan={7} className="px-5 py-10 text-center text-slate-400">No hay ventas en el periodo seleccionado.</td></tr>
+                            ) : categories.map((category) => (
+                                <tr key={category.category} className="hover:bg-indigo-50/30">
+                                    <td className="px-5 py-4 font-black text-slate-800">{category.category}</td>
+                                    <td className="px-5 py-4 text-right font-bold">{category.quantity}</td>
+                                    <td className="px-5 py-4 text-right font-bold text-indigo-700">{category.commissionable_quantity}</td>
+                                    <td className="px-5 py-4 text-right">{formatMoney(category.purchase_amount)}</td>
+                                    <td className="px-5 py-4 text-right font-bold">{formatMoney(category.sales_amount)}</td>
+                                    <td className="px-5 py-4 text-right font-bold text-emerald-700">{formatMoney(category.profit)}</td>
+                                    <td className="px-5 py-4 text-right font-black text-indigo-700">{formatMoney(categoryCommission(category, commissionRates))}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div className="space-y-5">
+                {sellers.map((seller) => (
+                    <section key={seller.seller_id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Vendedor</p>
+                                <h3 className="text-lg font-black text-slate-900">{seller.seller_name}</h3>
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs sm:grid-cols-3 lg:grid-cols-6">
+                                <SellerMetric label="Cantidad" value={seller.total_quantity} />
+                                <SellerMetric label="Comisionable" value={seller.total_commissionable_quantity} />
+                                <SellerMetric label="Compra" value={formatMoney(seller.total_purchase_amount)} />
+                                <SellerMetric label="Venta" value={formatMoney(seller.total_sales_amount)} />
+                                <SellerMetric label="Utilidad" value={formatMoney(seller.total_profit)} />
+                                <SellerMetric label="Comisión" value={formatMoney((seller.categories || []).reduce((sum, category) => sum + categoryCommission(category, commissionRates), 0))} highlight />
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[850px] text-left text-sm">
+                                <thead className="bg-white text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                    <tr>
+                                        <th className="px-5 py-3">Categoría</th>
+                                        <th className="px-5 py-3 text-right">Cantidad</th>
+                                        <th className="px-5 py-3 text-right">Comisionable</th>
+                                        <th className="px-5 py-3 text-right">Compra</th>
+                                        <th className="px-5 py-3 text-right">Venta</th>
+                                        <th className="px-5 py-3 text-right">Utilidad</th>
+                                        <th className="px-5 py-3 text-right">Comisión</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {(seller.categories || []).map((category) => (
+                                        <tr key={category.category} className="hover:bg-slate-50">
+                                            <td className="px-5 py-4 font-bold text-slate-700">{category.category}</td>
+                                            <td className="px-5 py-4 text-right">{category.quantity}</td>
+                                            <td className="px-5 py-4 text-right font-bold text-indigo-700">{category.commissionable_quantity}</td>
+                                            <td className="px-5 py-4 text-right">{formatMoney(category.purchase_amount)}</td>
+                                            <td className="px-5 py-4 text-right font-bold">{formatMoney(category.sales_amount)}</td>
+                                            <td className="px-5 py-4 text-right font-bold text-emerald-700">{formatMoney(category.profit)}</td>
+                                            <td className="px-5 py-4 text-right font-black text-indigo-700">{formatMoney(categoryCommission(category, commissionRates))}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function SellerMetric({ label, value, highlight = false }: { label: string; value: string | number; highlight?: boolean }) {
+    return (
+        <div>
+            <span className="block text-[9px] font-black uppercase tracking-wider text-slate-400">{label}</span>
+            <strong className={highlight ? 'text-indigo-700' : 'text-slate-800'}>{value}</strong>
         </div>
     );
 }
