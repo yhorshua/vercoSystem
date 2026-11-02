@@ -18,6 +18,7 @@ import {
   getSalesReport,
   getSneakersGoal,
   getMonthlyWebSalesTotal,
+  MonthlyWebSalesResponse,
 } from '../services/reportServices';
 
 import KpiCard from './components/kpiCard';
@@ -32,7 +33,7 @@ type TrendItem = {
 type DashboardData = {
   storeGoals: any | null;
   storeTrend: TrendItem[];
-  webMonthly: any | null;
+  webMonthly: MonthlyWebSalesResponse | null;
 };
 
 function toNumber(value: any) {
@@ -260,10 +261,24 @@ export default function Dashboard() {
   if (isWebSeller) {
     const web = dashboardData.webMonthly;
 
-    const pedidos = web?.pedidos || {};
-    const importes = web?.importes || {};
-    const pares = web?.pares || {};
-    const metaMensual = web?.meta_mensual || {};
+    const pedidos = web?.pedidos ?? {
+      total: 0, pendiente: 0, aprobado: 0, despachado: 0, entregado: 0, cancelado: 0,
+    };
+    const importes = web?.importes ?? {
+      total_registrado: 0, total_entregado: 0, total_vendido_real: 0, total_pendiente: 0, total_devuelto: 0,
+    };
+    const pares = web?.pares ?? {
+      registrados: 0, vendidos: 0, pendientes: 0, devueltos: 0,
+    };
+    const canales = web?.canales ?? {
+      unidad: { pedidos: 0, pares_vendidos: 0, monto_vendido: 0 },
+      mayor: { pedidos: 0, pares_vendidos: 0, monto_vendido: 0 },
+    };
+    const unidad = canales.unidad;
+    const mayor = canales.mayor;
+    const metaMensual = web?.meta_mensual ?? {
+      monto_objetivo: 0, pares_objetivo: 0,
+    };
 
     /**
      * METAS DEL WAREHOUSE
@@ -294,6 +309,13 @@ export default function Dashboard() {
 
     const montoFaltante = Math.max(montoObjetivo - totalVendidoReal, 0);
     const paresFaltantes = Math.max(paresObjetivo - paresVendidos, 0);
+    const tieneMeta = montoObjetivo > 0 || paresObjetivo > 0;
+    const metaMontoCumplida = montoObjetivo <= 0 || totalVendidoReal >= montoObjetivo;
+    const metaParesCumplida = paresObjetivo <= 0 || paresVendidos >= paresObjetivo;
+    const metaCumplida = tieneMeta && metaMontoCumplida && metaParesCumplida;
+    const ticketPromedioEntregado = toNumber(pedidos.entregado) > 0
+      ? totalVendidoReal / toNumber(pedidos.entregado)
+      : 0;
 
     return (
       <div className="min-h-screen bg-[#FDFDFD] text-slate-900 p-4 md:p-10 font-sans tracking-tight">
@@ -314,19 +336,28 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <button
-              onClick={fetchData}
-              className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all text-slate-600"
-            >
-              <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-            </button>
+            <div className="flex items-center gap-3">
+              <div className={`rounded-2xl border px-4 py-3 text-right ${metaCumplida ? 'border-emerald-200 bg-emerald-50' : tieneMeta ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-slate-50'}`}>
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Estado de mi meta</p>
+                <p className={`text-sm font-black ${metaCumplida ? 'text-emerald-700' : tieneMeta ? 'text-amber-700' : 'text-slate-600'}`}>
+                  {metaCumplida ? 'META CUMPLIDA' : tieneMeta ? 'META EN PROGRESO' : 'META NO CONFIGURADA'}
+                </p>
+              </div>
+              <button
+                onClick={fetchData}
+                aria-label="Actualizar dashboard"
+                className="p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all text-slate-600"
+              >
+                <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+              </button>
+            </div>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-5">
               <KpiCard
                 variant="master"
-                title="Ventas Web Reales"
+                title="Monto Total Entregado"
                 value={`S/ ${Number(
                   importes.total_vendido_real || 0
                 ).toLocaleString('es-PE', {
@@ -363,7 +394,7 @@ export default function Dashboard() {
 
             <div className="md:col-span-3">
               <KpiCard
-                title="Pares Vendidos Web"
+                title="Pares Entregados"
                 value={`${Number(pares.vendidos || 0)} Pares`}
                 percentage={porcentajeParesBar}
                 icon={<ShoppingBag size={24} />}
@@ -382,48 +413,28 @@ export default function Dashboard() {
 
             <div className="md:col-span-4">
               <KpiCard
-                title="Pedidos Web del Mes"
-                value={`${Number(pedidos.total || 0)} pedidos`}
+                title="Pedidos Entregados"
+                value={`${Number(pedidos.entregado || 0)} pedidos`}
                 icon={<Target size={24} />}
               >
                 <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
-                  <div className="bg-slate-50 rounded-xl p-3">
+                  <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
                     <p className="text-slate-400 font-bold uppercase text-[10px]">
-                      Pendientes
-                    </p>
-
-                    <p className="text-lg font-black text-amber-500">
-                      {pedidos.pendiente || 0}
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-slate-400 font-bold uppercase text-[10px]">
-                      Entregados
+                      Pares entregados
                     </p>
 
                     <p className="text-lg font-black text-emerald-500">
-                      {pedidos.entregado || 0}
+                      {paresVendidos}
                     </p>
                   </div>
 
-                  <div className="bg-slate-50 rounded-xl p-3">
+                  <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
                     <p className="text-slate-400 font-bold uppercase text-[10px]">
-                      Devueltos
+                      Monto entregado
                     </p>
 
-                    <p className="text-lg font-black text-rose-500">
-                      {pares.devueltos || 0}
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-slate-400 font-bold uppercase text-[10px]">
-                      Despachados
-                    </p>
-
-                    <p className="text-lg font-black text-indigo-500">
-                      {pedidos.despachado || 0}
+                    <p className="text-lg font-black text-indigo-600">
+                      S/ {totalVendidoReal.toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -431,26 +442,72 @@ export default function Dashboard() {
             </div>
           </div>
 
+          <section className="overflow-hidden rounded-[32px] border border-slate-200/70 bg-white shadow-sm">
+            <div className="flex flex-col gap-2 border-b border-slate-100 px-7 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Mi rendimiento por canal</p>
+                <h2 className="mt-1 text-xl font-black text-slate-900">Pares entregados por unidad y por mayor</h2>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600">
+                Total: {paresVendidos} pares
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 p-6 lg:grid-cols-2">
+              <article className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-700 p-7 text-white shadow-xl shadow-indigo-100">
+                <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10" />
+                <div className="relative z-10 flex items-start justify-between gap-5">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-indigo-200">Venta por unidad</p>
+                    <p className="mt-3 text-5xl font-black tracking-tight">{toNumber(unidad.pares_vendidos)}</p>
+                    <p className="mt-1 text-sm font-bold text-indigo-100">pares entregados</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/15 p-3 backdrop-blur"><ShoppingBag size={25} /></div>
+                </div>
+                <div className="relative z-10 mt-7 grid grid-cols-2 gap-3 border-t border-white/15 pt-5">
+                  <div><p className="text-[9px] font-black uppercase text-indigo-200">Monto entregado</p><p className="mt-1 text-lg font-black">S/ {toNumber(unidad.monto_vendido).toFixed(2)}</p></div>
+                  <div><p className="text-[9px] font-black uppercase text-indigo-200">Pedidos</p><p className="mt-1 text-lg font-black">{toNumber(unidad.pedidos)}</p></div>
+                </div>
+              </article>
+
+              <article className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-7 text-white shadow-xl shadow-orange-100">
+                <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/15" />
+                <div className="relative z-10 flex items-start justify-between gap-5">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-50">Venta por mayor</p>
+                    <p className="mt-3 text-5xl font-black tracking-tight">{toNumber(mayor.pares_vendidos)}</p>
+                    <p className="mt-1 text-sm font-bold text-orange-50">pares entregados</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/20 p-3 backdrop-blur"><CreditCard size={25} /></div>
+                </div>
+                <div className="relative z-10 mt-7 grid grid-cols-2 gap-3 border-t border-white/20 pt-5">
+                  <div><p className="text-[9px] font-black uppercase text-orange-50">Monto entregado</p><p className="mt-1 text-lg font-black">S/ {toNumber(mayor.monto_vendido).toFixed(2)}</p></div>
+                  <div><p className="text-[9px] font-black uppercase text-orange-50">Pedidos</p><p className="mt-1 text-lg font-black">{toNumber(mayor.pedidos)}</p></div>
+                </div>
+              </article>
+            </div>
+          </section>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 bg-white border border-slate-200/60 rounded-[32px] p-8 shadow-sm">
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                    Resumen financiero web
+                    Resultado de pedidos entregados
                   </h3>
 
                   <p className="text-sm text-slate-500 font-medium">
-                    Importes calculados según pedidos del mes actual.
+                    Solo considera pedidos con estado ENTREGADO durante el mes actual.
                   </p>
                 </div>
 
                 <div className="text-right">
                   <p className="text-2xl font-black text-indigo-600">
-                    S/ {Number(importes.total_registrado || 0).toFixed(2)}
+                    S/ {Number(importes.total_entregado || 0).toFixed(2)}
                   </p>
 
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Registrado
+                    Total entregado
                   </p>
                 </div>
               </div>
@@ -458,31 +515,31 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
                   <p className="text-[10px] font-black text-emerald-600 uppercase">
-                    Vendido real
+                    Monto entregado
                   </p>
 
                   <p className="text-2xl font-black text-emerald-700 mt-2">
-                    S/ {Number(importes.total_vendido_real || 0).toFixed(2)}
+                    S/ {Number(importes.total_entregado || 0).toFixed(2)}
                   </p>
                 </div>
 
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
-                  <p className="text-[10px] font-black text-amber-600 uppercase">
-                    Pendiente
+                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
+                  <p className="text-[10px] font-black text-indigo-600 uppercase">
+                    Pares entregados
                   </p>
 
-                  <p className="text-2xl font-black text-amber-700 mt-2">
-                    S/ {Number(importes.total_pendiente || 0).toFixed(2)}
+                  <p className="text-2xl font-black text-indigo-700 mt-2">
+                    {paresVendidos}
                   </p>
                 </div>
 
-                <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5">
-                  <p className="text-[10px] font-black text-rose-600 uppercase">
-                    Devuelto
+                <div className="bg-violet-50 border border-violet-100 rounded-2xl p-5">
+                  <p className="text-[10px] font-black text-violet-600 uppercase">
+                    Ticket promedio entregado
                   </p>
 
-                  <p className="text-2xl font-black text-rose-700 mt-2">
-                    S/ {Number(importes.total_devuelto || 0).toFixed(2)}
+                  <p className="text-2xl font-black text-violet-700 mt-2">
+                    S/ {ticketPromedioEntregado.toFixed(2)}
                   </p>
                 </div>
               </div>

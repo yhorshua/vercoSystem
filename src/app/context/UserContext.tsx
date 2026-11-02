@@ -24,6 +24,8 @@ export interface Warehouse {
   warehouse_name: string;
   type: string;
   location: string;
+  cantidad_pares?: number;
+  monto?: number;
   status: {
     type: string;
     data: number[];

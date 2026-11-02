@@ -27,6 +27,8 @@ interface ProductoVendedor {
     nombre: string;
     marca: string;
     precio: number;
+    precioUnidad: number;
+    precioMayor: number;
     imagen: string;
     tallas: SizeStock[];
 }
@@ -38,6 +40,7 @@ export default function PantallaVentaWeb() {
     const [pedido, setPedido] = useState<any[]>([]);
     const [step, setStep] = useState(1); // 1: Carrito, 2: Datos
     const [isAgencyDelivery, setIsAgencyDelivery] = useState(false);
+    const [saleType, setSaleType] = useState<'UNIDAD' | 'MAYOR'>('UNIDAD');
 
     const { user } = useUser();
     const token = user?.token ?? '';
@@ -58,6 +61,14 @@ export default function PantallaVentaWeb() {
 };
 
     const [customerData, setCustomerData] = useState(initialCustomerData);
+
+    const changeSaleType = (nextType: 'UNIDAD' | 'MAYOR') => {
+        if (pedido.length > 0) {
+            Swal.fire('Carrito en curso', 'Vacía el carrito antes de cambiar el tipo de venta.', 'info');
+            return;
+        }
+        setSaleType(nextType);
+    };
 
     const [depId, setDepId] = useState<keyof Ubigeo | ''>('');
     const [provId, setProvId] = useState('');
@@ -94,6 +105,14 @@ export default function PantallaVentaWeb() {
                 return;
             }
 
+            const unitPrice = Number(data.manufacturing_cost || 0);
+            const wholesalePrice = Number(data.wholesale_price || 0);
+
+            if (saleType === 'MAYOR' && wholesalePrice <= 0) {
+                Swal.fire('Precio no configurado', 'Este producto no tiene un precio por mayor registrado.', 'warning');
+                return;
+            }
+
             const stockMap = new Map<number, number>(
                 data.stock.map((s: any) => [
                     Number(s.product_size_id),
@@ -110,7 +129,9 @@ export default function PantallaVentaWeb() {
                 codigo: data.article_code,
                 nombre: data.article_description,
                 marca: data.category?.name || 'Sin categoría',
-                precio: Number(data.manufacturing_cost || 0),
+                precio: saleType === 'MAYOR' ? wholesalePrice : unitPrice,
+                precioUnidad: unitPrice,
+                precioMayor: wholesalePrice,
                 imagen: getProductImage(data.product_image),
                 tallas: orderedSizes.map((s: any) => ({
                     id: Number(s.id),
@@ -145,6 +166,7 @@ export default function PantallaVentaWeb() {
             }
 
             const payload = {
+                sale_type: saleType,
                 customer_name: customerData.name,
                 customer_dni: customerData.dni,
                 customer_phone: customerData.phone,
@@ -267,13 +289,31 @@ export default function PantallaVentaWeb() {
                         <h1 className="text-3xl font-black tracking-tighter text-slate-900">VENTA POR <span className="text-indigo-600">REDES</span></h1>
                         <p className="text-slate-500 font-medium">Asesor: {user.full_name || 'Usuario'}</p>
                     </div>
-                    <div className="flex items-center gap-3 bg-white p-2 rounded-3xl shadow-sm border border-slate-200">
-                        <div className="bg-indigo-600 p-3 rounded-2xl text-white shadow-lg shadow-indigo-100">
-                            <ShoppingCart size={24} />
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div className="flex rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+                            <button
+                                type="button"
+                                onClick={() => changeSaleType('UNIDAD')}
+                                className={`rounded-xl px-4 py-2.5 text-xs font-black transition-all ${saleType === 'UNIDAD' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                POR UNIDAD
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => changeSaleType('MAYOR')}
+                                className={`rounded-xl px-4 py-2.5 text-xs font-black transition-all ${saleType === 'MAYOR' ? 'bg-amber-500 text-white shadow-lg shadow-amber-100' : 'text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                POR MAYOR
+                            </button>
                         </div>
-                        <div className="pr-4">
-                            <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Mi Carrito</p>
-                            <p className="text-xl font-black text-slate-800">{pedido.length} <span className="text-sm font-bold text-slate-400">Items</span></p>
+                        <div className="flex items-center gap-3 bg-white p-2 rounded-3xl shadow-sm border border-slate-200">
+                            <div className="bg-indigo-600 p-3 rounded-2xl text-white shadow-lg shadow-indigo-100">
+                                <ShoppingCart size={24} />
+                            </div>
+                            <div className="pr-4">
+                                <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Mi Carrito</p>
+                                <p className="text-xl font-black text-slate-800">{pedido.length} <span className="text-sm font-bold text-slate-400">Items</span></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -474,7 +514,9 @@ export default function PantallaVentaWeb() {
                             </div>
 
                             <div className="mb-8">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Precio de Venta Sugerido</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                                    Precio de venta {saleType === 'MAYOR' ? 'por mayor' : 'por unidad'}
+                                </label>
                                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-3xl border border-slate-100 focus-within:border-indigo-500 transition-all">
                                     <span className="font-black text-slate-400 text-2xl italic">S/</span>
                                     <input type="number" step="0.01" value={selectedProduct.precio} onChange={(e) => setSelectedProduct({ ...selectedProduct, precio: Number(e.target.value) })} className="w-full bg-transparent outline-none font-black text-3xl text-slate-800" />

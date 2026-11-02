@@ -16,6 +16,7 @@ export interface WebSaleDetailDto {
 }
 
 export interface CreateWebSaleDto {
+  sale_type?: 'UNIDAD' | 'MAYOR';
   customer_name: string;
   customer_dni: string;
   customer_phone: string;
@@ -136,7 +137,15 @@ export async function getWebSales(
   );
 
   if (!res.ok) {
-    throw new Error('Error al obtener ventas');
+    const responseText = await res.text();
+    let message = responseText;
+    try {
+      const parsed = JSON.parse(responseText);
+      message = Array.isArray(parsed?.message)
+        ? parsed.message.join(', ')
+        : parsed?.message || responseText;
+    } catch { }
+    throw new Error(message || `Error al obtener ventas (${res.status})`);
   }
 
   return res.json();

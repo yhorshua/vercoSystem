@@ -339,6 +339,44 @@ export type SneakersGoalResponse = {
   };
 };
 
+export type MonthlyWebSalesResponse = {
+  year: number;
+  month: number;
+  start: string;
+  end: string;
+  role: string;
+  seller_id: number;
+  meta_mensual: {
+    monto_objetivo: number;
+    pares_objetivo: number;
+  };
+  pedidos: {
+    total: number;
+    pendiente: number;
+    aprobado: number;
+    despachado: number;
+    entregado: number;
+    cancelado: number;
+  };
+  importes: {
+    total_registrado: number;
+    total_entregado: number;
+    total_vendido_real: number;
+    total_pendiente: number;
+    total_devuelto: number;
+  };
+  pares: {
+    registrados: number;
+    vendidos: number;
+    pendientes: number;
+    devueltos: number;
+  };
+  canales: {
+    unidad: { pedidos: number; pares_vendidos: number; monto_vendido: number };
+    mayor: { pedidos: number; pares_vendidos: number; monto_vendido: number };
+  };
+};
+
 // Función para manejar errores de forma segura
 function safeErrorMessage(text: string) {
   try {
@@ -686,7 +724,7 @@ export async function getSneakersGoal(
   return res.json();
 }
 
-export async function getMonthlyWebSalesTotal(token: string) {
+export async function getMonthlyWebSalesTotal(token: string): Promise<MonthlyWebSalesResponse> {
   const res = await fetch(
     `${API_URL}/reports/monthly-total`,
     {
