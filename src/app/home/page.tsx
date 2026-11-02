@@ -62,7 +62,7 @@ export default function Dashboard() {
   });
 
   const roleName = user?.role?.name_role || user?.role;
-  const isWebSeller = roleName === 'Vendedor Web';
+  const isWebSalesRole = roleName === 'Vendedor Web' || roleName === 'Jefe Ventas';
 
   const fetchData = useCallback(async () => {
     if (!user?.token) {
@@ -80,11 +80,11 @@ export default function Dashboard() {
       };
 
       /**
-       * DASHBOARD PARA VENDEDOR WEB
+       * DASHBOARD PARA ROLES DE VENTAS WEB
        * Solo consume el token.
        * El backend obtiene el user_id desde req.user.
        */
-      if (isWebSeller) {
+      if (isWebSalesRole) {
         const webMonthly = await getMonthlyWebSalesTotal(user.token);
 
         nextData.webMonthly = webMonthly;
@@ -148,7 +148,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [user?.token, user?.warehouse_id, isWebSeller]);
+  }, [user?.token, user?.warehouse_id, isWebSalesRole]);
 
   useEffect(() => {
     fetchData();
@@ -223,7 +223,7 @@ export default function Dashboard() {
     );
   }
 
-  if (isWebSeller && !dashboardData.webMonthly) {
+  if (isWebSalesRole && !dashboardData.webMonthly) {
     return (
       <div className="h-screen flex flex-col items-center justify-center text-slate-400 font-bold">
         <p>No se encontraron datos de ventas web para este mes.</p>
@@ -238,7 +238,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!isWebSeller && !dashboardData.storeGoals) {
+  if (!isWebSalesRole && !dashboardData.storeGoals) {
     return (
       <div className="h-screen flex flex-col items-center justify-center text-slate-400 font-bold">
         <p>No se encontraron datos de tienda para este mes.</p>
@@ -255,10 +255,10 @@ export default function Dashboard() {
 
   /**
    * ==============================
-   * DASHBOARD VENDEDOR WEB
+   * DASHBOARD DE VENTAS WEB
    * ==============================
    */
-  if (isWebSeller) {
+  if (isWebSalesRole) {
     const web = dashboardData.webMonthly;
 
     const pedidos = web?.pedidos ?? {
@@ -326,13 +326,13 @@ export default function Dashboard() {
                 Dashboard Web
 
                 <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md border border-indigo-100 uppercase tracking-widest">
-                  Vendedor Web
+                  {roleName}
                 </span>
               </h1>
 
               <p className="text-slate-500 font-medium flex items-center gap-2">
                 <Calendar size={16} />
-                Rendimiento mensual de {user?.full_name || 'vendedor web'}
+                Rendimiento mensual de {user?.full_name || 'asesor comercial'}
               </p>
             </div>
 
