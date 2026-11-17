@@ -1345,6 +1345,7 @@ export default function CotizadorPage() {
                                         <option>Transferencia</option>
                                         <option>Crédito</option>
                                         <option>Yape</option>
+                                        <option>Contra Entrega</option>
                                     </select>
                                 </div>
 
